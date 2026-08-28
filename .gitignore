@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+.vercel/
+test-results/
+.qa/
+docs/*handoff*.md
