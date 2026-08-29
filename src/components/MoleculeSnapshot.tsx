@@ -1,22 +1,27 @@
-import { useId, useMemo } from "react";
+import { useId, useMemo, type CSSProperties } from "react";
 import type { MoleculeComparison } from "../domain/mechanism-comparison";
-import type { MoleculeState, Point } from "../domain/types";
+import type { ArrowDraft, MoleculeState } from "../domain/types";
+import { buildMechanismArrowGeometry } from "./mechanism-arrow-geometry";
+import {
+  comparisonReplayArrowRoutes,
+  electronSourcePosition,
+} from "./mechanism-arrow-layout";
+import {
+  snapshotLabelPlacement,
+  snapshotImplicitHydrogenPlacement,
+  snapshotPairPosition,
+  type SnapshotViewBox,
+  viewBoxValue,
+} from "./molecule-snapshot-geometry";
 
 interface MoleculeSnapshotProps {
   molecule: MoleculeState;
+  labelStates: readonly MoleculeState[];
   comparison: MoleculeComparison;
   side: "before" | "after";
-}
-
-function pairPosition(state: MoleculeState, siteId: string): Point | null {
-  const site = state.lonePairSites.find((candidate) => candidate.id === siteId);
-  const atom = state.atoms.find((candidate) => candidate.id === site?.atomId);
-  if (!site || !atom) return null;
-  const radians = (site.angle * Math.PI) / 180;
-  return {
-    x: atom.position.x + Math.cos(radians) * 38,
-    y: atom.position.y + Math.sin(radians) * 38,
-  };
+  viewBox: SnapshotViewBox;
+  replayArrows?: ReadonlyArray<Pick<ArrowDraft, "source" | "target">>;
+  replayKey?: number;
 }
 
 function chargeLabel(charge: number): string {
@@ -26,8 +31,15 @@ function chargeLabel(charge: number): string {
   return charge > 0 ? `${charge}+` : `${Math.abs(charge)}−`;
 }
 
-export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapshotProps) {
-  const titleId = useId();
+export function MoleculeSnapshot({
+  molecule,
+  labelStates,
+  comparison,
+  side,
+  viewBox,
+  replayArrows = [],
+  replayKey = 0,
+}: MoleculeSnapshotProps) {
   const descriptionId = useId();
   const changedAtomIds = useMemo(
     () => new Set(comparison.atomChanges.map((change) => change.atomId)),
@@ -43,16 +55,29 @@ export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapsho
       ),
     [comparison.bondChanges, side],
   );
+  const mappedAtomIds = useMemo(
+    () =>
+      new Set([
+        ...comparison.atomChanges.map((change) => change.atomId),
+        ...comparison.bondChanges.flatMap((change) => change.atomIds),
+      ]),
+    [comparison.atomChanges, comparison.bondChanges],
+  );
+  const replayRoutes = useMemo(
+    () => comparisonReplayArrowRoutes(molecule, replayArrows),
+    [molecule, replayArrows],
+  );
 
   return (
     <div className="molecule-snapshot">
       <svg
         className="molecule-snapshot__svg"
-        viewBox="0 0 760 330"
+        viewBox={viewBoxValue(viewBox)}
+        preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-labelledby={`${titleId} ${descriptionId}`}
+        aria-label={molecule.label}
+        aria-describedby={descriptionId}
       >
-        <title id={titleId}>{molecule.label}</title>
         <desc id={descriptionId}>
           {side === "before" ? "Before" : "After"} structure. Highlighted atoms and bonds
           changed in this committed step. An exact text description follows the diagrams.
@@ -61,7 +86,9 @@ export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapsho
           <text
             x={separator.x}
             y={separator.y}
-            className="snapshot-plus-sign"
+            className="plus-sign snapshot-plus-sign"
+            textAnchor="middle"
+            dominantBaseline="central"
             aria-hidden="true"
             key={`${separator.x}-${separator.y}-${index}`}
           >
@@ -88,7 +115,7 @@ export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapsho
                 y2={second.position.y}
               />
               <line
-                className="snapshot-bond__line"
+                className="bond-line snapshot-bond__line"
                 x1={first.position.x}
                 y1={first.position.y}
                 x2={second.position.x}
@@ -98,31 +125,40 @@ export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapsho
           );
         })}
 
-        {molecule.atoms.map((atom) => (
-          <g
-            className={`snapshot-atom ${changedAtomIds.has(atom.id) ? "snapshot-atom--changed" : ""}`}
-            key={atom.id}
-            aria-hidden="true"
-          >
+        {molecule.atoms.map((atom) => {
+          const label = snapshotLabelPlacement(labelStates, atom);
+          const implicitHydrogen = snapshotImplicitHydrogenPlacement(labelStates, atom);
+          return (
+            <g
+              className={`snapshot-atom ${changedAtomIds.has(atom.id) ? "snapshot-atom--changed" : ""}`}
+              key={atom.id}
+              aria-hidden="true"
+            >
             <circle
-              className="snapshot-atom__change-ring"
+              className="atom-target snapshot-atom__change-ring"
               cx={atom.position.x}
               cy={atom.position.y}
-              r="31"
+              r="33"
             />
             {atom.implicitHydrogenCount > 0 && (
               <text
-                className="snapshot-implicit-hydrogen"
-                x={atom.position.x}
-                y={atom.position.y + 49}
-                textAnchor="middle"
+                className="implicit-hydrogen snapshot-implicit-hydrogen"
+                x={implicitHydrogen.x}
+                y={implicitHydrogen.y}
+                textAnchor={implicitHydrogen.textAnchor}
                 dominantBaseline="middle"
               >
-                {atom.implicitHydrogenCount}H
+                <tspan className="snapshot-implicit-hydrogen__symbol">H</tspan>
+                <tspan
+                  className="snapshot-implicit-hydrogen__count"
+                  baselineShift="sub"
+                >
+                  {atom.implicitHydrogenCount}
+                </tspan>
               </text>
             )}
             <text
-              className="snapshot-atom__symbol"
+              className="atom-symbol snapshot-atom__symbol"
               x={atom.position.x}
               y={atom.position.y}
               textAnchor="middle"
@@ -130,41 +166,45 @@ export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapsho
             >
               {atom.element}
             </text>
-            <text
-              className="snapshot-atom__label"
-              x={atom.position.x}
-              y={atom.position.y - 42}
-              textAnchor="middle"
-            >
-              {atom.label}
-            </text>
+            {mappedAtomIds.has(atom.id) && (
+              <text
+                className="snapshot-atom__label"
+                x={label.x}
+                y={label.y}
+                textAnchor={label.textAnchor}
+                dominantBaseline="central"
+              >
+                {atom.label}
+              </text>
+            )}
             {atom.formalCharge !== 0 && (
               <text
-                className="snapshot-formal-charge"
+                className="formal-charge snapshot-formal-charge"
                 x={atom.position.x + 24}
                 y={atom.position.y - 22}
               >
                 {chargeLabel(atom.formalCharge)}
               </text>
             )}
-          </g>
-        ))}
+            </g>
+          );
+        })}
 
         {molecule.lonePairSites.map((site) => {
-          const position = pairPosition(molecule, site.id);
+          const position = snapshotPairPosition(molecule, site.id);
           if (!position) return null;
           const radians = (site.angle * Math.PI) / 180;
           const tangent = { x: -Math.sin(radians) * 4, y: Math.cos(radians) * 4 };
           return (
             <g className="snapshot-pair" key={site.id} aria-hidden="true">
               <circle
-                className="snapshot-electron-dot"
+                className="electron-dot snapshot-electron-dot"
                 cx={position.x - tangent.x}
                 cy={position.y - tangent.y}
                 r="3.4"
               />
               <circle
-                className="snapshot-electron-dot"
+                className="electron-dot snapshot-electron-dot"
                 cx={position.x + tangent.x}
                 cy={position.y + tangent.y}
                 r="3.4"
@@ -172,6 +212,43 @@ export function MoleculeSnapshot({ molecule, comparison, side }: MoleculeSnapsho
             </g>
           );
         })}
+
+        {replayArrows.length > 0 && (
+          <g className="snapshot-replay" key={replayKey} aria-hidden="true">
+            {replayArrows.map((arrow, index) => {
+              const start = electronSourcePosition(molecule, arrow.source);
+              const target = molecule.atoms.find(
+                (atom) => atom.id === arrow.target.entityId,
+              )?.position;
+              if (!start || !target) return null;
+              const geometry = buildMechanismArrowGeometry(
+                start,
+                target,
+                index,
+                arrow.source.kind,
+                replayRoutes.get(index),
+              );
+              const replayStyle = { "--replay-index": index } as CSSProperties;
+              return (
+                <g
+                  className="snapshot-replay-arrow"
+                  key={`${arrow.source.kind}-${arrow.source.entityId}-${arrow.target.entityId}`}
+                  style={replayStyle}
+                >
+                  <path
+                    className="snapshot-replay-arrow__shaft"
+                    d={geometry.shaftPath}
+                    pathLength="1"
+                  />
+                  <polygon
+                    className="snapshot-replay-arrow__head"
+                    points={geometry.headPoints}
+                  />
+                </g>
+              );
+            })}
+          </g>
+        )}
       </svg>
     </div>
   );

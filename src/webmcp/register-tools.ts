@@ -8,12 +8,13 @@ import {
   reachableHistoryStateIds,
   visibleStateId,
 } from "../domain/problem-steps";
+import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
 import type { CommandResult, ElectronSource } from "../domain/types";
 import { activeSessionMode, mechanismStore } from "../store/active-mechanism-store";
 import type { MechanismStore } from "../store/mechanism-store";
 
 const registeredContexts = new WeakSet<object>();
-export const MECHANISM_TOOL_COUNT = 14;
+export const MECHANISM_TOOL_COUNT = 15;
 
 interface ToolFailure {
   ok: false;
@@ -29,6 +30,16 @@ function dispatchStatus(status: "ready" | "manual" | "error"): void {
   document.dispatchEvent(
     new CustomEvent("mechanism-canvas:webmcp-status", { detail: status }),
   );
+}
+
+function dispatchReachedStepReplay(detail: {
+  commitId: string;
+  beforeStateId: string;
+  afterStateId: string;
+}): boolean {
+  if (typeof document === "undefined") return false;
+  document.dispatchEvent(new CustomEvent(REPLAY_REACHED_STEP_EVENT, { detail }));
+  return true;
 }
 
 function toolError(code: string, message: string, revision?: number): ToolFailure {
@@ -372,6 +383,74 @@ function defineTools(
             ok: true,
             problemId: problem.id,
             mechanismRevision: state.mechanismRevision,
+            step: {
+              commitId: comparison.commitId,
+              stepIndex: comparison.stepIndex,
+              stepId: comparison.stepId,
+              stepTitle: comparison.stepTitle,
+              actor: comparison.actor,
+              beforeStateId: comparison.beforeStateId,
+              beforeStateLabel: comparison.beforeStateLabel,
+              afterStateId: comparison.afterStateId,
+              afterStateLabel: comparison.afterStateLabel,
+              performedArrowBundle: comparison.arrowBundle,
+            },
+            comparison: comparison.comparison,
+          };
+        } catch (error) {
+          return toolError("INVALID_INPUT", (error as Error).message, store.getState().mechanismRevision);
+        }
+      },
+    },
+    {
+      name: "replay_reached_step",
+      description:
+        "Open the reached-step evidence sheet and replay the exact performed curved-arrow bundle for one active committed transition. This changes only transient presentation state: chemistry, revisions, validation authority, persistence, and activity remain unchanged. Undone and future transitions are rejected.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          beforeStateId: { type: "string" },
+          afterStateId: { type: "string" },
+        },
+        required: ["beforeStateId", "afterStateId"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["beforeStateId", "afterStateId"]);
+          const state = store.getState();
+          const problem = store.getProblem();
+          const comparison = compareReachedStep(
+            problem,
+            state,
+            requiredString(parsed, "beforeStateId"),
+            requiredString(parsed, "afterStateId"),
+          );
+          if (!comparison) {
+            return toolError(
+              "TARGET_NOT_SUPPORTED",
+              "That exact transition is not an active committed step. Read availableStepComparisons from get_mechanism_state and replay only a listed pair.",
+              state.mechanismRevision,
+            );
+          }
+          const presented = dispatchReachedStepReplay({
+            commitId: comparison.commitId,
+            beforeStateId: comparison.beforeStateId,
+            afterStateId: comparison.afterStateId,
+          });
+          return {
+            ok: true,
+            problemId: problem.id,
+            mechanismRevision: state.mechanismRevision,
+            activitySequence: state.activitySequence,
+            presented,
             step: {
               commitId: comparison.commitId,
               stepIndex: comparison.stepIndex,

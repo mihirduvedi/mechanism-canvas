@@ -115,6 +115,20 @@ describe("mechanism arrow geometry", () => {
     expect(geometry.headPoints.startsWith(`${geometry.tip.x},${geometry.tip.y}`)).toBe(true);
   });
 
+  it("uses an explicit comparison arch without changing target landing geometry", () => {
+    const geometry = buildMechanismArrowGeometry(
+      { x: 650, y: 190 },
+      { x: 180, y: 90 },
+      0,
+      "lone_pair",
+      { targetAngle: 0.2, archY: 72 },
+    );
+
+    expect(geometry.firstControl.y).toBe(72);
+    expect(geometry.tipControl.y).toBe(72);
+    expect(distance(geometry.tip, { x: 180, y: 90 })).toBeCloseTo(35.5, 5);
+  });
+
   it("fans crowded arrowheads around a shared target", () => {
     const target = { x: 490, y: 190 };
     const routes = buildMechanismArrowRoutes([

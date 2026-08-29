@@ -14,11 +14,11 @@
 
 ## 0:18–0:36 — The WebMCP idea
 
-**On screen:** Open the Site tools menu and show the 14 available tools. Return to the page.
+**On screen:** Open the Site tools menu and show the 15 available tools. Return to the page.
 
 **Narration:**
 
-> Mechanism Canvas gives the open page fourteen narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, one reaction timeline, and one activity trail. The model never grades the chemistry.
+> Mechanism Canvas gives the open page fifteen narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, one reaction timeline, and one activity trail. The model never grades the chemistry.
 
 ## 0:36–0:58 — Discover the capstone
 
@@ -46,11 +46,11 @@
 
 ## 1:48–2:10 — Compare reached states
 
-**On screen:** Agent calls `compare_reached_step` for the first transition while the learner opens **Compare committed steps**. Show the highlighted C–Br break and C–N formation, then close the dialog, view `amine_reactants`, and return to the intermediate. Keep products locked.
+**On screen:** Agent calls `compare_reached_step` for the first transition while the learner opens **Step evidence**. Show the highlighted C–Br break and C–N formation, then call `replay_reached_step` and let the two performed arrows finish. Close the dialog, view `amine_reactants`, and return to the intermediate. Keep products locked.
 
 **Narration:**
 
-> The app and agent read the same exact bond, charge, and lone-pair delta. The learner can then inspect the starting structure without losing the intermediate. Comparison and history are read-only, leave revision untouched, and refuse future states.
+> The app and agent read the same exact bond, charge, and lone-pair delta, then replay the arrows the learner actually committed. The trace explains electron bookkeeping; it does not apply the chemistry again or claim to show a physical transition state. Comparison, replay, and history leave revision untouched and refuse future states.
 
 ## 2:10–2:38 — Finish and inspect the proof
 

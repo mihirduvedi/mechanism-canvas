@@ -65,12 +65,16 @@ export function buildMechanismArrowGeometry(
     route?.curveLane !== undefined
       ? -route.curveLane * Math.min(56, Math.max(24, drawableLength * 0.18))
       : curveSide * Math.min(48, Math.max(6, drawableLength * 0.16));
-  const firstControl = {
-    x: start.x + drawable.x * 0.33 + normal.x * curve,
-    y: start.y + drawable.y * 0.33 + normal.y * curve,
-  };
+  const firstControl = route?.archY !== undefined
+    ? { x: start.x + drawable.x * 0.33, y: route.archY }
+    : {
+        x: start.x + drawable.x * 0.33 + normal.x * curve,
+        y: start.y + drawable.y * 0.33 + normal.y * curve,
+      };
   const tipControl =
-    route?.targetAngle !== undefined || sourceKind === "bond"
+    route?.archY !== undefined
+      ? { x: start.x + drawable.x * 0.7, y: route.archY }
+      : route?.targetAngle !== undefined || sourceKind === "bond"
       ? pointAlong(
           tip,
           targetRadial,

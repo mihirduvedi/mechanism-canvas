@@ -67,7 +67,10 @@ export function ProblemBrief({
 
       <p className="problem-prompt">{problem.prompt}</p>
       <details className="context-note">
-        <summary>What this exercise models</summary>
+        <summary>
+          <span>What this exercise models</span>
+          <span className="context-note__toggle" aria-hidden="true" />
+        </summary>
         <p>{problem.contextNote}</p>
       </details>
 

@@ -18,6 +18,7 @@ export interface ArrowRouteInput {
 export interface MechanismArrowRoute {
   targetAngle: number;
   curveLane?: number;
+  archY?: number;
 }
 
 interface AngledRouteInput extends ArrowRouteInput {

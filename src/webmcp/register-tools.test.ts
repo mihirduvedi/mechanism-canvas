@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
 import { createMechanismStore } from "../store/mechanism-store";
 import { registerMechanismCanvasTools } from "./register-tools";
 
@@ -13,17 +14,18 @@ function contextHarness() {
 }
 
 describe("WebMCP site tool registration", () => {
-  it("registers the full fourteen-tool catalog with guarded history and comparison", async () => {
+  it("registers the full fifteen-tool catalog with guarded history, comparison, and replay", async () => {
     const store = createMechanismStore(undefined, null);
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(14);
+    expect(count).toBe(15);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "inspect_mechanism_entities",
       "get_activity_trail",
       "view_mechanism_history_state",
       "compare_reached_step",
+      "replay_reached_step",
       "focus_mechanism_entities",
       "add_draft_arrow",
       "remove_draft_arrow",
@@ -38,6 +40,11 @@ describe("WebMCP site tool registration", () => {
     expect(tools.find((tool) => tool.name === "compare_reached_step")?.annotations?.readOnlyHint).toBe(
       true,
     );
+    expect(tools.find((tool) => tool.name === "replay_reached_step")?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+    });
     expect(tools.find((tool) => tool.name === "add_draft_arrow")?.inputSchema.additionalProperties).toBe(
       false,
     );
@@ -67,6 +74,14 @@ describe("WebMCP site tool registration", () => {
       afterStateId: "methylammonium_intermediate",
     });
     expect(unreachedComparison).toMatchObject({
+      ok: false,
+      error: { code: "TARGET_NOT_SUPPORTED" },
+    });
+    const unreachedReplay = await call("replay_reached_step", {
+      beforeStateId: "amine_reactants",
+      afterStateId: "methylammonium_intermediate",
+    });
+    expect(unreachedReplay).toMatchObject({
       ok: false,
       error: { code: "TARGET_NOT_SUPPORTED" },
     });
@@ -115,6 +130,36 @@ describe("WebMCP site tool registration", () => {
           expect.objectContaining({ change: "broken", beforeBondId: "bond_c_br" }),
         ]),
       },
+    });
+    expect(store.getState().activitySequence).toBe(5);
+
+    const replayRequests: CustomEvent[] = [];
+    const captureReplay = (event: Event) => {
+      replayRequests.push(event as CustomEvent);
+    };
+    document.addEventListener(REPLAY_REACHED_STEP_EVENT, captureReplay, { once: true });
+    const replayed = await call("replay_reached_step", {
+      beforeStateId: "amine_reactants",
+      afterStateId: "methylammonium_intermediate",
+    });
+    expect(replayed).toMatchObject({
+      ok: true,
+      problemId: "ammonia_alkylation_01",
+      mechanismRevision: 4,
+      activitySequence: 5,
+      presented: true,
+      step: {
+        commitId: expect.any(String),
+        stepIndex: 1,
+        performedArrowBundle: expect.arrayContaining([
+          expect.objectContaining({ source: { kind: "lone_pair", entityId: "lp_n_attack_1" } }),
+        ]),
+      },
+    });
+    expect(replayRequests[0]?.detail).toMatchObject({
+      commitId: expect.any(String),
+      beforeStateId: "amine_reactants",
+      afterStateId: "methylammonium_intermediate",
     });
     expect(store.getState().activitySequence).toBe(5);
 

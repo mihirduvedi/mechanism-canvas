@@ -5,18 +5,17 @@ import type {
   ArrowDraft,
   ElectronSource,
   MechanismState,
-  MoleculeState,
-  Point,
   ProblemDefinition,
 } from "../domain/types";
 import type { MechanismStore } from "../store/mechanism-store";
 import { buildMechanismArrowGeometry } from "./mechanism-arrow-geometry";
-import { MechanismTimeline } from "./MechanismTimeline";
 import {
-  buildMechanismArrowRoutes,
-  preferredMechanismArrowTargetAngle,
-  type MechanismArrowRoute,
-} from "./mechanism-arrow-routing";
+  arrowBundleRoutes,
+  electronPairPosition,
+  electronSourcePosition,
+} from "./mechanism-arrow-layout";
+import { MechanismTimeline } from "./MechanismTimeline";
+import type { MechanismArrowRoute } from "./mechanism-arrow-routing";
 
 const MolecularModel = lazy(() =>
   import("./MolecularModel").then((module) => ({ default: module.MolecularModel })),
@@ -26,94 +25,6 @@ interface MechanismCanvasProps {
   problem: ProblemDefinition;
   state: MechanismState;
   store: MechanismStore;
-}
-
-function pairPosition(state: MoleculeState, siteId: string): Point | null {
-  const site = state.lonePairSites.find((candidate) => candidate.id === siteId);
-  const atom = state.atoms.find((candidate) => candidate.id === site?.atomId);
-  if (!site || !atom) return null;
-  const radians = (site.angle * Math.PI) / 180;
-  return {
-    x: atom.position.x + Math.cos(radians) * 38,
-    y: atom.position.y + Math.sin(radians) * 38,
-  };
-}
-
-function bondPosition(state: MoleculeState, bondId: string): Point | null {
-  const bond = state.bonds.find((candidate) => candidate.id === bondId);
-  if (!bond) return null;
-  const first = state.atoms.find((atom) => atom.id === bond.atomIds[0]);
-  const second = state.atoms.find((atom) => atom.id === bond.atomIds[1]);
-  if (!first || !second) return null;
-  return {
-    x: (first.position.x + second.position.x) / 2,
-    y: (first.position.y + second.position.y) / 2,
-  };
-}
-
-function sourcePosition(state: MoleculeState, source: ElectronSource): Point | null {
-  return source.kind === "lone_pair"
-    ? pairPosition(state, source.entityId)
-    : bondPosition(state, source.entityId);
-}
-
-function targetObstacleAngles(state: MoleculeState, atomId: string): number[] {
-  const atom = state.atoms.find((candidate) => candidate.id === atomId);
-  if (!atom) return [];
-
-  const angles = state.lonePairSites
-    .filter((site) => site.atomId === atomId)
-    .map((site) => (site.angle * Math.PI) / 180);
-
-  for (const bond of state.bonds) {
-    if (!bond.atomIds.includes(atomId)) continue;
-    const otherAtomId = bond.atomIds.find((candidate) => candidate !== atomId);
-    const otherAtom = state.atoms.find((candidate) => candidate.id === otherAtomId);
-    if (otherAtom) {
-      angles.push(
-        Math.atan2(
-          otherAtom.position.y - atom.position.y,
-          otherAtom.position.x - atom.position.x,
-        ),
-      );
-    }
-  }
-
-  if (atom.formalCharge !== 0) angles.push(-Math.PI / 4);
-  if (atom.implicitHydrogenCount > 0) angles.push(Math.PI / 2);
-  return angles;
-}
-
-function bundleRoutes(
-  molecule: MoleculeState,
-  arrows: Array<Pick<ArrowDraft, "source" | "target">>,
-): Map<number, MechanismArrowRoute> {
-  return buildMechanismArrowRoutes(
-    arrows.flatMap((arrow, index) => {
-      const source = sourcePosition(molecule, arrow.source);
-      const target = molecule.atoms.find((atom) => atom.id === arrow.target.entityId)?.position;
-      return source && target
-        ? [
-            {
-              index,
-              targetId: arrow.target.entityId,
-              source,
-              target,
-              preferredTargetAngle: preferredMechanismArrowTargetAngle(
-                source,
-                target,
-                index,
-                arrow.source.kind,
-              ),
-              targetObstacleAngles: targetObstacleAngles(
-                molecule,
-                arrow.target.entityId,
-              ),
-            },
-          ]
-        : [];
-    }),
-  );
 }
 
 function handleKeyboardActivate(event: React.KeyboardEvent<SVGGElement>, action: () => void) {
@@ -145,8 +56,8 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
     !historyView;
   const focused = useMemo(() => new Set(state.focusEntityIds), [state.focusEntityIds]);
   const previewArrows = showPreview ? activeStep?.acceptedBundles[0] ?? [] : [];
-  const previewRoutes = bundleRoutes(molecule, previewArrows);
-  const draftRoutes = bundleRoutes(molecule, state.draftArrows);
+  const previewRoutes = arrowBundleRoutes(molecule, previewArrows);
+  const draftRoutes = arrowBundleRoutes(molecule, state.draftArrows);
 
   const selectSource = (source: ElectronSource) => {
     if (complete || historyView) return;
@@ -175,7 +86,7 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
     variant: "draft" | "accepted" | "preview",
     route?: MechanismArrowRoute,
   ) => {
-    const start = sourcePosition(molecule, arrow.source);
+    const start = electronSourcePosition(molecule, arrow.source);
     const target = molecule.atoms.find((atom) => atom.id === arrow.target.entityId)?.position;
     if (!start || !target) return null;
     const geometry = buildMechanismArrowGeometry(
@@ -383,7 +294,7 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
           })}
 
           {molecule.lonePairSites.map((site) => {
-            const position = pairPosition(molecule, site.id);
+              const position = electronPairPosition(molecule, site.id);
             if (!position) return null;
             const radians = (site.angle * Math.PI) / 180;
             const tangent = { x: -Math.sin(radians) * 4, y: Math.cos(radians) * 4 };

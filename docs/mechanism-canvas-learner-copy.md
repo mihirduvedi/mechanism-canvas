@@ -2,7 +2,7 @@
 
 Electron movement, made inspectable.
 
-## A concerted substitution
+## Hydroxide replaces bromide
 
 Show the curved-arrow step for hydroxide reacting with bromomethane. Add every arrow that moves in the same elementary step, then check the bundle.
 

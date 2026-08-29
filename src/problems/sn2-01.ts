@@ -2,7 +2,7 @@ import type { ProblemDefinition } from "../domain/types";
 
 export const sn2Problem: ProblemDefinition = {
   id: "sn2_01",
-  title: "A concerted substitution",
+  title: "Hydroxide replaces bromide",
   reactionFamily: "SN2",
   difficulty: 1,
   stepCount: 1,
@@ -129,7 +129,7 @@ export const sn2Problem: ProblemDefinition = {
   steps: [
     {
       id: "sn2_substitution",
-      title: "Substitute bromide",
+      title: "Replace bromide with hydroxide",
       fromStateId: "sn2_reactants",
       toStateId: "sn2_products",
   acceptedBundles: [
