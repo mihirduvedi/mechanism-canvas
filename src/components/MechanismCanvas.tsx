@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { describeEntity } from "../domain/chemistry";
+import { problemStepForState, visibleStateId } from "../domain/problem-steps";
 import type {
   ArrowDraft,
   ElectronSource,
@@ -9,6 +10,13 @@ import type {
   ProblemDefinition,
 } from "../domain/types";
 import type { MechanismStore } from "../store/mechanism-store";
+import { buildMechanismArrowGeometry } from "./mechanism-arrow-geometry";
+import { MechanismTimeline } from "./MechanismTimeline";
+import {
+  buildMechanismArrowRoutes,
+  preferredMechanismArrowTargetAngle,
+  type MechanismArrowRoute,
+} from "./mechanism-arrow-routing";
 
 const MolecularModel = lazy(() =>
   import("./MolecularModel").then((module) => ({ default: module.MolecularModel })),
@@ -49,30 +57,63 @@ function sourcePosition(state: MoleculeState, source: ElectronSource): Point | n
     : bondPosition(state, source.entityId);
 }
 
-function arrowPath(source: Point, target: Point, index: number): string {
-  const dx = target.x - source.x;
-  const dy = target.y - source.y;
-  const length = Math.max(Math.hypot(dx, dy), 1);
-  const ux = dx / length;
-  const uy = dy / length;
-  const start = { x: source.x + ux * 9, y: source.y + uy * 9 };
-  const end = { x: target.x - ux * 35, y: target.y - uy * 35 };
-  const drawableDx = end.x - start.x;
-  const drawableDy = end.y - start.y;
-  const drawableLength = Math.max(Math.hypot(drawableDx, drawableDy), 1);
-  const curve =
-    (index % 2 === 0 ? -1 : 1) * Math.min(66, Math.max(14, drawableLength * 0.22));
-  const nx = -uy;
-  const ny = ux;
-  const firstControl = {
-    x: start.x + drawableDx * 0.33 + nx * curve,
-    y: start.y + drawableDy * 0.33 + ny * curve,
-  };
-  const secondControl = {
-    x: start.x + drawableDx * 0.68 + nx * curve,
-    y: start.y + drawableDy * 0.68 + ny * curve,
-  };
-  return `M ${start.x} ${start.y} C ${firstControl.x} ${firstControl.y}, ${secondControl.x} ${secondControl.y}, ${end.x} ${end.y}`;
+function targetObstacleAngles(state: MoleculeState, atomId: string): number[] {
+  const atom = state.atoms.find((candidate) => candidate.id === atomId);
+  if (!atom) return [];
+
+  const angles = state.lonePairSites
+    .filter((site) => site.atomId === atomId)
+    .map((site) => (site.angle * Math.PI) / 180);
+
+  for (const bond of state.bonds) {
+    if (!bond.atomIds.includes(atomId)) continue;
+    const otherAtomId = bond.atomIds.find((candidate) => candidate !== atomId);
+    const otherAtom = state.atoms.find((candidate) => candidate.id === otherAtomId);
+    if (otherAtom) {
+      angles.push(
+        Math.atan2(
+          otherAtom.position.y - atom.position.y,
+          otherAtom.position.x - atom.position.x,
+        ),
+      );
+    }
+  }
+
+  if (atom.formalCharge !== 0) angles.push(-Math.PI / 4);
+  if (atom.implicitHydrogenCount > 0) angles.push(Math.PI / 2);
+  return angles;
+}
+
+function bundleRoutes(
+  molecule: MoleculeState,
+  arrows: Array<Pick<ArrowDraft, "source" | "target">>,
+): Map<number, MechanismArrowRoute> {
+  return buildMechanismArrowRoutes(
+    arrows.flatMap((arrow, index) => {
+      const source = sourcePosition(molecule, arrow.source);
+      const target = molecule.atoms.find((atom) => atom.id === arrow.target.entityId)?.position;
+      return source && target
+        ? [
+            {
+              index,
+              targetId: arrow.target.entityId,
+              source,
+              target,
+              preferredTargetAngle: preferredMechanismArrowTargetAngle(
+                source,
+                target,
+                index,
+                arrow.source.kind,
+              ),
+              targetObstacleAngles: targetObstacleAngles(
+                molecule,
+                arrow.target.entityId,
+              ),
+            },
+          ]
+        : [];
+    }),
+  );
 }
 
 function handleKeyboardActivate(event: React.KeyboardEvent<SVGGElement>, action: () => void) {
@@ -91,20 +132,29 @@ function chargeLabel(charge: number): string {
 
 export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps) {
   const [showPhysicalModel, setShowPhysicalModel] = useState(false);
-  const molecule = problem.states[state.currentStateId];
+  const molecule = problem.states[visibleStateId(state)];
   const complete = state.currentStateId === problem.completedStateId;
+  const historyView = state.historyViewStateId !== null;
+  const activeStep = problemStepForState(problem, state.currentStateId);
   const selectedSource = state.selection.source;
   const accepted = state.latestValidation?.classification === "valid";
-  const showPreview = state.highestScaffoldLevel >= 4 && !complete;
+  const showPreview =
+    state.visibleScaffoldLevel === 4 &&
+    state.draftArrows.length === 0 &&
+    !complete &&
+    !historyView;
   const focused = useMemo(() => new Set(state.focusEntityIds), [state.focusEntityIds]);
+  const previewArrows = showPreview ? activeStep?.acceptedBundles[0] ?? [] : [];
+  const previewRoutes = bundleRoutes(molecule, previewArrows);
+  const draftRoutes = bundleRoutes(molecule, state.draftArrows);
 
   const selectSource = (source: ElectronSource) => {
-    if (complete) return;
+    if (complete || historyView) return;
     store.selectSource(source);
   };
 
   const selectTarget = (atomId: string) => {
-    if (complete) {
+    if (complete || historyView) {
       store.focusEntities([atomId], "human");
       return;
     }
@@ -123,29 +173,45 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
     arrow: Pick<ArrowDraft, "source" | "target">,
     index: number,
     variant: "draft" | "accepted" | "preview",
+    route?: MechanismArrowRoute,
   ) => {
     const start = sourcePosition(molecule, arrow.source);
     const target = molecule.atoms.find((atom) => atom.id === arrow.target.entityId)?.position;
     if (!start || !target) return null;
+    const geometry = buildMechanismArrowGeometry(
+      start,
+      target,
+      index,
+      arrow.source.kind,
+      route,
+    );
     return (
-      <path
-        className={`mechanism-arrow mechanism-arrow--${variant}`}
-        d={arrowPath(start, target, index)}
-        markerEnd={`url(#arrowhead-${variant})`}
-        key={`${variant}-${arrow.source.entityId}-${arrow.target.entityId}`}
-      />
+      <g
+        className={`mechanism-arrow-group mechanism-arrow-group--${variant}`}
+        key={`${variant}-${index}-${arrow.source.entityId}-${arrow.target.entityId}`}
+        aria-hidden="true"
+      >
+        <path className="mechanism-arrow" d={geometry.shaftPath} />
+        <polygon className="mechanism-arrow-head" points={geometry.headPoints} />
+      </g>
     );
   };
 
   return (
     <section
-      className={`canvas-panel ${accepted ? "canvas-panel--valid" : ""}`}
+      className={`canvas-panel ${accepted ? "canvas-panel--valid" : ""} ${historyView ? "canvas-panel--history" : ""}`}
       aria-labelledby="canvas-title"
     >
       <div className="canvas-heading">
         <div>
           <p className="section-kicker">Mechanism workspace</p>
-          <h2 id="canvas-title">{complete ? "Committed product state" : "Draft the elementary step"}</h2>
+          <h2 id="canvas-title">
+            {historyView
+              ? "Reviewing committed history"
+              : complete
+                ? "Committed product state"
+                : activeStep?.title ?? "Draft the elementary step"}
+          </h2>
         </div>
         <div className="canvas-heading__actions">
           <button
@@ -158,23 +224,33 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
           </button>
           <div className={`state-seal ${complete ? "state-seal--complete" : ""}`}>
             <span className="state-seal__dot" aria-hidden="true" />
-            {complete ? "Step committed" : `${state.draftArrows.length} draft arrow${state.draftArrows.length === 1 ? "" : "s"}`}
+            {historyView
+              ? "History view"
+              : complete
+                ? `${problem.stepCount} steps committed`
+                : `${state.draftArrows.length} draft arrow${state.draftArrows.length === 1 ? "" : "s"}`}
           </div>
         </div>
       </div>
 
       <div className="canvas-instruction" aria-live="polite">
         <span className="instruction-index" aria-hidden="true">
-          {complete ? "✓" : selectedSource ? "02" : "01"}
+          {historyView ? "↶" : complete ? "✓" : selectedSource ? "02" : "01"}
         </span>
         <p>
-          {complete
+          {historyView
+            ? `${molecule.label}. This is a read-only committed state; the current mechanism state remains unchanged.`
+            : complete
             ? "The accepted step is committed. Undo it to examine or try the reactants again."
             : selectedSource
               ? `Electron source selected: ${describeEntity(molecule, selectedSource.entityId)}. Choose the atom that receives this pair.`
               : "Choose a lone pair or bond as the electron source. Then choose its target atom."}
         </p>
-        {selectedSource && (
+        {historyView ? (
+          <button type="button" className="text-button" onClick={() => store.viewHistoryState(null, "human")}>
+            Return to current state
+          </button>
+        ) : selectedSource && (
           <button type="button" className="text-button" onClick={store.cancelSelection}>
             Cancel source
           </button>
@@ -190,39 +266,23 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
         >
           <title id="molecule-title">{molecule.label}</title>
           <desc id="molecule-description">
-            {complete
-              ? "Committed product structure. Select an atom to inspect it."
-              : "Interactive reactant structure. Lone pairs and bonds select an electron source. Atoms select the destination."}
+            {historyView
+              ? "Read-only committed history structure. Select an atom to inspect it."
+              : complete
+                ? "Committed product structure. Select an atom to inspect it."
+                : "Interactive reactant structure. Lone pairs and bonds select an electron source. Atoms select the destination."}
           </desc>
-          <defs>
-            <marker id="arrowhead-draft" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" />
-            </marker>
-            <marker id="arrowhead-accepted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" />
-            </marker>
-            <marker id="arrowhead-preview" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" />
-            </marker>
-          </defs>
-
-          <g className="bench-grid" aria-hidden="true">
-            <line x1="28" y1="318" x2="732" y2="318" />
-            {[80, 180, 280, 380, 480, 580, 680].map((x) => (
-              <line x1={x} y1="312" x2={x} y2="324" key={x} />
-            ))}
-          </g>
-
-          {!complete && (
-            <text x="332" y="200" className="plus-sign" aria-hidden="true">
+          {(molecule.separators ?? []).map((separator, index) => (
+            <text
+              x={separator.x}
+              y={separator.y}
+              className="plus-sign"
+              aria-hidden="true"
+              key={`${separator.x}-${separator.y}-${index}`}
+            >
               +
             </text>
-          )}
-          {complete && (
-            <text x="545" y="200" className="plus-sign" aria-hidden="true">
-              +
-            </text>
-          )}
+          ))}
 
           {molecule.bonds.map((bond) => {
             const first = molecule.atoms.find((atom) => atom.id === bond.atomIds[0]);
@@ -237,7 +297,7 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
               "bond-control",
               selected ? "is-selected" : "",
               focused.has(bond.id) ? "is-focused" : "",
-              complete ? "is-disabled" : "",
+              complete || historyView ? "is-disabled" : "",
             ]
               .filter(Boolean)
               .join(" ");
@@ -245,17 +305,17 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
               <g
                 className={className}
                 key={bond.id}
-                role={complete ? "img" : "button"}
-                tabIndex={complete ? -1 : 0}
+                role={complete || historyView ? "img" : "button"}
+                tabIndex={complete || historyView ? -1 : 0}
                 aria-label={
-                  complete
+                  complete || historyView
                     ? describeEntity(molecule, bond.id)
                     : `${describeEntity(molecule, bond.id)}. Select as electron source.`
                 }
-                aria-pressed={complete ? undefined : selected}
-                onClick={complete ? undefined : () => selectSource({ kind: "bond", entityId: bond.id })}
+                aria-pressed={complete || historyView ? undefined : selected}
+                onClick={complete || historyView ? undefined : () => selectSource({ kind: "bond", entityId: bond.id })}
                 onKeyDown={
-                  complete
+                  complete || historyView
                     ? undefined
                     : (event) =>
                         handleKeyboardActivate(event, () =>
@@ -271,6 +331,9 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
                   height="28"
                   transform={`rotate(${bondAngle} ${first.position.x} ${first.position.y})`}
                 />
+                {focused.has(bond.id) && (
+                  <line className="bond-focus-indicator" x1={first.position.x} y1={first.position.y} x2={second.position.x} y2={second.position.y} aria-hidden="true" />
+                )}
                 <line className="bond-line" x1={first.position.x} y1={first.position.y} x2={second.position.x} y2={second.position.y} />
               </g>
             );
@@ -292,14 +355,22 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
                   <text
                     className="implicit-hydrogen"
                     x={atom.position.x}
-                    y={atom.position.y + 34}
+                    y={atom.position.y + 51}
                     textAnchor="middle"
+                    dominantBaseline="middle"
                     aria-hidden="true"
                   >
-                    {atom.implicitHydrogenCount} H
+                    {atom.implicitHydrogenCount}H
                   </text>
                 )}
-                <text className="atom-symbol" x={atom.position.x} y={atom.position.y + 9} textAnchor="middle" aria-hidden="true">
+                <text
+                  className="atom-symbol"
+                  x={atom.position.x}
+                  y={atom.position.y}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  aria-hidden="true"
+                >
                   {atom.element}
                 </text>
                 {atom.formalCharge !== 0 && (
@@ -319,23 +390,23 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
             const selected = selectedSource?.kind === "lone_pair" && selectedSource.entityId === site.id;
             return (
               <g
-                className={`pair-control ${selected ? "is-selected" : ""} ${focused.has(site.id) ? "is-focused" : ""} ${complete ? "is-disabled" : ""}`}
+                className={`pair-control ${selected ? "is-selected" : ""} ${focused.has(site.id) ? "is-focused" : ""} ${complete || historyView ? "is-disabled" : ""}`}
                 key={site.id}
-                role={complete ? "img" : "button"}
-                tabIndex={complete ? -1 : 0}
+                role={complete || historyView ? "img" : "button"}
+                tabIndex={complete || historyView ? -1 : 0}
                 aria-label={
-                  complete
+                  complete || historyView
                     ? describeEntity(molecule, site.id)
                     : `${describeEntity(molecule, site.id)}. Select as electron source.`
                 }
-                aria-pressed={complete ? undefined : selected}
+                aria-pressed={complete || historyView ? undefined : selected}
                 onClick={
-                  complete
+                  complete || historyView
                     ? undefined
                     : () => selectSource({ kind: "lone_pair", entityId: site.id })
                 }
                 onKeyDown={
-                  complete
+                  complete || historyView
                     ? undefined
                     : (event) =>
                         handleKeyboardActivate(event, () =>
@@ -351,14 +422,21 @@ export function MechanismCanvas({ problem, state, store }: MechanismCanvasProps)
           })}
 
           {showPreview &&
-            problem.acceptedBundles[0].map((arrow, index) =>
-              renderArrow({ ...arrow }, index, "preview"),
+            previewArrows.map((arrow, index) =>
+              renderArrow({ ...arrow }, index, "preview", previewRoutes.get(index)),
             )}
-          {state.draftArrows.map((arrow, index) =>
-            renderArrow(arrow, index, accepted ? "accepted" : "draft"),
+          {!historyView && state.draftArrows.map((arrow, index) =>
+            renderArrow(
+              arrow,
+              index,
+              accepted ? "accepted" : "draft",
+              draftRoutes.get(index),
+            ),
           )}
         </svg>
       </div>
+
+      <MechanismTimeline problem={problem} state={state} store={store} />
 
       <details className="structure-mirror">
         <summary>Read the structure as text</summary>

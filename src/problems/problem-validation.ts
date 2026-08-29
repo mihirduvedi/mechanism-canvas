@@ -43,12 +43,22 @@ export function problemDefinitionErrors(problem: ProblemDefinition): string[] {
   if (!initial) add(`initial state ${problem.currentStateId} does not exist`);
   if (!completed) add(`completed state ${problem.completedStateId} does not exist`);
   if (problem.currentStateId === problem.completedStateId) add("initial and completed states must differ");
-  if (problem.stepCount !== 1) add("this milestone supports exactly one authored step per problem");
-  if (problem.acceptedBundles.length === 0) add("at least one accepted arrow bundle is required");
-  if (problem.negativeCases.length < 4) add("at least four named negative cases are required");
+  if (problem.stepCount !== problem.steps.length) add("step count must match the authored step list");
+  if (problem.steps.length === 0) add("at least one authored step is required");
   if (problem.review.sources.length < 2) add("at least two chemistry sources are required");
-  if (problem.scaffold.map((entry) => entry.level).join(",") !== "1,2,3,4") {
-    add("scaffold levels must appear exactly once in the order 1,2,3,4");
+
+  const stepIds = problem.steps.map((step) => step.id);
+  if (new Set(stepIds).size !== stepIds.length) add("authored step IDs must be unique");
+  if (problem.steps[0]?.fromStateId !== problem.currentStateId) {
+    add("the first authored step must begin at the problem's initial state");
+  }
+  if (problem.steps.at(-1)?.toStateId !== problem.completedStateId) {
+    add("the last authored step must end at the problem's completed state");
+  }
+  for (let index = 1; index < problem.steps.length; index += 1) {
+    if (problem.steps[index - 1].toStateId !== problem.steps[index].fromStateId) {
+      add(`step ${problem.steps[index].id} does not continue from the previous authored state`);
+    }
   }
 
   const stateList = Object.values(problem.states);
@@ -99,69 +109,86 @@ export function problemDefinitionErrors(problem: ProblemDefinition): string[] {
       .map((atom) => `${atom.id}:${atom.element}`)
       .sort()
       .join("|");
-    const completedAtoms = [...completed.atoms]
-      .map((atom) => `${atom.id}:${atom.element}`)
-      .sort()
-      .join("|");
-    if (initialAtoms !== completedAtoms) add("atom inventory or element identity changes between states");
-    if (totalFormalCharge(initial) !== totalFormalCharge(completed)) {
-      add("net formal charge changes between initial and completed states");
-    }
-
-    const initialIds = entityIds(initial);
-    const feedbackGroups = [
-      problem.feedback.incomplete,
-      problem.feedback.accepted,
-      problem.feedback.notAccepted,
-      ...problem.feedback.bondDirection,
-    ];
-    for (const feedback of feedbackGroups) {
-      const missing = feedback.focusEntityIds.find((id) => !initialIds.has(id));
-      if (missing) add(`feedback references missing initial-state entity ${missing}`);
-    }
-    for (const diagnostic of problem.feedback.bondDirection) {
-      if (!initial.bonds.some((bond) => bond.id === diagnostic.sourceBondId)) {
-        add(`bond-direction diagnostic references missing bond ${diagnostic.sourceBondId}`);
-      }
-      if (!initial.atoms.some((atom) => atom.id === diagnostic.incorrectTargetAtomId)) {
-        add(`bond-direction diagnostic references missing target ${diagnostic.incorrectTargetAtomId}`);
-      }
-    }
-    for (const scaffold of problem.scaffold) {
-      const missing = scaffold.focusEntityIds.find((id) => !initialIds.has(id));
-      if (missing) add(`scaffold ${scaffold.level} references missing initial-state entity ${missing}`);
-    }
-
-    for (const [bundleIndex, bundle] of problem.acceptedBundles.entries()) {
-      const draft = arrowDrafts(bundle, `accepted_${bundleIndex + 1}`);
-      const transformation = applyArrowBundle(initial, draft);
-      if (!transformation.ok) {
-        add(`accepted bundle ${bundleIndex + 1} fails transformation with ${transformation.issue.code}`);
-      } else if (stateSignature(transformation.state) !== stateSignature(completed)) {
-        add(`accepted bundle ${bundleIndex + 1} does not produce the completed state`);
-      }
-      const validation = validateDraftStep(problem, problem.currentStateId, draft, 0);
-      if (validation.classification !== "valid") {
-        add(`accepted bundle ${bundleIndex + 1} validates as ${validation.classification}`);
+    for (const state of stateList) {
+      const stateAtoms = [...state.atoms]
+        .map((atom) => `${atom.id}:${atom.element}`)
+        .sort()
+        .join("|");
+      if (initialAtoms !== stateAtoms) add(`atom inventory or element identity changes in ${state.id}`);
+      if (totalFormalCharge(initial) !== totalFormalCharge(state)) {
+        add(`net formal charge changes in ${state.id}`);
       }
     }
 
-    for (const negativeCase of problem.negativeCases) {
-      const result = validateDraftStep(
-        problem,
-        problem.currentStateId,
-        arrowDrafts(negativeCase.arrows, negativeCase.id),
-        0,
-      );
-      if (result.classification !== negativeCase.expectedClassification) {
-        add(
-          `negative case ${negativeCase.id} expected ${negativeCase.expectedClassification} but received ${result.classification}`,
+    for (const step of problem.steps) {
+      const from = problem.states[step.fromStateId];
+      const to = problem.states[step.toStateId];
+      if (!from) {
+        add(`step ${step.id} starts from missing state ${step.fromStateId}`);
+        continue;
+      }
+      if (!to) {
+        add(`step ${step.id} ends at missing state ${step.toStateId}`);
+        continue;
+      }
+      if (step.fromStateId === step.toStateId) add(`step ${step.id} does not change state`);
+      if (step.acceptedBundles.length === 0) add(`step ${step.id} needs an accepted arrow bundle`);
+      if (step.negativeCases.length < 4) add(`step ${step.id} needs at least four negative cases`);
+      if (step.scaffold.map((entry) => entry.level).join(",") !== "1,2,3,4") {
+        add(`step ${step.id} scaffold levels must appear exactly once in the order 1,2,3,4`);
+      }
+
+      const fromIds = entityIds(from);
+      const feedbackGroups = [
+        step.feedback.incomplete,
+        step.feedback.accepted,
+        step.feedback.notAccepted,
+        ...step.feedback.bondDirection,
+      ];
+      for (const feedback of feedbackGroups) {
+        const missing = feedback.focusEntityIds.find((id) => !fromIds.has(id));
+        if (missing) add(`step ${step.id} feedback references missing entity ${missing}`);
+      }
+      for (const diagnostic of step.feedback.bondDirection) {
+        if (!from.bonds.some((bond) => bond.id === diagnostic.sourceBondId)) {
+          add(`step ${step.id} diagnostic references missing bond ${diagnostic.sourceBondId}`);
+        }
+        if (!from.atoms.some((atom) => atom.id === diagnostic.incorrectTargetAtomId)) {
+          add(`step ${step.id} diagnostic references missing target ${diagnostic.incorrectTargetAtomId}`);
+        }
+      }
+      for (const scaffold of step.scaffold) {
+        const missing = scaffold.focusEntityIds.find((id) => !fromIds.has(id));
+        if (missing) add(`step ${step.id} scaffold ${scaffold.level} references missing entity ${missing}`);
+      }
+
+      for (const [bundleIndex, bundle] of step.acceptedBundles.entries()) {
+        const draft = arrowDrafts(bundle, `${step.id}_accepted_${bundleIndex + 1}`);
+        const transformation = applyArrowBundle(from, draft);
+        if (!transformation.ok) {
+          add(`step ${step.id} bundle ${bundleIndex + 1} fails with ${transformation.issue.code}`);
+        } else if (stateSignature(transformation.state) !== stateSignature(to)) {
+          add(`step ${step.id} bundle ${bundleIndex + 1} does not produce ${to.id}`);
+        }
+        const validation = validateDraftStep(problem, step.fromStateId, draft, 0);
+        if (validation.classification !== "valid") {
+          add(`step ${step.id} bundle ${bundleIndex + 1} validates as ${validation.classification}`);
+        }
+      }
+
+      for (const negativeCase of step.negativeCases) {
+        const result = validateDraftStep(
+          problem,
+          step.fromStateId,
+          arrowDrafts(negativeCase.arrows, negativeCase.id),
+          0,
         );
-      }
-      if (result.issues[0]?.code !== negativeCase.expectedReasonCode) {
-        add(
-          `negative case ${negativeCase.id} expected ${negativeCase.expectedReasonCode} but received ${result.issues[0]?.code ?? "no reason code"}`,
-        );
+        if (result.classification !== negativeCase.expectedClassification) {
+          add(`negative case ${negativeCase.id} expected ${negativeCase.expectedClassification} but received ${result.classification}`);
+        }
+        if (result.issues[0]?.code !== negativeCase.expectedReasonCode) {
+          add(`negative case ${negativeCase.id} expected ${negativeCase.expectedReasonCode} but received ${result.issues[0]?.code ?? "no reason code"}`);
+        }
       }
     }
   }

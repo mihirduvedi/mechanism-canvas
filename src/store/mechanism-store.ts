@@ -14,8 +14,14 @@ import type {
   ElectronTarget,
   MechanismState,
   ProblemDefinition,
+  ProblemStepDefinition,
   ValidationResult,
 } from "../domain/types";
+import {
+  problemStepForState,
+  reachableHistoryStateIds,
+  visibleStateId,
+} from "../domain/problem-steps";
 import { findProblem, previewProblemCatalog } from "../problems/catalog";
 import { sn2Problem } from "../problems/sn2-01";
 
@@ -31,6 +37,7 @@ interface PersistedProblemWorkspace {
   history: MechanismState["history"];
   focusEntityIds: string[];
   highestScaffoldLevel: MechanismState["highestScaffoldLevel"];
+  visibleScaffoldLevel?: MechanismState["visibleScaffoldLevel"];
   attemptCount: number;
   hintCount: number;
 }
@@ -88,7 +95,12 @@ export interface MechanismStore {
   requestScaffold: (
     level: 1 | 2 | 3 | 4,
     actor: Extract<Actor, "human" | "agent">,
-  ) => CommandResult<ProblemDefinition["scaffold"][number]>;
+  ) => CommandResult<ProblemStepDefinition["scaffold"][number]>;
+  dismissScaffold: () => void;
+  viewHistoryState: (
+    stateId: string | null,
+    actor: Extract<Actor, "human" | "agent">,
+  ) => CommandResult;
   focusEntities: (entityIds: string[], actor: Extract<Actor, "human" | "agent">) => CommandResult;
   resetProblem: (
     actor: Extract<Actor, "human" | "agent">,
@@ -107,8 +119,10 @@ function baseState(problem: ProblemDefinition): MechanismState {
     activitySequence: 0,
     activity: [],
     history: [],
+    historyViewStateId: null,
     focusEntityIds: [],
     highestScaffoldLevel: 0,
+    visibleScaffoldLevel: 0,
     attemptCount: 0,
     hintCount: 0,
     hydrated: true,
@@ -150,6 +164,7 @@ function restoreProblemState(
     history: persisted.history,
     focusEntityIds: persisted.focusEntityIds,
     highestScaffoldLevel: persisted.highestScaffoldLevel,
+    visibleScaffoldLevel: persisted.visibleScaffoldLevel ?? 0,
     attemptCount: persisted.attemptCount,
     hintCount: persisted.hintCount,
     latestValidation: null,
@@ -167,6 +182,7 @@ function toPersistedProblem(state: MechanismState): PersistedProblemWorkspace {
     history: state.history,
     focusEntityIds: state.focusEntityIds,
     highestScaffoldLevel: state.highestScaffoldLevel,
+    visibleScaffoldLevel: state.visibleScaffoldLevel,
     attemptCount: state.attemptCount,
     hintCount: state.hintCount,
   };
@@ -304,6 +320,7 @@ export function createMechanismStore(
     kind: ActivityEvent["kind"],
     summary: string,
     entityIds: string[] = [],
+    outcome: ActivityEvent["outcome"] = "neutral",
   ): MechanismState => {
     const sequence = current.activitySequence + 1;
     const event: ActivityEvent = {
@@ -314,6 +331,7 @@ export function createMechanismStore(
       summary,
       entityIds,
       timestamp: new Date().toISOString(),
+      outcome,
     };
     return {
       ...current,
@@ -360,6 +378,8 @@ export function createMechanismStore(
           latestValidation: null,
           selection: { source: null },
           focusEntityIds: [],
+          visibleScaffoldLevel: 0,
+          historyViewStateId: null,
           mechanismRevision: restored.mechanismRevision + 1,
         },
         actor,
@@ -383,6 +403,8 @@ export function createMechanismStore(
         ...state,
         selection: { source },
         focusEntityIds: [source.entityId],
+        visibleScaffoldLevel: 0,
+        historyViewStateId: null,
       });
       return { ok: true };
     },
@@ -425,6 +447,8 @@ export function createMechanismStore(
             latestValidation: null,
             mechanismRevision: nextRevision,
             focusEntityIds: [source.entityId, target.entityId],
+            visibleScaffoldLevel: 0,
+            historyViewStateId: null,
           },
           actor,
           "arrow_added",
@@ -449,6 +473,8 @@ export function createMechanismStore(
             latestValidation: null,
             mechanismRevision: state.mechanismRevision + 1,
             focusEntityIds: [],
+            visibleScaffoldLevel: 0,
+            historyViewStateId: null,
           },
           actor,
           "arrow_removed",
@@ -469,6 +495,8 @@ export function createMechanismStore(
             latestValidation: null,
             mechanismRevision: state.mechanismRevision + 1,
             focusEntityIds: [],
+            visibleScaffoldLevel: 0,
+            historyViewStateId: null,
           },
           actor,
           "draft_cleared",
@@ -494,11 +522,17 @@ export function createMechanismStore(
             latestValidation: result,
             attemptCount: state.attemptCount + 1,
             focusEntityIds: [...new Set(focusIds)],
+            historyViewStateId: null,
           },
           "validator",
           "step_checked",
           result.summary,
           focusIds,
+          result.classification === "valid"
+            ? "success"
+            : result.classification === "incomplete"
+              ? "warning"
+              : "error",
         ),
       );
       return { ok: true, value: result };
@@ -527,6 +561,16 @@ export function createMechanismStore(
       }
 
       const committedAt = new Date().toISOString();
+      const activeStep = problemStepForState(problem, state.currentStateId);
+      if (!activeStep || activeStep.toStateId !== checked.nextStateId) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_VALIDATION",
+            message: "The authored step changed. Check the current draft again before committing it.",
+          },
+        };
+      }
       const record = {
         id: `commit_${state.history.length + 1}`,
         fromStateId: state.currentStateId,
@@ -548,11 +592,15 @@ export function createMechanismStore(
             mechanismRevision: state.mechanismRevision + 1,
             history: [...state.history, record],
             focusEntityIds: problem.states[checked.nextStateId].atoms.map((atom) => atom.id),
+            historyViewStateId: null,
+            highestScaffoldLevel: 0,
+            visibleScaffoldLevel: 0,
           },
           actor,
           "step_committed",
-          problem.feedback.commitActivitySummary,
+          activeStep.feedback.commitActivitySummary,
           record.arrowBundle.flatMap((arrow) => [arrow.source.entityId, arrow.target.entityId]),
+          "success",
         ),
       );
       return { ok: true };
@@ -588,16 +636,20 @@ export function createMechanismStore(
             mechanismRevision: state.mechanismRevision + 1,
             history: nextHistory,
             focusEntityIds: [],
+            historyViewStateId: null,
+            highestScaffoldLevel: 0,
+            visibleScaffoldLevel: 0,
           },
           actor,
           "commit_undone",
-          "Undid the last committed step and restored the reactants.",
+          `Undid the last committed step and restored ${problem.states[record.fromStateId].label}.`,
         ),
       );
       return { ok: true };
     },
     requestScaffold: (level, actor) => {
-      const scaffold = problem.scaffold.find((entry) => entry.level === level);
+      const step = problemStepForState(problem, state.currentStateId);
+      const scaffold = step?.scaffold.find((entry) => entry.level === level);
       if (!scaffold) {
         return {
           ok: false,
@@ -609,8 +661,10 @@ export function createMechanismStore(
           state,
           {
             highestScaffoldLevel: Math.max(state.highestScaffoldLevel, level) as 1 | 2 | 3 | 4,
+            visibleScaffoldLevel: level,
             hintCount: state.hintCount + 1,
             focusEntityIds: scaffold.focusEntityIds,
+            historyViewStateId: null,
           },
           actor,
           "scaffold_requested",
@@ -620,8 +674,49 @@ export function createMechanismStore(
       );
       return { ok: true, value: scaffold };
     },
+    dismissScaffold: () => {
+      if (state.visibleScaffoldLevel === 0 && state.focusEntityIds.length === 0) return;
+      update({
+        ...state,
+        visibleScaffoldLevel: 0,
+        focusEntityIds: [],
+      });
+    },
+    viewHistoryState: (stateId, actor) => {
+      const nextView = stateId === null || stateId === state.currentStateId ? null : stateId;
+      if (nextView === state.historyViewStateId) return { ok: true };
+      const reachable = reachableHistoryStateIds(problem, state.history);
+      if (nextView !== null && !reachable.includes(nextView)) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: "That mechanism state has not been reached in this exercise.",
+          },
+        };
+      }
+      const nextStateId = nextView ?? state.currentStateId;
+      update(
+        withEvent(
+          state,
+          {
+            historyViewStateId: nextView,
+            selection: { source: null },
+            focusEntityIds: [],
+            visibleScaffoldLevel: 0,
+          },
+          actor,
+          "history_state_viewed",
+          nextView === null
+            ? `Returned to the current state: ${problem.states[nextStateId].label}.`
+            : `Viewed mechanism history: ${problem.states[nextStateId].label}.`,
+          problem.states[nextStateId].atoms.map((atom) => atom.id),
+        ),
+      );
+      return { ok: true };
+    },
     focusEntities: (entityIds, actor) => {
-      const molecule = problem.states[state.currentStateId];
+      const molecule = problem.states[visibleStateId(state)];
       const allIds = new Set([
         ...molecule.atoms.map((atom) => atom.id),
         ...molecule.bonds.map((bond) => bond.id),
@@ -666,5 +761,3 @@ export function createMechanismStore(
     },
   };
 }
-
-export const mechanismStore = createMechanismStore();

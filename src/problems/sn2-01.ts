@@ -68,6 +68,7 @@ export const sn2Problem: ProblemDefinition = {
         { id: "lp_br_2", atomId: "br_leaving", angle: 30 },
         { id: "lp_br_3", atomId: "br_leaving", angle: 150 },
       ],
+      separators: [{ x: 332, y: 200 }],
     },
     sn2_products: {
       id: "sn2_products",
@@ -122,8 +123,15 @@ export const sn2Problem: ProblemDefinition = {
         { id: "lp_br_3", atomId: "br_leaving", angle: 90 },
         { id: "lp_br_4", atomId: "br_leaving", angle: 180 },
       ],
+      separators: [{ x: 545, y: 200 }],
     },
   },
+  steps: [
+    {
+      id: "sn2_substitution",
+      title: "Substitute bromide",
+      fromStateId: "sn2_reactants",
+      toStateId: "sn2_products",
   acceptedBundles: [
     [
       {
@@ -263,6 +271,8 @@ export const sn2Problem: ProblemDefinition = {
       ],
       expectedClassification: "not_accepted_path",
       expectedReasonCode: "NOT_IN_AUTHORED_PATH",
+    },
+    ],
     },
   ],
   review: {

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { DemoNotice } from "./components/DemoNotice";
 import { DraftTray } from "./components/DraftTray";
 import { MechanismCanvas } from "./components/MechanismCanvas";
 import { ProblemBrief } from "./components/ProblemBrief";
 import { ReasoningPanel } from "./components/ReasoningPanel";
-import { mechanismStore } from "./store/mechanism-store";
+import { demoSessionPath, savedPracticePath } from "./demo/demo-mode";
+import { activeSessionMode, mechanismStore } from "./store/active-mechanism-store";
 import { useMechanismState } from "./store/use-mechanism";
 import { MECHANISM_TOOL_COUNT } from "./webmcp/register-tools";
 
@@ -16,6 +18,10 @@ export function App() {
   const [toolStatus, setToolStatus] = useState<ToolStatus>(
     typeof document !== "undefined" && document.modelContext ? "ready" : "manual",
   );
+  const sessionLink =
+    activeSessionMode === "demo"
+      ? savedPracticePath(window.location.href)
+      : demoSessionPath(window.location.href);
 
   useEffect(() => {
     const handleStatus = (event: Event) => {
@@ -28,7 +34,7 @@ export function App() {
 
   const reset = () => {
     const confirmed = window.confirm(
-      `Reset ${problem.title}? Its draft, activity trail, hints, and committed step will be replaced with a fresh reactant state.`,
+      `Reset ${problem.title}? Its draft, activity trail, hints, and committed steps will be replaced with a fresh reactant state.`,
     );
     if (confirmed) mechanismStore.resetProblem("human");
   };
@@ -39,49 +45,58 @@ export function App() {
         Skip to mechanism workspace
       </a>
       <header className="topbar">
-        <div className="brand-block">
-          <span className="brand-mark" aria-hidden="true">
-            <span>e</span>
-            <sup>−</sup>
-          </span>
-          <div>
-            <strong>Mechanism Canvas</strong>
-            <span>Electron movement, made inspectable</span>
+        <div className="topbar__inner">
+          <div className="brand-block">
+            <span className="brand-mark" aria-hidden="true">
+              <span>e</span>
+              <sup>−</sup>
+            </span>
+            <div>
+              <strong>Mechanism Canvas</strong>
+              <span>Curved-arrow practice</span>
+            </div>
+          </div>
+          <div className="topbar-meta">
+            <span className={`tool-status tool-status--${toolStatus}`}>
+              <span aria-hidden="true" />
+              {toolStatus === "ready"
+                ? `${MECHANISM_TOOL_COUNT} site tools ready`
+                : toolStatus === "error"
+                  ? "Site tools unavailable"
+                  : "Manual mode"}
+            </span>
+            <a className="session-link" href={sessionLink}>
+              {activeSessionMode === "demo" ? "Saved practice" : "Clean demo"}
+            </a>
           </div>
         </div>
-        <div className="topbar-meta">
-          <span className="prototype-label">Hackathon prototype · local data</span>
-          <span className={`tool-status tool-status--${toolStatus}`}>
-            <span aria-hidden="true" />
-            {toolStatus === "ready"
-              ? `${MECHANISM_TOOL_COUNT} site tools ready`
-              : toolStatus === "error"
-                ? "Site tool registration failed"
-                : "Manual mode · WebMCP host not detected"}
-          </span>
-        </div>
       </header>
+
+      {activeSessionMode === "demo" && (
+        <DemoNotice />
+      )}
 
       <main className="workspace" id="mechanism-workspace">
         <ProblemBrief
           problem={problem}
           problems={problems}
           state={state}
+          demoMode={activeSessionMode === "demo"}
           onProblemChange={(problemId) => mechanismStore.switchProblem(problemId, "human")}
           onReset={reset}
         />
         <div className="workbench-column">
           <MechanismCanvas problem={problem} state={state} store={mechanismStore} />
           <DraftTray problem={problem} state={state} store={mechanismStore} />
+          <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
         </div>
-        <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
       </main>
 
       <footer className="app-footer">
-        <span>Release candidate</span>
-        <p>Two structurally checked prototype fixtures. Independent chemistry review is pending.</p>
+        <span>Prototype</span>
+        <p>Three structurally checked fixtures. Independent chemistry review is pending.</p>
         <a href="https://learn.chatgpt.com/docs/webmcp" target="_blank" rel="noreferrer">
-          WebMCP boundary
+          About site tools
         </a>
       </footer>
     </div>

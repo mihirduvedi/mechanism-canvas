@@ -7,6 +7,7 @@ import {
   type MolecularGeometry3D,
 } from "../domain/molecular-geometry";
 import type { ElementSymbol, MoleculeState } from "../domain/types";
+import { chargeGlyphSegments } from "./charge-badge-geometry";
 
 interface MolecularModelProps {
   molecule: MoleculeState;
@@ -32,13 +33,23 @@ const ELEMENT_COLORS: Record<ElementSymbol, number> = {
   I: 0x74558e,
 };
 
+const ATOMIC_NUMBERS: Record<ElementSymbol, number> = {
+  H: 1,
+  C: 6,
+  N: 7,
+  O: 8,
+  Cl: 17,
+  Br: 35,
+  I: 53,
+};
+
 function toVector3(value: { x: number; y: number; z: number }): THREE.Vector3 {
   return new THREE.Vector3(value.x, value.y, value.z);
 }
 
 function readableCharge(charge: number): string {
   if (charge === 0) return "neutral";
-  return charge > 0 ? `formal charge +${charge}` : `formal charge ${charge}`;
+  return charge > 0 ? `+${charge} (positive)` : `−${Math.abs(charge)} (negative)`;
 }
 
 function createCylinder(
@@ -105,10 +116,8 @@ function addPolarityMeshes(
   atomById: Map<string, MolecularAtom3D>,
 ): void {
   const material = new THREE.MeshStandardMaterial({
-    color: 0x28a4b3,
-    emissive: 0x0b4d55,
-    emissiveIntensity: 0.18,
-    roughness: 0.35,
+    color: 0xc76a16,
+    roughness: 0.58,
   });
   for (const bond of model.bonds) {
     if (!bond.negativeEndAtomId || bond.electronegativityDelta < 0.35) continue;
@@ -118,41 +127,156 @@ function addPolarityMeshes(
     if (!negative || !positive) continue;
     const from = toVector3(positive.position);
     const to = toVector3(negative.position);
-    const direction = to.clone().sub(from).normalize();
-    const perpendicular = perpendicularTo(direction).multiplyScalar(0.22);
-    const arrowStart = from.clone().lerp(to, 0.28).add(perpendicular);
-    const arrowEnd = from.clone().lerp(to, 0.73).add(perpendicular);
-    const shaftEnd = arrowEnd.clone().addScaledVector(direction, -0.12);
-    const shaft = createCylinder(arrowStart, shaftEnd, 0.025, material, 12);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.085, 0.18, 18), material);
-    cone.position.copy(arrowEnd);
+    const bondVector = to.clone().sub(from);
+    const direction = bondVector.clone().normalize();
+    const perpendicular = perpendicularTo(direction);
+    const midpoint = from.clone().lerp(to, 0.5);
+    const clearance = Math.max(positive.displayRadius, negative.displayRadius) + 0.24;
+    const offsetCandidates = [perpendicular, perpendicular.clone().negate()];
+    const chosenOffset = offsetCandidates.reduce((best, candidate) => {
+      const candidatePoint = midpoint.clone().addScaledVector(candidate, clearance);
+      const nearestOtherAtom = model.atoms
+        .filter((atom) => atom.id !== positive.id && atom.id !== negative.id)
+        .reduce((nearest, atom) => {
+          const clearanceFromAtom = candidatePoint.distanceTo(toVector3(atom.position)) - atom.displayRadius;
+          return Math.min(nearest, clearanceFromAtom);
+        }, Number.POSITIVE_INFINITY);
+      const bestPoint = midpoint.clone().addScaledVector(best, clearance);
+      const nearestForBest = model.atoms
+        .filter((atom) => atom.id !== positive.id && atom.id !== negative.id)
+        .reduce((nearest, atom) => {
+          const clearanceFromAtom = bestPoint.distanceTo(toVector3(atom.position)) - atom.displayRadius;
+          return Math.min(nearest, clearanceFromAtom);
+        }, Number.POSITIVE_INFINITY);
+      return nearestOtherAtom > nearestForBest ? candidate : best;
+    });
+    const offset = chosenOffset.clone().multiplyScalar(clearance);
+    const normalizedStrength = THREE.MathUtils.clamp(
+      (bond.electronegativityDelta - 0.35) / 0.95,
+      0,
+      1,
+    );
+    const arrowLength = THREE.MathUtils.lerp(0.42, 0.72, normalizedStrength);
+    const headLength = 0.14;
+    const arrowStart = midpoint.clone().add(offset).addScaledVector(direction, -arrowLength / 2);
+    const arrowTip = midpoint.clone().add(offset).addScaledVector(direction, arrowLength / 2);
+    const headBase = arrowTip.clone().addScaledVector(direction, -headLength);
+    const shaftEnd = headBase.clone().addScaledVector(direction, 0.012);
+    const shaft = createCylinder(arrowStart, shaftEnd, 0.024, material, 16);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.072, headLength, 20), material);
+    cone.position.copy(arrowTip).addScaledVector(direction, -headLength / 2);
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-    group.add(shaft, cone);
+    const cross = createCylinder(
+      arrowStart.clone().addScaledVector(chosenOffset, -0.085),
+      arrowStart.clone().addScaledVector(chosenOffset, 0.085),
+      0.02,
+      material,
+      12,
+    );
+    group.add(shaft, cone, cross);
   }
+}
+
+function chargeBadgeDirection(
+  atom: MolecularAtom3D,
+  model: MolecularGeometry3D,
+  atomById: Map<string, MolecularAtom3D>,
+): THREE.Vector3 {
+  const atomPosition = toVector3(atom.position);
+  const occupied: THREE.Vector3[] = [];
+  for (const bond of model.bonds) {
+    if (!bond.atomIds.includes(atom.id)) continue;
+    const otherId = bond.atomIds.find((id) => id !== atom.id);
+    const other = otherId ? atomById.get(otherId) : undefined;
+    if (other) occupied.push(toVector3(other.position).sub(atomPosition).normalize());
+  }
+  for (const pair of model.lonePairs.filter((candidate) => candidate.atomId === atom.id)) {
+    occupied.push(toVector3(pair.direction).normalize());
+  }
+  const candidates = [
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(1, 1, 0).normalize(),
+    new THREE.Vector3(-1, 1, 0).normalize(),
+    new THREE.Vector3(0, 1, 1).normalize(),
+    new THREE.Vector3(0, 1, -1).normalize(),
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, -1, 0),
+  ];
+  return candidates.reduce((best, candidate) => {
+    const score = occupied.length
+      ? Math.min(...occupied.map((direction) => 1 - candidate.dot(direction)))
+      : candidate.y + 1;
+    const bestScore = occupied.length
+      ? Math.min(...occupied.map((direction) => 1 - best.dot(direction)))
+      : best.y + 1;
+    return score > bestScore ? candidate : best;
+  });
+}
+
+function createChargeBadge(
+  atom: MolecularAtom3D,
+  model: MolecularGeometry3D,
+  atomById: Map<string, MolecularAtom3D>,
+): THREE.Sprite {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (context) {
+    const negative = atom.formalCharge < 0;
+    context.beginPath();
+    context.arc(64, 64, 50, 0, Math.PI * 2);
+    context.fillStyle = negative ? "#a93e38" : "#3f6da8";
+    context.fill();
+    context.lineWidth = 7;
+    context.strokeStyle = "rgba(255, 255, 255, 0.92)";
+    context.stroke();
+    context.beginPath();
+    context.strokeStyle = "#ffffff";
+    context.lineWidth = 12;
+    context.lineCap = "round";
+    for (const segment of chargeGlyphSegments(atom.formalCharge)) {
+      context.moveTo(segment.from.x, segment.from.y);
+      context.lineTo(segment.to.x, segment.to.y);
+    }
+    context.stroke();
+  }
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  const direction = chargeBadgeDirection(atom, model, atomById);
+  sprite.position.copy(toVector3(atom.position)).addScaledVector(direction, atom.displayRadius + 0.34);
+  sprite.scale.setScalar(0.34);
+  sprite.renderOrder = 5;
+  sprite.userData.chargeAtomId = atom.id;
+  return sprite;
 }
 
 function addLonePairMeshes(group: THREE.Group, model: MolecularGeometry3D): void {
   const material = new THREE.MeshPhysicalMaterial({
-    color: 0x62d5df,
-    emissive: 0x0b5961,
-    emissiveIntensity: 0.2,
-    transparent: true,
-    opacity: 0.84,
-    roughness: 0.25,
-    clearcoat: 0.35,
-    depthWrite: false,
+    color: 0x27a5ad,
+    emissive: 0x063f43,
+    emissiveIntensity: 0.08,
+    roughness: 0.45,
+    clearcoat: 0.08,
   });
-  const geometry = new THREE.SphereGeometry(0.13, 24, 18);
+  const geometry = new THREE.SphereGeometry(0.115, 28, 20);
   for (const pair of model.lonePairs) {
     const direction = toVector3(pair.direction).normalize();
-    const perpendicular = perpendicularTo(direction).multiplyScalar(0.11);
+    const perpendicular = perpendicularTo(direction).multiplyScalar(0.13);
     for (const side of [-1, 1]) {
-      const lobe = new THREE.Mesh(geometry, material);
-      lobe.position.copy(toVector3(pair.position).addScaledVector(perpendicular, side));
-      lobe.scale.set(0.82, 1.52, 0.82);
-      lobe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-      lobe.userData.lonePairId = pair.id;
-      group.add(lobe);
+      const electron = new THREE.Mesh(geometry, material);
+      electron.position.copy(toVector3(pair.position).addScaledVector(perpendicular, side));
+      electron.castShadow = true;
+      electron.userData.lonePairId = pair.id;
+      group.add(electron);
     }
   }
 }
@@ -164,6 +288,10 @@ function disposeScene(scene: THREE.Scene): void {
       const materials = Array.isArray(object.material) ? object.material : [object.material];
       materials.forEach((material) => material.dispose());
     }
+    if (object instanceof THREE.Sprite) {
+      object.material.map?.dispose();
+      object.material.dispose();
+    }
   });
 }
 
@@ -172,7 +300,7 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
   const explicitAtoms = useMemo(() => model.atoms.filter((atom) => !atom.virtual), [model]);
   const [selectedAtomId, setSelectedAtomId] = useState(explicitAtoms[0]?.id ?? "");
   const [showLonePairs, setShowLonePairs] = useState(true);
-  const [showPolarity, setShowPolarity] = useState(true);
+  const [showPolarity, setShowPolarity] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [renderError, setRenderError] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -234,31 +362,36 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.06;
+    renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
-    renderer.setClearColor(0xe8eef0, 1);
+    renderer.setClearColor(0xf3f6f5, 1);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0xe8eef0, model.radius * 5, model.radius * 10);
-    const camera = new THREE.PerspectiveCamera(34, 1, 0.05, 120);
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 120);
     const center = toVector3(model.center);
-    camera.position.copy(center).add(new THREE.Vector3(model.radius * 0.7, model.radius * 0.48, model.radius * 3.05));
+    camera.position.copy(center).add(
+      new THREE.Vector3(model.radius * 0.7, model.radius * 0.42, model.radius * 4.1),
+    );
 
     const controls = new OrbitControls(camera, canvas);
     controls.target.copy(center);
+    controls.cursor.copy(center);
     controls.enableDamping = true;
     controls.dampingFactor = 0.075;
-    controls.enablePan = false;
+    controls.enablePan = true;
+    controls.screenSpacePanning = true;
+    controls.panSpeed = 0.32;
+    controls.maxTargetRadius = model.radius * 0.9;
     controls.minDistance = Math.max(2.3, model.radius * 1.15);
-    controls.maxDistance = model.radius * 6.4;
+    controls.maxDistance = model.radius * 8;
     controls.autoRotate = autoRotate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     controls.autoRotateSpeed = 0.65;
     controls.saveState();
     controlsRef.current = controls;
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x7b898b, 1.75));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xa8b1ae, 1.85));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.45);
     keyLight.position.copy(center).add(new THREE.Vector3(-4, 7, 6));
     keyLight.castShadow = true;
     keyLight.shadow.mapSize.set(1024, 1024);
@@ -270,7 +403,7 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
     keyLight.shadow.camera.top = shadowExtent;
     keyLight.shadow.camera.bottom = -shadowExtent;
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x74d9e2, 1.2);
+    const rimLight = new THREE.DirectionalLight(0xa8d8da, 0.7);
     rimLight.position.copy(center).add(new THREE.Vector3(5, 2, -5));
     scene.add(rimLight);
 
@@ -293,10 +426,10 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
     for (const atom of model.atoms) {
       const material = new THREE.MeshPhysicalMaterial({
         color: ELEMENT_COLORS[atom.element],
-        metalness: 0.04,
-        roughness: atom.element === "H" ? 0.28 : 0.34,
-        clearcoat: 0.35,
-        clearcoatRoughness: 0.28,
+        metalness: 0,
+        roughness: atom.element === "H" ? 0.42 : 0.48,
+        clearcoat: 0.1,
+        clearcoatRoughness: 0.5,
         emissive: atom.id === selectedRef.current ? 0x0a7f8e : 0x000000,
         emissiveIntensity: atom.id === selectedRef.current ? 0.34 : 0,
       });
@@ -313,14 +446,15 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
         const haloMaterial = new THREE.MeshBasicMaterial({
           color: atom.formalCharge < 0 ? 0xdc5c55 : 0x4f77c8,
           transparent: true,
-          opacity: 0.17,
+          opacity: 0.11,
           side: THREE.BackSide,
           depthWrite: false,
         });
         const halo = new THREE.Mesh(new THREE.SphereGeometry(atom.displayRadius * 1.32, 32, 20), haloMaterial);
         halo.position.copy(atomMesh.position);
         halo.userData.chargeAtomId = atom.id;
-        modelGroup.add(halo);
+        const badge = createChargeBadge(atom, model, atomById);
+        modelGroup.add(halo, badge);
       }
     }
     atomMeshesRef.current = atomMeshes;
@@ -328,7 +462,7 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
     const lowestY = model.atoms.reduce((lowest, atom) => Math.min(lowest, atom.position.y - atom.displayRadius), 0);
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(model.radius * 5, model.radius * 4),
-      new THREE.ShadowMaterial({ color: 0x3c4a4b, opacity: 0.17 }),
+      new THREE.ShadowMaterial({ color: 0x3c4a4b, opacity: 0.1 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(center.x, lowestY - 0.62, center.z);
@@ -401,6 +535,13 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
     controlsRef.current?.update();
   };
 
+  const panView = (horizontal: number, vertical: number) => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    controls.pan(horizontal, vertical);
+    controls.update();
+  };
+
   const reducedMotion =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -414,7 +555,7 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
         <span>VSEPR-informed · 3D</span>
       </div>
       <p className="physical-model__boundary">
-        Rotate and zoom the molecule to inspect its geometry. Bond length and order, electron-domain count, lone pairs, formal charge, and bond polarity all change what is drawn. This is an explanatory model, not a quantum calculation or a predicted conformer.
+        Rotate, pan, and zoom to inspect the geometry. The model reflects the displayed Lewis structure, not a calculated conformer or a quantum simulation.
       </p>
 
       <div className="model-layout">
@@ -427,7 +568,9 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
               aria-label={`Interactive three-dimensional model of ${molecule.label}. Use the adjacent atom selector and view controls for a non-pointer interface.`}
             />
             {renderError && <p className="model-error" role="status">{renderError}</p>}
-            <div className="model-stage__hint" aria-hidden="true">Drag to orbit · scroll to zoom · select an atom</div>
+            <div className="model-stage__hint" aria-hidden="true">
+              Drag to rotate · right-drag or Shift-drag to pan · scroll to zoom
+            </div>
           </div>
 
           <div className="model-toolbar" aria-label="Three-dimensional model controls">
@@ -473,35 +616,55 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
                   <strong>{ELEMENT_NAMES[selectedAtom.element]}</strong>
                   <span>{selectedAtom.virtual ? "implicit atom" : selectedAtom.label}</span>
                 </div>
-                <b>{selectedAtom.formalCharge === 0 ? "0" : selectedAtom.formalCharge > 0 ? `+${selectedAtom.formalCharge}` : selectedAtom.formalCharge}</b>
+                <span className="atomic-number" title={`Atomic number ${ATOMIC_NUMBERS[selectedAtom.element]}`}>
+                  <small>Z</small>{ATOMIC_NUMBERS[selectedAtom.element]}
+                </span>
               </div>
-              <dl>
+              <dl className="atom-card__primary-data">
+                <div><dt>Formal charge</dt><dd className={`charge-reading charge-reading--${selectedAtom.formalCharge < 0 ? "negative" : selectedAtom.formalCharge > 0 ? "positive" : "neutral"}`}>{readableCharge(selectedAtom.formalCharge)}</dd></div>
                 <div><dt>Electronegativity</dt><dd>{selectedAtom.electronegativity.toFixed(2)}</dd></div>
-                <div><dt>Formal charge</dt><dd>{readableCharge(selectedAtom.formalCharge)}</dd></div>
-                <div><dt>Electron geometry</dt><dd>{selectedGeometry?.electronGeometry ?? "single domain"}</dd></div>
-                <div><dt>Molecular geometry</dt><dd>{selectedGeometry?.molecularGeometry ?? "terminal atom"}</dd></div>
+                <div><dt>Molecular shape</dt><dd>{selectedGeometry?.molecularGeometry ?? "terminal atom"}</dd></div>
                 <div><dt>Lone pairs</dt><dd>{selectedAtom.lonePairCount}</dd></div>
-                <div><dt>Bond-order sum</dt><dd>{selectedGeometry?.bondOrderSum ?? 1}</dd></div>
-                <div><dt>Mean shown angle</dt><dd>{selectedGeometry?.meanBondAngle ? `${selectedGeometry.meanBondAngle.toFixed(1)}°` : "not applicable"}</dd></div>
-                <div><dt>Strongest ΔEN</dt><dd>{selectedGeometry?.strongestPolarity.toFixed(2) ?? "0.00"}</dd></div>
+                <div><dt>Bond angle</dt><dd>{selectedGeometry?.meanBondAngle ? `${selectedGeometry.meanBondAngle.toFixed(1)}°` : "not applicable"}</dd></div>
               </dl>
+              <details className="atom-card__more">
+                <summary>More measurements</summary>
+                <dl>
+                  <div><dt>Electron geometry</dt><dd>{selectedGeometry?.electronGeometry ?? "single domain"}</dd></div>
+                  <div><dt>Bond-order sum</dt><dd>{selectedGeometry?.bondOrderSum ?? 1}</dd></div>
+                  <div><dt>Strongest bond ΔEN</dt><dd>{selectedGeometry?.strongestPolarity.toFixed(2) ?? "0.00"}</dd></div>
+                </dl>
+              </details>
             </div>
           )}
 
-          <div className="view-nudges" aria-label="Keyboard view rotation">
-            <button type="button" aria-label="Rotate view left" onClick={() => rotateView(0.24, 0)}>←</button>
-            <button type="button" aria-label="Rotate view up" onClick={() => rotateView(0, 0.18)}>↑</button>
-            <button type="button" aria-label="Rotate view down" onClick={() => rotateView(0, -0.18)}>↓</button>
-            <button type="button" aria-label="Rotate view right" onClick={() => rotateView(-0.24, 0)}>→</button>
-          </div>
+          <details className="model-keyboard-controls">
+            <summary>Keyboard view controls</summary>
+            <div className="view-controls">
+              <span>Rotate</span>
+              <div className="view-nudges" aria-label="Keyboard view rotation">
+                <button type="button" aria-label="Rotate view left" onClick={() => rotateView(0.24, 0)}>←</button>
+                <button type="button" aria-label="Rotate view up" onClick={() => rotateView(0, 0.18)}>↑</button>
+                <button type="button" aria-label="Rotate view down" onClick={() => rotateView(0, -0.18)}>↓</button>
+                <button type="button" aria-label="Rotate view right" onClick={() => rotateView(-0.24, 0)}>→</button>
+              </div>
+              <span>Pan</span>
+              <div className="view-nudges" aria-label="Keyboard view panning">
+                <button type="button" aria-label="Pan view left" onClick={() => panView(10, 0)}>←</button>
+                <button type="button" aria-label="Pan view up" onClick={() => panView(0, 10)}>↑</button>
+                <button type="button" aria-label="Pan view down" onClick={() => panView(0, -10)}>↓</button>
+                <button type="button" aria-label="Pan view right" onClick={() => panView(-10, 0)}>→</button>
+              </div>
+            </div>
+          </details>
         </aside>
       </div>
 
       <ul className="force-key" aria-label="Three-dimensional model legend">
         <li><span className="force-key__bond" aria-hidden="true" />Parallel rods show bond order</li>
-        <li><span className="force-key__pair" aria-hidden="true" />Cyan lobes show lone pairs</li>
-        <li><span className="force-key__polarity" aria-hidden="true">→</span>Arrow points toward δ−</li>
-        <li><span className="force-key__charge" aria-hidden="true">±</span>Halo shows formal charge</li>
+        <li><span className="force-key__pair" aria-hidden="true" />Paired teal spheres show lone pairs</li>
+        <li><span className="force-key__polarity" aria-hidden="true">↦</span>Longer dipole arrow means larger ΔEN</li>
+        <li><span className="force-key__charge-pair" aria-hidden="true"><span className="force-key__charge force-key__charge--positive" /><span className="force-key__charge force-key__charge--negative" /></span>Blue + and red − mark formal charge</li>
       </ul>
     </section>
   );

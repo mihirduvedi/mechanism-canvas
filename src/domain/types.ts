@@ -37,6 +37,7 @@ export interface MoleculeState {
   atoms: Atom[];
   bonds: Bond[];
   lonePairSites: LonePairSite[];
+  separators?: Point[];
 }
 
 export type ElectronSource =
@@ -86,6 +87,17 @@ export interface ProblemFeedback {
   commitActivitySummary: string;
 }
 
+export interface ProblemStepDefinition {
+  id: string;
+  title: string;
+  fromStateId: string;
+  toStateId: string;
+  acceptedBundles: AcceptedArrow[][];
+  scaffold: ScaffoldLevel[];
+  feedback: ProblemFeedback;
+  negativeCases: NegativeCase[];
+}
+
 export interface NegativeCase {
   id: string;
   title: string;
@@ -121,7 +133,7 @@ export interface ChemistryReview {
 export interface ProblemDefinition {
   id: string;
   title: string;
-  reactionFamily: "SN2" | "proton_transfer";
+  reactionFamily: "SN2" | "proton_transfer" | "SN2_proton_transfer";
   difficulty: 1 | 2 | 3;
   stepCount: number;
   prompt: string;
@@ -130,10 +142,7 @@ export interface ProblemDefinition {
   currentStateId: string;
   completedStateId: string;
   states: Record<string, MoleculeState>;
-  acceptedBundles: AcceptedArrow[][];
-  scaffold: ScaffoldLevel[];
-  feedback: ProblemFeedback;
-  negativeCases: NegativeCase[];
+  steps: ProblemStepDefinition[];
   review: ChemistryReview;
 }
 
@@ -194,10 +203,12 @@ export interface ActivityEvent {
     | "scaffold_requested"
     | "entities_focused"
     | "problem_switched"
-    | "problem_reset";
+    | "problem_reset"
+    | "history_state_viewed";
   summary: string;
   entityIds: string[];
   timestamp: string;
+  outcome?: "neutral" | "success" | "warning" | "error";
 }
 
 export interface CommitRecord {
@@ -225,8 +236,10 @@ export interface MechanismState {
   activitySequence: number;
   activity: ActivityEvent[];
   history: CommitRecord[];
+  historyViewStateId: string | null;
   focusEntityIds: string[];
   highestScaffoldLevel: 0 | 1 | 2 | 3 | 4;
+  visibleScaffoldLevel: 0 | 1 | 2 | 3 | 4;
   attemptCount: number;
   hintCount: number;
   hydrated: boolean;

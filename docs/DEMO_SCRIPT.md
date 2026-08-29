@@ -1,71 +1,79 @@
 # Demo script: under three minutes
 
-**Target runtime:** 2:35–2:50
+**Target runtime:** 2:40–2:55
 **Format:** screen recording with live narration
 **Primary frame:** deployed app in ChatGPT's built-in browser, with the Site tools menu shown once near the start
 
-## 0:00–0:20 — The problem
+## 0:00–0:18 — The problem
 
-**On screen:** Fresh SN2 workspace, then briefly hover or focus an atom and a lone pair.
-
-**Narration:**
-
-> Organic chemistry mechanisms look like drawings, but every arrow carries exact meaning: which electron pair moved, where it went, and which bonds changed with it. A browser agent can see the pixels. It cannot safely infer all of that structure from coordinates.
-
-## 0:20–0:38 — The WebMCP idea
-
-**On screen:** Open the Site tools menu and show the 12 available tools. Return to the page.
+**On screen:** Open `?demo=1` to show the clean-session notice, then briefly focus an atom and a lone pair.
 
 **Narration:**
 
-> Mechanism Canvas gives the open page twelve narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, and one activity trail. The model never grades the chemistry.
+> Organic chemistry mechanisms look like drawings, but every arrow carries exact meaning: which electron pair moved, where it went, and which bonds changed with it. A browser agent can see pixels. It cannot safely infer all of that structure from coordinates.
 
-## 0:38–1:00 — Discover and switch
+## 0:18–0:36 — The WebMCP idea
 
-**On screen:** Ask the agent to read state, switch to `proton_transfer_01`, and inspect `lp_n_1`, `h_transfer`, `bond_o_h_transfer`, and `o_acid`.
-
-**Narration:**
-
-> The agent discovers two reaction families, switches the visible station, and reads stable chemical IDs instead of guessing where to click.
-
-## 1:00–1:28 — Let an incomplete idea fail honestly
-
-**On screen:** Agent adds `lp_n_1 → h_transfer`, then calls `check_draft_step`. Keep the amber incomplete feedback visible.
+**On screen:** Open the Site tools menu and show the 13 available tools. Return to the page.
 
 **Narration:**
 
-> First it adds only the bond-forming arrow. The deterministic check rejects that as incomplete because the original oxygen-hydrogen bond pair is still unaccounted for. Checking diagnoses the draft. It does not change the molecule.
+> Mechanism Canvas gives the open page thirteen narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, one reaction timeline, and one activity trail. The model never grades the chemistry.
 
-## 1:28–1:58 — Complete, check, commit
+## 0:36–0:58 — Discover the capstone
 
-**On screen:** Agent adds `bond_o_h_transfer → o_acid`, checks again, then commits with the returned validation ID.
-
-**Narration:**
-
-> The companion arrow returns that bond pair to oxygen. This time the authored transition and electron bookkeeping agree. The valid check produces a token bound to this exact revision, and only then can the agent commit ammonium plus water.
-
-## 1:58–2:24 — Inspect the proof
-
-**On screen:** Show the activity trail. Have the agent call `get_activity_trail`. Open the 3D inspector and select nitrogen if the pace allows.
+**On screen:** Ask the agent to read state and switch to `ammonia_alkylation_01`. Keep the two-step prompt and locked future states visible.
 
 **Narration:**
 
-> Every agent action is already visible beside learner and validator events, and the same record is available as structured site-tool output. The optional 3D view is generated from the committed molecular graph, so ammonium becomes tetrahedral while water is bent.
+> The agent discovers three authored exercises and selects a two-step capstone. Stable IDs describe two ammonia molecules, bromomethane, and one mapped hydrogen. The timeline exposes only states the learner has actually reached.
 
-## 2:24–2:42 — Reversibility and close
+## 0:58–1:20 — Let an incomplete idea fail honestly
 
-**On screen:** Agent calls `undo_last_commit`; show reactants return and the undo event remain in the trail.
+**On screen:** Agent adds `lp_n_attack_1 → c_methyl`, then calls `check_draft_step`. Keep the amber incomplete feedback visible.
 
 **Narration:**
 
-> Undo restores the reactants without erasing what happened. Mechanism Canvas shows what WebMCP adds to a visual learning tool: shared semantics, bounded actions, deterministic checks, and a learner who stays in control.
+> First it adds only the bond-forming arrow. The deterministic check rejects that as incomplete because the carbon–bromine pair is still unaccounted for. Checking diagnoses the draft. It does not change the molecule.
+
+## 1:20–1:48 — Commit a real intermediate
+
+**On screen:** Agent adds `bond_c_br → br_leaving`, checks again, then commits with the returned validation ID.
+
+**Narration:**
+
+> The companion arrow returns the leaving-group pair to bromine. This time the authored transition and electron bookkeeping agree. A revision-bound validation token permits one explicit commit, and the canvas advances to charged methylammonium bromide plus ammonia.
+
+## 1:48–2:10 — Compare reached states
+
+**On screen:** Agent calls `view_mechanism_history_state` for `amine_reactants`, then returns to `methylammonium_intermediate`. Show the read-only banner and locked products.
+
+**Narration:**
+
+> The learner can inspect the starting structure without losing the intermediate. History mode is visibly read-only, leaves the chemistry revision untouched, and refuses to open future states.
+
+## 2:10–2:38 — Finish and inspect the proof
+
+**On screen:** Agent adds `lp_n_base_1 → h_transfer` and `bond_n_attack_h_transfer → n_attacker`, checks, commits, and reads the activity trail.
+
+**Narration:**
+
+> A second, separately checked step transfers the mapped proton to excess ammonia. Methylamine and ammonium bromide appear, while every agent, validator, history, and commit event remains visible in one structured trail.
+
+## 2:38–2:52 — Reversibility and close
+
+**On screen:** Agent calls `undo_last_commit`; show the exact intermediate return while the earlier commit remains reached.
+
+**Narration:**
+
+> Undo reverses only the last elementary step. Mechanism Canvas shows what WebMCP adds to a visual learning tool: shared semantics, bounded actions, deterministic checks, and a learner who stays in control.
 
 ## Recording checklist
 
 - Start from the deployed HTTPS URL, not localhost.
-- Use a fresh or explicitly reset proton-transfer workspace.
+- Start at `https://mihirduvedi.github.io/mechanism-canvas/?demo=1`; do not reset saved practice for the recording.
 - Show the Site tools count and at least one real tool call source.
-- Keep the incomplete check on screen long enough to read.
+- Keep the incomplete check and read-only history banner on screen long enough to read.
 - Do not describe the fixtures as chemistry-reviewed; the review badge must remain visible.
 - Record at 1440 × 900 or a similar desktop size with browser zoom at 100%.
 - Keep the final cut under three minutes and confirm that narration is audible before publishing.

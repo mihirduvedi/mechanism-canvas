@@ -6,10 +6,12 @@ import type {
   ElectronSource,
   MoleculeState,
   ProblemDefinition,
+  ProblemStepDefinition,
   ReasonCode,
   ValidationIssue,
   ValidationResult,
 } from "./types";
+import { problemStepForState } from "./problem-steps";
 
 const VALENCE_ELECTRONS = {
   H: 1,
@@ -116,7 +118,7 @@ export function draftSignature(state: MoleculeState, arrows: ArrowDraft[]): stri
 
 function acceptedSignature(
   state: MoleculeState,
-  bundle: ProblemDefinition["acceptedBundles"][number],
+  bundle: ProblemStepDefinition["acceptedBundles"][number],
 ): string {
   return bundle
     .map((arrow) => canonicalArrowDescriptor(state, arrow.source, arrow.target.entityId))
@@ -131,14 +133,14 @@ function descriptorSet(state: MoleculeState, arrows: ArrowDraft[]): Set<string> 
 }
 
 function isStrictAcceptedSubset(
-  problem: ProblemDefinition,
+  step: ProblemStepDefinition,
   state: MoleculeState,
   arrows: ArrowDraft[],
 ): boolean {
   if (arrows.length === 0) return false;
   const actual = descriptorSet(state, arrows);
 
-  return problem.acceptedBundles.some((bundle) => {
+  return step.acceptedBundles.some((bundle) => {
     const accepted = new Set(
       bundle.map((arrow) => canonicalArrowDescriptor(state, arrow.source, arrow.target.entityId)),
     );
@@ -146,8 +148,8 @@ function isStrictAcceptedSubset(
   });
 }
 
-function findBondDirectionDiagnostic(problem: ProblemDefinition, arrows: ArrowDraft[]) {
-  return problem.feedback.bondDirection.find((diagnostic) =>
+function findBondDirectionDiagnostic(step: ProblemStepDefinition, arrows: ArrowDraft[]) {
+  return step.feedback.bondDirection.find((diagnostic) =>
     arrows.some(
       (arrow) =>
         arrow.source.kind === "bond" &&
@@ -497,8 +499,22 @@ export function validateDraftStep(
     );
   }
 
-  if (isStrictAcceptedSubset(problem, state, arrows)) {
-    const feedback = problem.feedback.incomplete;
+  const step = problemStepForState(problem, stateId);
+  if (!step) {
+    return validation(
+      problem,
+      state,
+      arrows,
+      mechanismRevision,
+      "invalid_input",
+      "This committed state has no authored next step.",
+      [issue("STALE_STATE", "Refresh the mechanism state before checking again.")],
+      null,
+    );
+  }
+
+  if (isStrictAcceptedSubset(step, state, arrows)) {
+    const feedback = step.feedback.incomplete;
     return validation(
       problem,
       state,
@@ -517,7 +533,7 @@ export function validateDraftStep(
     );
   }
 
-  const bondDirectionDiagnostic = findBondDirectionDiagnostic(problem, arrows);
+  const bondDirectionDiagnostic = findBondDirectionDiagnostic(step, arrows);
   if (bondDirectionDiagnostic) {
     return validation(
       problem,
@@ -551,14 +567,14 @@ export function validateDraftStep(
     );
   }
 
-  const arrowIsAccepted = problem.acceptedBundles.some(
+  const arrowIsAccepted = step.acceptedBundles.some(
     (bundle) => acceptedSignature(state, bundle) === draftSignature(state, arrows),
   );
-  const target = problem.states[problem.completedStateId];
+  const target = problem.states[step.toStateId];
   const stateIsAccepted = stateSignature(transformation.state) === stateSignature(target);
 
   if (arrowIsAccepted && stateIsAccepted) {
-    const feedback = problem.feedback.accepted;
+    const feedback = step.feedback.accepted;
     return validation(
       problem,
       state,
@@ -573,11 +589,11 @@ export function validateDraftStep(
           feedback.focusEntityIds,
         ),
       ],
-      problem.completedStateId,
+      step.toStateId,
     );
   }
 
-  const feedback = problem.feedback.notAccepted;
+  const feedback = step.feedback.notAccepted;
   return validation(
     problem,
     state,

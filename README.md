@@ -2,7 +2,7 @@
 
 Mechanism Canvas is a shared organic chemistry workspace where a learner and a WebMCP agent work on the same live reaction mechanism. The agent reads stable chemical entities and uses narrow domain actions; the app's deterministic chemistry engine decides whether an arrow bundle is accepted.
 
-[Open the live app](https://mihirduvedi.github.io/mechanism-canvas/) · [Read the judge guide](docs/JUDGE_GUIDE.md) · [View the demo script](docs/DEMO_SCRIPT.md)
+[Open a clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) · [Read the judge guide](docs/JUDGE_GUIDE.md) · [View the demo script](docs/DEMO_SCRIPT.md)
 
 ## Why this needs WebMCP
 
@@ -12,12 +12,13 @@ Mechanism Canvas exposes that meaning directly. An agent can discover the availa
 
 ```mermaid
 flowchart LR
-  P["Reviewed problem fixtures"] --> S["One revisioned mechanism store"]
+  P["Authored prototype fixtures"] --> S["One revisioned mechanism store"]
   H["Learner controls"] --> S
-  A["12 WebMCP site tools"] --> S
+  A["13 WebMCP site tools"] --> S
   S --> V["Deterministic chemistry validator"]
   S --> C["2D curved-arrow canvas"]
   S --> T["Shared provenance trail"]
+  S --> R["Reached-state history timeline"]
   S --> M["Graph-derived 3D inspector"]
   V --> G["Revision-bound commit gate"]
 ```
@@ -26,11 +27,11 @@ There is no agent-only state, hidden model grader, or second implementation of t
 
 ## The judge path
 
-Open the live app in ChatGPT's built-in browser with Site tools enabled, then ask:
+Open the [clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) in ChatGPT's built-in browser with Site tools enabled, then ask:
 
-> Use this page's site tools and keep every change visible. Read the current mechanism state. If the active proton-transfer exercise contains old work, reset it; I confirm that reset. Switch to the proton-transfer problem, inspect the nitrogen lone pair, mapped hydrogen, oxygen-hydrogen bond, and oxygen. Add only the nitrogen lone-pair arrow first and check the incomplete step. Explain the validator's result briefly. Add the companion bond arrow, check again, commit the valid step, read back the shared activity trail, then undo the commit.
+> Use this page's site tools and keep every change visible. Read the clean demo state and switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Add bond_c_br → br_leaving, check again, and commit the intermediate. Use view_mechanism_history_state to compare amine_reactants with methylammonium_intermediate, then return to the current step. Add lp_n_base_1 → h_transfer and bond_n_attack_h_transfer → n_attacker, check, and commit the products. Read back the shared activity trail, then undo only the last commit.
 
-That journey demonstrates discovery, stable entity IDs, an intentionally incomplete attempt, deterministic feedback, a guarded commit, structured provenance, and reversibility. The [judge guide](docs/JUDGE_GUIDE.md) includes a shorter fallback route for ordinary browsers.
+That journey demonstrates discovery, stable entity IDs, an intentionally incomplete attempt, deterministic feedback, two guarded commits, reached-state navigation, structured provenance, and one-step-at-a-time reversibility. The [judge guide](docs/JUDGE_GUIDE.md) includes a shorter fallback route for ordinary browsers.
 
 ## Site tools
 
@@ -39,6 +40,7 @@ That journey demonstrates discovery, stable entity IDs, an intentionally incompl
 | `get_mechanism_state` | Read the active problem, revision, draft, check, and stable entity IDs. |
 | `inspect_mechanism_entities` | Read atom, bond, or lone-pair data for named IDs. |
 | `get_activity_trail` | Read human, agent, and validator events incrementally without changing state. |
+| `view_mechanism_history_state` | Show a reached reactant, intermediate, or product state without changing committed chemistry. |
 | `focus_mechanism_entities` | Focus named entities on the visible canvas and record the action. |
 | `add_draft_arrow` | Add one arrow against an expected revision. |
 | `remove_draft_arrow` | Remove one named draft arrow against an expected revision. |
@@ -53,17 +55,19 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 
 ## What is implemented
 
-- Two structurally checked one-step fixtures: hydroxide plus bromomethane SN2, and ammonia plus hydronium proton transfer.
+- Three structurally checked fixtures: one-step SN2, one-step proton transfer, and a two-step ammonia-alkylation capstone with a charged intermediate.
 - Clickable and keyboard-operable SVG atoms, bonds, and lone pairs.
 - Atomic multi-arrow validation with distinct incomplete, invariant-error, authored-path, accepted, and invalid-input results.
 - Explicit check, revision-bound commit, undo, reset, per-problem local persistence, and shared actor provenance.
 - Four progressive scaffold levels per exercise.
 - A lazy-loaded Three.js inspector generated from the same molecular graph, including implicit hydrogens, bond order, lone pairs, formal charge, polarity, and VSEPR geometry.
-- Twelve top-level imperative WebMCP tools backed by the same store as the human interface.
+- A reached-state reaction timeline that locks future states and keeps history browsing read-only.
+- Thirteen top-level imperative WebMCP tools backed by the same store as the human interface.
+- An isolated `?demo=1` session that always starts from clean SN2 reactants, reports its temporary state to the agent, and never reads or changes saved practice.
 
 ## Trust boundaries
 
-Both fixtures pass automated structure and transition checks, but they remain labeled `draft` until an independent chemistry reviewer approves the exact representations and teaching language. The app is an educational prototype, not a reaction predictor or chemistry authority.
+All three fixtures pass automated structure and transition checks, but they remain labeled `draft` until an independent chemistry reviewer approves the exact representations and teaching language. The app is an educational prototype, not a reaction predictor or chemistry authority.
 
 The validator is deterministic and fixture-bound. The 3D view is explanatory rather than a quantum calculation, molecular-dynamics simulation, conformer prediction, or claim about kinetics. Progress stays in the browser: there is no account, backend, model API call, telemetry pipeline, or cloud sync.
 

@@ -12,6 +12,12 @@
 
 ---
 
+## Implementation status addendum — August 28, 2026
+
+The P1 two-step capstone is now implemented as the draft-only `ammonia_alkylation_01` fixture. Its SN2 commit advances to a charged methylammonium intermediate; a separately checked proton-transfer commit advances to products. A reached-state timeline and the `view_mechanism_history_state` site tool provide read-only history navigation, future states remain locked, and undo reverses one commit at a time. The active prototype therefore has three fixtures and thirteen site tools. The original counts and milestones below remain the build-baseline record; [README.md](../README.md) and [JUDGE_GUIDE.md](JUDGE_GUIDE.md) describe current behavior. Independent chemistry review is still required before the capstone can enter the production catalog.
+
+---
+
 ## 1. Executive summary
 
 Mechanism Canvas is a visual organic-chemistry learning workspace where a learner and a browser-based AI agent reason over the same live reaction mechanism.

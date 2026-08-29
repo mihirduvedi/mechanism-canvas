@@ -1,9 +1,10 @@
 import type { ProblemDefinition } from "../domain/types";
+import { ammoniaAlkylationProblem } from "./ammonia-alkylation-01";
 import { protonTransferProblem } from "./proton-transfer-01";
 import { assertProblemCatalog, createProductionProblemCatalog } from "./problem-validation";
 import { sn2Problem } from "./sn2-01";
 
-const previewProblems = [sn2Problem, protonTransferProblem] as const;
+const previewProblems = [sn2Problem, protonTransferProblem, ammoniaAlkylationProblem] as const;
 
 assertProblemCatalog(previewProblems);
 

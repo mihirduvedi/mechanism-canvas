@@ -13,15 +13,16 @@ function contextHarness() {
 }
 
 describe("WebMCP site tool registration", () => {
-  it("registers the full twelve-tool catalog with narrow schemas", async () => {
+  it("registers the full thirteen-tool catalog with guarded history navigation", async () => {
     const store = createMechanismStore(undefined, null);
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(12);
+    expect(count).toBe(13);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "inspect_mechanism_entities",
       "get_activity_trail",
+      "view_mechanism_history_state",
       "focus_mechanism_entities",
       "add_draft_arrow",
       "remove_draft_arrow",
@@ -33,8 +34,93 @@ describe("WebMCP site tool registration", () => {
       "reset_active_exercise",
     ]);
     expect(tools[0].annotations?.readOnlyHint).toBe(true);
-    expect(tools[4].inputSchema.additionalProperties).toBe(false);
-    expect(tools[11].annotations?.destructiveHint).toBe(true);
+    expect(tools[5].inputSchema.additionalProperties).toBe(false);
+    expect(tools[12].annotations?.destructiveHint).toBe(true);
+  });
+
+  it("completes both capstone steps and browses only reached history states", async () => {
+    const store = createMechanismStore(undefined, null);
+    const { tools, context } = contextHarness();
+    await registerMechanismCanvasTools(store, context);
+    const call = (name: string, input: unknown) =>
+      tools.find((tool) => tool.name === name)?.execute(input);
+
+    await call("switch_problem", {
+      problemId: "ammonia_alkylation_01",
+      expectedRevision: 0,
+    });
+    const unreached = await call("view_mechanism_history_state", {
+      stateId: "amine_products",
+    });
+    expect(unreached).toMatchObject({
+      ok: false,
+      error: { code: "TARGET_NOT_SUPPORTED" },
+    });
+
+    await call("add_draft_arrow", {
+      sourceType: "lone_pair",
+      sourceEntityId: "lp_n_attack_1",
+      targetAtomId: "c_methyl",
+      expectedRevision: 1,
+    });
+    await call("add_draft_arrow", {
+      sourceType: "bond",
+      sourceEntityId: "bond_c_br",
+      targetAtomId: "br_leaving",
+      expectedRevision: 2,
+    });
+    const firstCheck = (await call("check_draft_step", { expectedRevision: 3 })) as {
+      validation: { validationId: string; classification: string };
+    };
+    expect(firstCheck.validation.classification).toBe("valid");
+    await call("commit_checked_step", {
+      validationId: firstCheck.validation.validationId,
+      expectedRevision: 3,
+    });
+    expect(store.getState().currentStateId).toBe("methylammonium_intermediate");
+
+    const viewed = await call("view_mechanism_history_state", { stateId: "amine_reactants" });
+    expect(viewed).toMatchObject({ ok: true, mechanismRevision: 4 });
+    expect(store.getState().historyViewStateId).toBe("amine_reactants");
+    await call("view_mechanism_history_state", { stateId: "methylammonium_intermediate" });
+    expect(store.getState().historyViewStateId).toBeNull();
+
+    await call("add_draft_arrow", {
+      sourceType: "lone_pair",
+      sourceEntityId: "lp_n_base_1",
+      targetAtomId: "h_transfer",
+      expectedRevision: 4,
+    });
+    await call("add_draft_arrow", {
+      sourceType: "bond",
+      sourceEntityId: "bond_n_attack_h_transfer",
+      targetAtomId: "n_attacker",
+      expectedRevision: 5,
+    });
+    const secondCheck = (await call("check_draft_step", { expectedRevision: 6 })) as {
+      validation: { validationId: string; classification: string };
+    };
+    expect(secondCheck.validation.classification).toBe("valid");
+    await call("commit_checked_step", {
+      validationId: secondCheck.validation.validationId,
+      expectedRevision: 6,
+    });
+
+    const final = await call("get_mechanism_state", {});
+    expect(final).toMatchObject({
+      problem: { id: "ammonia_alkylation_01" },
+      mechanism: {
+        currentStateId: "amine_products",
+        complete: true,
+        activeCommitCount: 2,
+        currentStep: null,
+        reachableHistoryStates: [
+          { id: "amine_reactants" },
+          { id: "methylammonium_intermediate" },
+          { id: "amine_products", current: true },
+        ],
+      },
+    });
   });
 
   it("switches problems and completes proton transfer through the same site-tool store", async () => {
@@ -80,10 +166,101 @@ describe("WebMCP site tool registration", () => {
     });
   });
 
+  it("runs the complete clean-demo judge journey with visible, reversible state", async () => {
+    const store = createMechanismStore(undefined, null);
+    const { tools, context } = contextHarness();
+    await registerMechanismCanvasTools(store, context, "demo");
+    const call = (name: string, input: unknown) =>
+      tools.find((tool) => tool.name === name)?.execute(input);
+
+    const initial = await call("get_mechanism_state", {});
+    expect(initial).toMatchObject({
+      ok: true,
+      session: { mode: "demo" },
+      problem: { id: "sn2_01" },
+      mechanism: { mechanismRevision: 0, draftArrows: [] },
+    });
+
+    await call("switch_problem", {
+      problemId: "proton_transfer_01",
+      expectedRevision: 0,
+    });
+    const inspected = await call("inspect_mechanism_entities", {
+      entityIds: ["lp_n_1", "h_transfer", "bond_o_h_transfer", "o_acid"],
+    });
+    expect(inspected).toMatchObject({
+      ok: true,
+      mechanismRevision: 1,
+      entities: [
+        { kind: "lone_pair", id: "lp_n_1" },
+        { kind: "atom", id: "h_transfer" },
+        { kind: "bond", id: "bond_o_h_transfer" },
+        { kind: "atom", id: "o_acid" },
+      ],
+    });
+
+    await call("add_draft_arrow", {
+      sourceType: "lone_pair",
+      sourceEntityId: "lp_n_1",
+      targetAtomId: "h_transfer",
+      expectedRevision: 1,
+    });
+    const incomplete = (await call("check_draft_step", {
+      expectedRevision: 2,
+    })) as { validation: { classification: string; issues: Array<{ code: string }> } };
+    expect(incomplete.validation.classification).toBe("incomplete");
+    expect(incomplete.validation.issues).toContainEqual(
+      expect.objectContaining({ code: "INCOMPLETE_CONCERTED_STEP" }),
+    );
+
+    await call("add_draft_arrow", {
+      sourceType: "bond",
+      sourceEntityId: "bond_o_h_transfer",
+      targetAtomId: "o_acid",
+      expectedRevision: 2,
+    });
+    const accepted = (await call("check_draft_step", {
+      expectedRevision: 3,
+    })) as { validation: { validationId: string; classification: string } };
+    expect(accepted.validation.classification).toBe("valid");
+    await call("commit_checked_step", {
+      validationId: accepted.validation.validationId,
+      expectedRevision: 3,
+    });
+    expect(store.getState().currentStateId).toBe("proton_transfer_products");
+
+    const activity = await call("get_activity_trail", { limit: 20 });
+    expect(activity).toMatchObject({
+      ok: true,
+      problemId: "proton_transfer_01",
+      latestSequence: 6,
+      hasMore: false,
+    });
+    expect(store.getState().activity.map((event) => event.actor)).toEqual([
+      "agent",
+      "agent",
+      "validator",
+      "agent",
+      "validator",
+      "agent",
+    ]);
+
+    const undone = await call("undo_last_commit", { expectedRevision: 4 });
+    expect(undone).toMatchObject({
+      ok: true,
+      currentStateId: "proton_transfer_reactants",
+      mechanismRevision: 5,
+    });
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      actor: "agent",
+      kind: "commit_undone",
+    });
+  });
+
   it("keeps read tools free of activity side effects", async () => {
     const store = createMechanismStore(undefined, null);
     const { tools, context } = contextHarness();
-    await registerMechanismCanvasTools(store, context);
+    await registerMechanismCanvasTools(store, context, "demo");
     const before = store.getState().activitySequence;
     const getState = tools.find((tool) => tool.name === "get_mechanism_state");
     const inspect = tools.find((tool) => tool.name === "inspect_mechanism_entities");
@@ -91,7 +268,13 @@ describe("WebMCP site tool registration", () => {
     const stateResult = await getState?.execute({});
     const inspectResult = await inspect?.execute({ entityIds: ["o_nucleophile"] });
     const activityResult = await activity?.execute({});
-    expect(stateResult).toMatchObject({ ok: true });
+    expect(stateResult).toMatchObject({
+      ok: true,
+      session: {
+        mode: "demo",
+        persistence: "memory only; resets on refresh",
+      },
+    });
     expect(inspectResult).toMatchObject({ ok: true });
     expect(activityResult).toMatchObject({ ok: true, events: [] });
     expect(store.getState().activitySequence).toBe(before);

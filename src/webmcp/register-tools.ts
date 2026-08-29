@@ -1,9 +1,15 @@
 import { describeEntity } from "../domain/chemistry";
+import {
+  problemStepForState,
+  reachableHistoryStateIds,
+  visibleStateId,
+} from "../domain/problem-steps";
 import type { CommandResult, ElectronSource } from "../domain/types";
-import { mechanismStore, type MechanismStore } from "../store/mechanism-store";
+import { activeSessionMode, mechanismStore } from "../store/active-mechanism-store";
+import type { MechanismStore } from "../store/mechanism-store";
 
 const registeredContexts = new WeakSet<object>();
-export const MECHANISM_TOOL_COUNT = 12;
+export const MECHANISM_TOOL_COUNT = 13;
 
 interface ToolFailure {
   ok: false;
@@ -104,12 +110,19 @@ function commandOutput<T>(store: MechanismStore, result: CommandResult<T>) {
   };
 }
 
-function stateOutput(store: MechanismStore) {
+function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
   const state = store.getState();
   const problem = store.getProblem();
-  const molecule = problem.states[state.currentStateId];
+  const currentMolecule = problem.states[state.currentStateId];
+  const molecule = problem.states[visibleStateId(state)];
+  const activeStep = problemStepForState(problem, state.currentStateId);
+  const historyStateIds = reachableHistoryStateIds(problem, state.history);
   return {
     ok: true,
+    session: {
+      mode: sessionMode,
+      persistence: sessionMode === "demo" ? "memory only; resets on refresh" : "local browser storage",
+    },
     problem: {
       id: problem.id,
       title: problem.title,
@@ -117,6 +130,13 @@ function stateOutput(store: MechanismStore) {
       prompt: problem.prompt,
       objective: problem.objective,
       reviewStatus: problem.review.status,
+      steps: problem.steps.map((step, index) => ({
+        index: index + 1,
+        id: step.id,
+        title: step.title,
+        fromStateId: step.fromStateId,
+        toStateId: step.toStateId,
+      })),
     },
     availableProblems: store.getProblems().map((candidate) => ({
       id: candidate.id,
@@ -129,16 +149,35 @@ function stateOutput(store: MechanismStore) {
     })),
     mechanism: {
       currentStateId: state.currentStateId,
-      currentStateLabel: molecule.label,
+      currentStateLabel: currentMolecule.label,
       complete: state.currentStateId === problem.completedStateId,
+      currentStep: activeStep
+        ? {
+            index: problem.steps.indexOf(activeStep) + 1,
+            id: activeStep.id,
+            title: activeStep.title,
+          }
+        : null,
       mechanismRevision: state.mechanismRevision,
       draftArrows: state.draftArrows.map((arrow) => ({ ...arrow })),
       latestValidation: state.latestValidation ? { ...state.latestValidation } : null,
       highestScaffoldLevel: state.highestScaffoldLevel,
+      visibleScaffoldLevel: state.visibleScaffoldLevel,
       attemptCount: state.attemptCount,
       hintCount: state.hintCount,
       activeCommitCount: state.history.filter((record) => record.undoneAt === null).length,
       activitySequence: state.activitySequence,
+      historyView: {
+        active: state.historyViewStateId !== null,
+        visibleStateId: visibleStateId(state),
+        visibleStateLabel: molecule.label,
+        readOnly: state.historyViewStateId !== null,
+      },
+      reachableHistoryStates: historyStateIds.map((stateId) => ({
+        id: stateId,
+        label: problem.states[stateId].label,
+        current: stateId === state.currentStateId,
+      })),
     },
     entities: {
       atomIds: molecule.atoms.map((atom) => atom.id),
@@ -148,7 +187,10 @@ function stateOutput(store: MechanismStore) {
   };
 }
 
-function defineTools(store: MechanismStore): WebMcpToolDefinition[] {
+function defineTools(
+  store: MechanismStore,
+  sessionMode: "saved" | "demo",
+): WebMcpToolDefinition[] {
   return [
     {
       name: "get_mechanism_state",
@@ -159,7 +201,7 @@ function defineTools(store: MechanismStore): WebMcpToolDefinition[] {
       execute: async (input) => {
         const parsed = toObject(input);
         assertExactKeys(parsed, []);
-        return stateOutput(store);
+        return stateOutput(store, sessionMode);
       },
     },
     {
@@ -186,7 +228,7 @@ function defineTools(store: MechanismStore): WebMcpToolDefinition[] {
           assertExactKeys(parsed, ["entityIds"]);
           const entityIds = requiredStringArray(parsed, "entityIds");
           const mechanism = store.getState();
-          const molecule = store.getProblem().states[mechanism.currentStateId];
+          const molecule = store.getProblem().states[visibleStateId(mechanism)];
           const entities = entityIds.map((entityId) => {
             const atom = molecule.atoms.find((candidate) => candidate.id === entityId);
             if (atom) return { kind: "atom", ...atom };
@@ -244,6 +286,37 @@ function defineTools(store: MechanismStore): WebMcpToolDefinition[] {
           };
         } catch (error) {
           return toolError("INVALID_INPUT", (error as Error).message, store.getState().mechanismRevision);
+        }
+      },
+    },
+    {
+      name: "view_mechanism_history_state",
+      description:
+        "Show one already reached reactant, intermediate, or product state in the visible canvas without changing committed chemistry. Pass the currentStateId to return to the current mechanism state. Unreached future states are rejected.",
+      inputSchema: {
+        type: "object",
+        properties: { stateId: { type: "string" } },
+        required: ["stateId"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["stateId"]);
+          const stateId = requiredString(parsed, "stateId");
+          return commandOutput(store, store.viewHistoryState(stateId, "agent"));
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
         }
       },
     },
@@ -526,6 +599,7 @@ export async function registerMechanismCanvasTools(
   store: MechanismStore = mechanismStore,
   context: WebMcpModelContext | undefined =
     typeof document === "undefined" ? undefined : document.modelContext,
+  sessionMode: "saved" | "demo" = activeSessionMode,
 ): Promise<number> {
   if (!context || typeof context.registerTool !== "function") {
     dispatchStatus("manual");
@@ -537,7 +611,7 @@ export async function registerMechanismCanvasTools(
   }
 
   try {
-    const tools = defineTools(store);
+    const tools = defineTools(store, sessionMode);
     for (const tool of tools) {
       await context.registerTool(tool);
     }

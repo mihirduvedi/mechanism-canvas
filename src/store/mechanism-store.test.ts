@@ -34,6 +34,24 @@ function addAcceptedProtonTransferBundle(store: ReturnType<typeof createMechanis
   ).toBe(true);
 }
 
+function addCapstoneStepOne(store: ReturnType<typeof createMechanismStore>) {
+  expect(store.switchProblem("ammonia_alkylation_01", "human").ok).toBe(true);
+  expect(
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_n_attack_1" },
+      target: { kind: "atom", entityId: "c_methyl" },
+      actor: "human",
+    }).ok,
+  ).toBe(true);
+  expect(
+    store.addDraftArrow({
+      source: { kind: "bond", entityId: "bond_c_br" },
+      target: { kind: "atom", entityId: "br_leaving" },
+      actor: "human",
+    }).ok,
+  ).toBe(true);
+}
+
 describe("mechanism command store", () => {
   it("checks, commits, and reverses the complete SN2 journey", () => {
     const store = createMechanismStore(undefined, null);
@@ -66,6 +84,52 @@ describe("mechanism command store", () => {
     expect(store.getState().activity.at(-1)?.summary).toContain("proton-transfer");
     expect(store.undoLastCommit("human").ok).toBe(true);
     expect(store.getState().currentStateId).toBe("proton_transfer_reactants");
+  });
+
+  it("commits a two-step capstone, guards future states, and undoes one step at a time", () => {
+    const store = createMechanismStore(undefined, null);
+    addCapstoneStepOne(store);
+
+    expect(store.viewHistoryState("amine_products", "human")).toMatchObject({
+      ok: false,
+      error: { code: "TARGET_NOT_SUPPORTED" },
+    });
+    const firstCheck = store.checkDraftStep("human");
+    expect(firstCheck.value?.classification).toBe("valid");
+    expect(store.commitCheckedStep(firstCheck.value?.validationId ?? "", "human").ok).toBe(true);
+    expect(store.getState()).toMatchObject({
+      currentStateId: "methylammonium_intermediate",
+      historyViewStateId: null,
+      highestScaffoldLevel: 0,
+    });
+
+    const revisionAfterFirstCommit = store.getState().mechanismRevision;
+    expect(store.viewHistoryState("amine_reactants", "human").ok).toBe(true);
+    expect(store.getState().historyViewStateId).toBe("amine_reactants");
+    expect(store.getState().mechanismRevision).toBe(revisionAfterFirstCommit);
+    expect(store.viewHistoryState("methylammonium_intermediate", "human").ok).toBe(true);
+    expect(store.getState().historyViewStateId).toBeNull();
+
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_n_base_1" },
+      target: { kind: "atom", entityId: "h_transfer" },
+      actor: "human",
+    });
+    store.addDraftArrow({
+      source: { kind: "bond", entityId: "bond_n_attack_h_transfer" },
+      target: { kind: "atom", entityId: "n_attacker" },
+      actor: "human",
+    });
+    const secondCheck = store.checkDraftStep("human");
+    expect(secondCheck.value?.classification).toBe("valid");
+    expect(store.commitCheckedStep(secondCheck.value?.validationId ?? "", "human").ok).toBe(true);
+    expect(store.getState().currentStateId).toBe("amine_products");
+    expect(store.getState().history.filter((record) => record.undoneAt === null)).toHaveLength(2);
+
+    expect(store.undoLastCommit("human").ok).toBe(true);
+    expect(store.getState().currentStateId).toBe("methylammonium_intermediate");
+    expect(store.undoLastCommit("human").ok).toBe(true);
+    expect(store.getState().currentStateId).toBe("amine_reactants");
   });
 
   it("invalidates a check token after a draft mutation", () => {
@@ -101,8 +165,67 @@ describe("mechanism command store", () => {
     expect(result.ok).toBe(true);
     expect(store.getState().mechanismRevision).toBe(before);
     expect(store.getState().highestScaffoldLevel).toBe(3);
+    expect(store.getState().visibleScaffoldLevel).toBe(3);
     expect(store.getState().hintCount).toBe(1);
     expect(store.getState().activity.at(-1)?.actor).toBe("agent");
+  });
+
+  it("lets the learner hide a hint without forgetting unlocked help", () => {
+    const store = createMechanismStore(undefined, null);
+    store.requestScaffold(4, "human");
+    store.dismissScaffold();
+    expect(store.getState()).toMatchObject({
+      highestScaffoldLevel: 4,
+      visibleScaffoldLevel: 0,
+      hintCount: 1,
+      focusEntityIds: [],
+    });
+  });
+
+  it("hides an open hint when the learner starts drawing", () => {
+    const store = createMechanismStore(undefined, null);
+    store.requestScaffold(4, "human");
+    store.selectSource({ kind: "lone_pair", entityId: "lp_o_1" });
+    expect(store.getState().visibleScaffoldLevel).toBe(0);
+    expect(store.getState().highestScaffoldLevel).toBe(4);
+  });
+
+  it("hides a reopened hint when the learner clears the draft", () => {
+    const store = createMechanismStore(undefined, null);
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_o_1" },
+      target: { kind: "atom", entityId: "c_electrophile" },
+      actor: "human",
+    });
+    store.requestScaffold(4, "human");
+    store.clearDraft("human");
+    expect(store.getState().visibleScaffoldLevel).toBe(0);
+    expect(store.getState().draftArrows).toHaveLength(0);
+  });
+
+  it("records check outcomes for the visible activity status", () => {
+    const store = createMechanismStore(undefined, null);
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_o_1" },
+      target: { kind: "atom", entityId: "c_electrophile" },
+      actor: "human",
+    });
+    store.checkDraftStep("human");
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      kind: "step_checked",
+      outcome: "warning",
+    });
+
+    store.addDraftArrow({
+      source: { kind: "bond", entityId: "bond_c_br" },
+      target: { kind: "atom", entityId: "br_leaving" },
+      actor: "human",
+    });
+    store.checkDraftStep("human");
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      kind: "step_checked",
+      outcome: "success",
+    });
   });
 
   it("persists work but deliberately drops validation capability on restore", () => {

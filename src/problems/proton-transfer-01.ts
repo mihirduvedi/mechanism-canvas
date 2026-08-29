@@ -54,6 +54,7 @@ export const protonTransferProblem: ProblemDefinition = {
         { id: "lp_n_1", atomId: "n_base", angle: 0 },
         { id: "lp_o_acid_1", atomId: "o_acid", angle: -90 },
       ],
+      separators: [{ x: 332, y: 200 }],
     },
     proton_transfer_products: {
       id: "proton_transfer_products",
@@ -94,8 +95,15 @@ export const protonTransferProblem: ProblemDefinition = {
         { id: "lp_o_acid_1", atomId: "o_acid", angle: -90 },
         { id: "lp_o_acid_2", atomId: "o_acid", angle: 90 },
       ],
+      separators: [{ x: 545, y: 200 }],
     },
   },
+  steps: [
+    {
+      id: "ammonia_proton_transfer",
+      title: "Transfer the proton",
+      fromStateId: "proton_transfer_reactants",
+      toStateId: "proton_transfer_products",
   acceptedBundles: [
     [
       {
@@ -231,6 +239,8 @@ export const protonTransferProblem: ProblemDefinition = {
       ],
       expectedClassification: "not_accepted_path",
       expectedReasonCode: "NOT_IN_AUTHORED_PATH",
+    },
+    ],
     },
   ],
   review: {

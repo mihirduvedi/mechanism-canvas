@@ -14,12 +14,13 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
   const canCommit = validation?.classification === "valid";
   const canUndo = state.history.some((record) => record.undoneAt === null);
   const complete = state.currentStateId === problem.completedStateId;
+  const historyView = state.historyViewStateId !== null;
 
   return (
     <section className="draft-tray" aria-labelledby="draft-heading">
       <div className="draft-tray__heading">
         <div>
-          <p className="section-kicker">Atomic bundle</p>
+          <p className="section-kicker">Current bundle</p>
           <h2 id="draft-heading">Draft arrows</h2>
         </div>
         <span className="revision-label">rev {state.mechanismRevision}</span>
@@ -27,8 +28,13 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
 
       {state.draftArrows.length === 0 ? (
         <div className="draft-empty">
-          <span className="draft-empty__line" aria-hidden="true" />
-          <p>{complete ? "No draft while the product is committed." : "Your selected electron movements will appear here before they change the structure."}</p>
+          <p>
+            {historyView
+              ? "History view is read-only. Return to the current mechanism state to continue."
+              : complete
+                ? "The authored mechanism is committed, so there is no active draft."
+                : "Your electron movements will appear here before they change the structure."}
+          </p>
         </div>
       ) : (
         <ol className="arrow-list">
@@ -58,7 +64,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
         <button
           className="button button--primary"
           type="button"
-          disabled={state.draftArrows.length === 0 || complete}
+          disabled={state.draftArrows.length === 0 || complete || historyView}
           title={state.draftArrows.length === 0 ? "Add at least one arrow first" : undefined}
           onClick={() => store.checkDraftStep("human")}
         >
@@ -67,7 +73,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
         <button
           className="button button--commit"
           type="button"
-          disabled={!canCommit}
+          disabled={!canCommit || historyView}
           title={!canCommit ? "A current valid check is required" : undefined}
           onClick={() => validation && store.commitCheckedStep(validation.validationId, "human")}
         >
@@ -76,7 +82,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
         <button
           className="button button--secondary"
           type="button"
-          disabled={!canUndo}
+          disabled={!canUndo || historyView}
           title={!canUndo ? "There is no committed step to undo" : undefined}
           onClick={() => store.undoLastCommit("human")}
         >
@@ -85,7 +91,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
         <button
           className="text-button"
           type="button"
-          disabled={state.draftArrows.length === 0}
+          disabled={state.draftArrows.length === 0 || historyView}
           onClick={() => store.clearDraft("human")}
         >
           Clear draft
