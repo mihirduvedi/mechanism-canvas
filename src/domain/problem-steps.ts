@@ -23,6 +23,7 @@ export function reachableHistoryStateIds(
 ): string[] {
   const reachable = new Set<string>([problem.currentStateId]);
   for (const record of history) {
+    if (record.undoneAt !== null) continue;
     reachable.add(record.fromStateId);
     reachable.add(record.toStateId);
   }

@@ -17,6 +17,7 @@
 - Counter-rule: green, amber, rust, and red appear only when the mechanism state or validation result needs them.
 - Signature: stable atoms, bonds, and electron pairs remain directly selectable while the adjacent feedback names the same entities in plain language.
 - Multi-step signature: a thin reaction path sits on the edge of the canvas. Reached states become navigable evidence; unreached states remain locked so history cannot reveal a future product.
+- Reaction-diff signature: one quiet utility panel opens a focused read-only comparison. Warm broken-bond marks, green formed-bond marks, teal atom-property rings, and an exact text ledger explain the same committed transition without becoming a second workspace.
 - Learning-record signature: a quiet reflection surface follows feedback and activity. The compact instructor view reads like a local lab record, not an account dashboard or gradebook.
 - Three-dimensional signature: a matte molecular model uses familiar element colors, spherical electron markers, readable bond rods, optional dipole arrows, and restrained lighting.
 - Typography: one system sans stack carries headings, controls, body copy, numbers, and chemistry labels. Hierarchy comes from size and weight, not a change of typeface. Monospace is reserved for machine-readable reason codes only.
@@ -35,6 +36,7 @@
 
 - Navigation: one workspace at `/`; a native selector swaps the active exercise and preserves separate local progress.
 - History navigation: reactants, reached intermediates, and committed products are read-only views over one current mechanism. Returning to the current node restores editing; viewing history never changes the chemistry revision.
+- Step comparison: only active committed transitions may be compared. Structures, performed arrows, and graph deltas come from the reached commit and authored states; undo relocks the reversed after-state. Opening, selecting, and closing a comparison never change chemistry, revision, activity, or persistence.
 - Primary action: **Check step**. Checking never mutates the committed mechanism.
 - Commit: enabled only after a current valid check. Undo remains explicit and reversible.
 - State grammar: every status uses text and shape in addition to color.
@@ -51,6 +53,7 @@
 - Core controls must work by keyboard with visible focus, meaningful names, and a textual structure view.
 - The interface becomes generic if the anchored electron controls, atomic validation bundle, and shared human-agent trail are removed.
 - The learning record must remain subordinate to active mechanism work. Its empty state is compact; the denser evidence ledger opens in a modal with native focus containment and Escape/close behavior.
+- Reaction Diff must show the full mapped structure on narrow screens, stack before and after in reading order, and repeat every visual highlight as text. Opening and closing the modal must move and restore focus; a reopened dialog starts at its header.
 
 ## Iteration safeguards
 
@@ -66,4 +69,5 @@
 - Final QA must inspect the 2D atom baseline, implicit-hydrogen clearance, two-arrow bundle, hidden-hint state, positive and negative 3D charges, dipole overlays, and the compact atom inspector at desktop and narrow widths.
 - The page uses one dominant working canvas and a two-column desktop structure. Feedback moves below the workbench. A redesign fails if auxiliary rails compete visually with the reaction or if narrow layouts only shrink the desktop composition.
 - The reaction timeline remains a supporting edge, not a card grid or second navigation rail. Its state nodes use one connected line, one current-state halo, and concise chemical labels. It must scroll horizontally at narrow widths without shrinking or revealing locked-state content.
+- Comparison color never carries the change alone: formed, broken, order, charge, lone-pair, and implicit-hydrogen changes are named with before and after values in the ledger.
 - Primary actions are at least 44 px high, use filled rounded rectangles, and include pressed, focus, selected, and disabled states. Capsule geometry is reserved for compact statuses and standalone utility controls.

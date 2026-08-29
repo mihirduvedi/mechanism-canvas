@@ -13,16 +13,17 @@ function contextHarness() {
 }
 
 describe("WebMCP site tool registration", () => {
-  it("registers the full thirteen-tool catalog with guarded history navigation", async () => {
+  it("registers the full fourteen-tool catalog with guarded history and comparison", async () => {
     const store = createMechanismStore(undefined, null);
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(13);
+    expect(count).toBe(14);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "inspect_mechanism_entities",
       "get_activity_trail",
       "view_mechanism_history_state",
+      "compare_reached_step",
       "focus_mechanism_entities",
       "add_draft_arrow",
       "remove_draft_arrow",
@@ -34,8 +35,13 @@ describe("WebMCP site tool registration", () => {
       "reset_active_exercise",
     ]);
     expect(tools[0].annotations?.readOnlyHint).toBe(true);
-    expect(tools[5].inputSchema.additionalProperties).toBe(false);
-    expect(tools[12].annotations?.destructiveHint).toBe(true);
+    expect(tools.find((tool) => tool.name === "compare_reached_step")?.annotations?.readOnlyHint).toBe(
+      true,
+    );
+    expect(tools.find((tool) => tool.name === "add_draft_arrow")?.inputSchema.additionalProperties).toBe(
+      false,
+    );
+    expect(tools.at(-1)?.annotations?.destructiveHint).toBe(true);
   });
 
   it("completes both capstone steps and browses only reached history states", async () => {
@@ -53,6 +59,14 @@ describe("WebMCP site tool registration", () => {
       stateId: "amine_products",
     });
     expect(unreached).toMatchObject({
+      ok: false,
+      error: { code: "TARGET_NOT_SUPPORTED" },
+    });
+    const unreachedComparison = await call("compare_reached_step", {
+      beforeStateId: "amine_reactants",
+      afterStateId: "methylammonium_intermediate",
+    });
+    expect(unreachedComparison).toMatchObject({
       ok: false,
       error: { code: "TARGET_NOT_SUPPORTED" },
     });
@@ -78,6 +92,31 @@ describe("WebMCP site tool registration", () => {
       expectedRevision: 3,
     });
     expect(store.getState().currentStateId).toBe("methylammonium_intermediate");
+
+    const firstComparison = await call("compare_reached_step", {
+      beforeStateId: "amine_reactants",
+      afterStateId: "methylammonium_intermediate",
+    });
+    expect(firstComparison).toMatchObject({
+      ok: true,
+      problemId: "ammonia_alkylation_01",
+      mechanismRevision: 4,
+      step: {
+        stepIndex: 1,
+        stepId: "form_methylammonium",
+        performedArrowBundle: expect.arrayContaining([
+          expect.objectContaining({ source: { kind: "bond", entityId: "bond_c_br" } }),
+        ]),
+      },
+      comparison: {
+        summary: "1 bond formed; 1 bond broken; 4 atom properties changed",
+        bondChanges: expect.arrayContaining([
+          expect.objectContaining({ change: "formed", afterBondId: "bond_c_n_attack" }),
+          expect.objectContaining({ change: "broken", beforeBondId: "bond_c_br" }),
+        ]),
+      },
+    });
+    expect(store.getState().activitySequence).toBe(5);
 
     const viewed = await call("view_mechanism_history_state", { stateId: "amine_reactants" });
     expect(viewed).toMatchObject({ ok: true, mechanismRevision: 4 });
@@ -118,6 +157,10 @@ describe("WebMCP site tool registration", () => {
           { id: "amine_reactants" },
           { id: "methylammonium_intermediate" },
           { id: "amine_products", current: true },
+        ],
+        availableStepComparisons: [
+          { stepIndex: 1, beforeStateId: "amine_reactants", afterStateId: "methylammonium_intermediate" },
+          { stepIndex: 2, beforeStateId: "methylammonium_intermediate", afterStateId: "amine_products" },
         ],
       },
     });

@@ -14,11 +14,11 @@
 
 ## 0:18–0:36 — The WebMCP idea
 
-**On screen:** Open the Site tools menu and show the 13 available tools. Return to the page.
+**On screen:** Open the Site tools menu and show the 14 available tools. Return to the page.
 
 **Narration:**
 
-> Mechanism Canvas gives the open page thirteen narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, one reaction timeline, and one activity trail. The model never grades the chemistry.
+> Mechanism Canvas gives the open page fourteen narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, one reaction timeline, and one activity trail. The model never grades the chemistry.
 
 ## 0:36–0:58 — Discover the capstone
 
@@ -46,11 +46,11 @@
 
 ## 1:48–2:10 — Compare reached states
 
-**On screen:** Agent calls `view_mechanism_history_state` for `amine_reactants`, then returns to `methylammonium_intermediate`. Show the read-only banner and locked products.
+**On screen:** Agent calls `compare_reached_step` for the first transition while the learner opens **Compare committed steps**. Show the highlighted C–Br break and C–N formation, then close the dialog, view `amine_reactants`, and return to the intermediate. Keep products locked.
 
 **Narration:**
 
-> The learner can inspect the starting structure without losing the intermediate. History mode is visibly read-only, leaves the chemistry revision untouched, and refuses to open future states.
+> The app and agent read the same exact bond, charge, and lone-pair delta. The learner can then inspect the starting structure without losing the intermediate. Comparison and history are read-only, leave revision untouched, and refuse future states.
 
 ## 2:10–2:38 — Finish and inspect the proof
 

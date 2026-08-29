@@ -4,6 +4,7 @@ import { DraftTray } from "./components/DraftTray";
 import { LearningRecord } from "./components/LearningRecord";
 import { MechanismCanvas } from "./components/MechanismCanvas";
 import { ProblemBrief } from "./components/ProblemBrief";
+import { ReactionDiff } from "./components/ReactionDiff";
 import { ReasoningPanel } from "./components/ReasoningPanel";
 import { demoSessionPath, savedPracticePath } from "./demo/demo-mode";
 import { activeSessionMode, mechanismStore } from "./store/active-mechanism-store";
@@ -90,6 +91,7 @@ export function App() {
           <MechanismCanvas problem={problem} state={state} store={mechanismStore} />
           <DraftTray problem={problem} state={state} store={mechanismStore} />
           <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
+          <ReactionDiff problem={problem} state={state} />
           <LearningRecord
             problem={problem}
             state={state}

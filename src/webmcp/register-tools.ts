@@ -1,5 +1,9 @@
 import { describeEntity } from "../domain/chemistry";
 import {
+  availableStepComparisons,
+  compareReachedStep,
+} from "../domain/mechanism-comparison";
+import {
   problemStepForState,
   reachableHistoryStateIds,
   visibleStateId,
@@ -9,7 +13,7 @@ import { activeSessionMode, mechanismStore } from "../store/active-mechanism-sto
 import type { MechanismStore } from "../store/mechanism-store";
 
 const registeredContexts = new WeakSet<object>();
-export const MECHANISM_TOOL_COUNT = 13;
+export const MECHANISM_TOOL_COUNT = 14;
 
 interface ToolFailure {
   ok: false;
@@ -117,6 +121,7 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
   const molecule = problem.states[visibleStateId(state)];
   const activeStep = problemStepForState(problem, state.currentStateId);
   const historyStateIds = reachableHistoryStateIds(problem, state.history);
+  const stepComparisons = availableStepComparisons(problem, state);
   return {
     ok: true,
     session: {
@@ -177,6 +182,16 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
         id: stateId,
         label: problem.states[stateId].label,
         current: stateId === state.currentStateId,
+      })),
+      availableStepComparisons: stepComparisons.map((comparison) => ({
+        commitId: comparison.commitId,
+        stepIndex: comparison.stepIndex,
+        stepId: comparison.stepId,
+        stepTitle: comparison.stepTitle,
+        beforeStateId: comparison.beforeStateId,
+        beforeStateLabel: comparison.beforeStateLabel,
+        afterStateId: comparison.afterStateId,
+        afterStateLabel: comparison.afterStateLabel,
       })),
     },
     entities: {
@@ -317,6 +332,62 @@ function defineTools(
             (error as Error).message,
             store.getState().mechanismRevision,
           );
+        }
+      },
+    },
+    {
+      name: "compare_reached_step",
+      description:
+        "Compare the before and after graphs for one active committed transition. Returns exact bond, formal-charge, lone-pair, and implicit-hydrogen changes without changing page state or chemistry. Only a currently reached beforeStateId/afterStateId pair listed by get_mechanism_state is accepted; undone and future transitions are rejected.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          beforeStateId: { type: "string" },
+          afterStateId: { type: "string" },
+        },
+        required: ["beforeStateId", "afterStateId"],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["beforeStateId", "afterStateId"]);
+          const state = store.getState();
+          const problem = store.getProblem();
+          const comparison = compareReachedStep(
+            problem,
+            state,
+            requiredString(parsed, "beforeStateId"),
+            requiredString(parsed, "afterStateId"),
+          );
+          if (!comparison) {
+            return toolError(
+              "TARGET_NOT_SUPPORTED",
+              "That exact transition is not an active committed step. Read availableStepComparisons from get_mechanism_state and compare only a listed pair.",
+              state.mechanismRevision,
+            );
+          }
+          return {
+            ok: true,
+            problemId: problem.id,
+            mechanismRevision: state.mechanismRevision,
+            step: {
+              commitId: comparison.commitId,
+              stepIndex: comparison.stepIndex,
+              stepId: comparison.stepId,
+              stepTitle: comparison.stepTitle,
+              actor: comparison.actor,
+              beforeStateId: comparison.beforeStateId,
+              beforeStateLabel: comparison.beforeStateLabel,
+              afterStateId: comparison.afterStateId,
+              afterStateLabel: comparison.afterStateLabel,
+              performedArrowBundle: comparison.arrowBundle,
+            },
+            comparison: comparison.comparison,
+          };
+        } catch (error) {
+          return toolError("INVALID_INPUT", (error as Error).message, store.getState().mechanismRevision);
         }
       },
     },
