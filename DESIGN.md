@@ -17,6 +17,7 @@
 - Counter-rule: green, amber, rust, and red appear only when the mechanism state or validation result needs them.
 - Signature: stable atoms, bonds, and electron pairs remain directly selectable while the adjacent feedback names the same entities in plain language.
 - Multi-step signature: a thin reaction path sits on the edge of the canvas. Reached states become navigable evidence; unreached states remain locked so history cannot reveal a future product.
+- Learning-record signature: a quiet reflection surface follows feedback and activity. The compact instructor view reads like a local lab record, not an account dashboard or gradebook.
 - Three-dimensional signature: a matte molecular model uses familiar element colors, spherical electron markers, readable bond rods, optional dipole arrows, and restrained lighting.
 - Typography: one system sans stack carries headings, controls, body copy, numbers, and chemistry labels. Hierarchy comes from size and weight, not a change of typeface. Monospace is reserved for machine-readable reason codes only.
 - Creative risk: the reduced visual system may feel too quiet. Test it by checking whether the molecule, current instruction, and check result are still the first three points of attention.
@@ -39,6 +40,8 @@
 - State grammar: every status uses text and shape in addition to color.
 - Copy: short chemistry verbs such as select, draw, inspect, check, commit, undo, and reset. Avoid AI praise and promotional language.
 - Trust: fixtures and grading are deterministic. Agent actions appear in the same visible trail. Review and storage limits remain visible.
+- Reflection: learner notes attach to exact commits and survive reversal. Saving a note does not change chemistry revision, restore commit authority, or become agent-authored chemistry.
+- Review and export: instructor review is local and read-oriented. JSON export is active-exercise-only, uses an explicit allowlist, and adds no accepted bundles, unreached graphs, validation IDs, or dedicated identity fields. Freeform reflections need a review-before-sharing reminder.
 
 ## Validation
 
@@ -47,6 +50,7 @@
 - In the capstone, the learner should understand that step 1 ends at a charged intermediate and that step 2 begins from that exact committed structure.
 - Core controls must work by keyboard with visible focus, meaningful names, and a textual structure view.
 - The interface becomes generic if the anchored electron controls, atomic validation bundle, and shared human-agent trail are removed.
+- The learning record must remain subordinate to active mechanism work. Its empty state is compact; the denser evidence ledger opens in a modal with native focus containment and Escape/close behavior.
 
 ## Iteration safeguards
 

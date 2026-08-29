@@ -25,8 +25,10 @@ import {
 import { findProblem, previewProblemCatalog } from "../problems/catalog";
 import { sn2Problem } from "../problems/sn2-01";
 
-const STORAGE_KEY = "mechanism-canvas:workspace:v2";
+const STORAGE_KEY = "mechanism-canvas:workspace:v3";
+const PREVIOUS_STORAGE_KEY = "mechanism-canvas:workspace:v2";
 const LEGACY_STORAGE_KEY = "mechanism-canvas:workspace:v1";
+export const MAX_REFLECTION_LENGTH = 1200;
 
 interface PersistedProblemWorkspace {
   currentStateId: string;
@@ -43,7 +45,7 @@ interface PersistedProblemWorkspace {
 }
 
 interface PersistedCatalogWorkspace {
-  version: 2;
+  version: 3;
   activeProblemId: string;
   workspaces: Record<string, PersistedProblemWorkspace>;
 }
@@ -101,6 +103,7 @@ export interface MechanismStore {
     stateId: string | null,
     actor: Extract<Actor, "human" | "agent">,
   ) => CommandResult;
+  saveCommitReflection: (commitId: string, reflection: string) => CommandResult;
   focusEntities: (entityIds: string[], actor: Extract<Actor, "human" | "agent">) => CommandResult;
   resetProblem: (
     actor: Extract<Actor, "human" | "agent">,
@@ -161,7 +164,20 @@ function restoreProblemState(
     mechanismRevision: persisted.mechanismRevision,
     activitySequence: persisted.activitySequence,
     activity: persisted.activity.slice(-80),
-    history: persisted.history,
+    history: persisted.history.map((record) => {
+      const reflection =
+        typeof record.reflection === "string"
+          ? record.reflection.trim().slice(0, MAX_REFLECTION_LENGTH)
+          : "";
+      return {
+        ...record,
+        reflection: reflection || null,
+        reflectionUpdatedAt:
+          reflection && typeof record.reflectionUpdatedAt === "string"
+            ? record.reflectionUpdatedAt
+            : null,
+      };
+    }),
     focusEntityIds: persisted.focusEntityIds,
     highestScaffoldLevel: persisted.highestScaffoldLevel,
     visibleScaffoldLevel: persisted.visibleScaffoldLevel ?? 0,
@@ -205,10 +221,14 @@ function hydrateCatalog(
   if (!storage) return fallback;
 
   try {
-    const raw = storage.getItem(STORAGE_KEY);
+    const raw = storage.getItem(STORAGE_KEY) ?? storage.getItem(PREVIOUS_STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<PersistedCatalogWorkspace>;
-      if (parsed.version === 2 && parsed.workspaces && typeof parsed.workspaces === "object") {
+      const parsed = JSON.parse(raw) as Partial<PersistedCatalogWorkspace> & { version?: number };
+      if (
+        (parsed.version === 3 || parsed.version === 2) &&
+        parsed.workspaces &&
+        typeof parsed.workspaces === "object"
+      ) {
         const workspaces = new Map<string, MechanismState>();
         for (const problem of catalog) {
           const persisted = parsed.workspaces[problem.id];
@@ -268,7 +288,7 @@ function persist(
     ]),
   );
   const snapshot: PersistedCatalogWorkspace = {
-    version: 2,
+    version: 3,
     activeProblemId: activeProblem.id,
     workspaces: serializedWorkspaces,
   };
@@ -580,6 +600,8 @@ export function createMechanismStore(
         actor,
         committedAt,
         undoneAt: null,
+        reflection: null,
+        reflectionUpdatedAt: null,
       };
       update(
         withEvent(
@@ -711,6 +733,58 @@ export function createMechanismStore(
             ? `Returned to the current state: ${problem.states[nextStateId].label}.`
             : `Viewed mechanism history: ${problem.states[nextStateId].label}.`,
           problem.states[nextStateId].atoms.map((atom) => atom.id),
+        ),
+      );
+      return { ok: true };
+    },
+    saveCommitReflection: (commitId, reflection) => {
+      const recordIndex = state.history.findIndex((record) => record.id === commitId);
+      if (recordIndex < 0) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: "That committed step is not part of this exercise record.",
+          },
+        };
+      }
+      const normalized = reflection.trim();
+      if (normalized.length > MAX_REFLECTION_LENGTH) {
+        return {
+          ok: false,
+          error: {
+            code: "REFLECTION_TOO_LONG",
+            message: `Keep the reflection to ${MAX_REFLECTION_LENGTH} characters or fewer.`,
+          },
+        };
+      }
+      const previous = state.history[recordIndex].reflection ?? "";
+      if (normalized === previous) return { ok: true };
+
+      const updatedAt = new Date().toISOString();
+      const nextHistory = state.history.map((record, index) =>
+        index === recordIndex
+          ? {
+              ...record,
+              reflection: normalized || null,
+              reflectionUpdatedAt: normalized ? updatedAt : null,
+            }
+          : record,
+      );
+      const step = problem.steps.find(
+        (candidate) =>
+          candidate.fromStateId === state.history[recordIndex].fromStateId &&
+          candidate.toStateId === state.history[recordIndex].toStateId,
+      );
+      update(
+        withEvent(
+          state,
+          { history: nextHistory },
+          "human",
+          normalized ? "reflection_saved" : "reflection_removed",
+          normalized
+            ? `Saved a learner reflection for ${step?.title ?? "a committed step"}.`
+            : `Removed the learner reflection for ${step?.title ?? "a committed step"}.`,
         ),
       );
       return { ok: true };

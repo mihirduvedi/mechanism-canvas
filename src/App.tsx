@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { DemoNotice } from "./components/DemoNotice";
 import { DraftTray } from "./components/DraftTray";
+import { LearningRecord } from "./components/LearningRecord";
 import { MechanismCanvas } from "./components/MechanismCanvas";
 import { ProblemBrief } from "./components/ProblemBrief";
 import { ReasoningPanel } from "./components/ReasoningPanel";
@@ -89,6 +90,12 @@ export function App() {
           <MechanismCanvas problem={problem} state={state} store={mechanismStore} />
           <DraftTray problem={problem} state={state} store={mechanismStore} />
           <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
+          <LearningRecord
+            problem={problem}
+            state={state}
+            store={mechanismStore}
+            sessionMode={activeSessionMode}
+          />
         </div>
       </main>
 

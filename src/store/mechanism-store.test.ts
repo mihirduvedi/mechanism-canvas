@@ -243,6 +243,78 @@ describe("mechanism command store", () => {
     expect(commit.error?.code).toBe("STALE_VALIDATION");
   });
 
+  it("keeps learner reflections attached to exact commits without changing chemistry authority", () => {
+    const storage = window.localStorage;
+    const first = createMechanismStore(undefined, storage);
+    addAcceptedBundle(first);
+    const checked = first.checkDraftStep("human");
+    expect(first.commitCheckedStep(checked.value?.validationId ?? "", "human").ok).toBe(true);
+
+    const revisionBeforeReflection = first.getState().mechanismRevision;
+    const activityBeforeReflection = first.getState().activitySequence;
+    expect(first.saveCommitReflection("commit_1", "x".repeat(1201))).toMatchObject({
+      ok: false,
+      error: { code: "REFLECTION_TOO_LONG" },
+    });
+    expect(first.getState().mechanismRevision).toBe(revisionBeforeReflection);
+    expect(
+      first.saveCommitReflection(
+        "commit_1",
+        "The oxygen lone pair forms the new bond while bromide leaves, so carbon keeps an octet.",
+      ).ok,
+    ).toBe(true);
+    expect(first.getState()).toMatchObject({
+      mechanismRevision: revisionBeforeReflection,
+      activitySequence: activityBeforeReflection + 1,
+    });
+    expect(first.getState().history[0]).toMatchObject({
+      id: "commit_1",
+      reflection:
+        "The oxygen lone pair forms the new bond while bromide leaves, so carbon keeps an octet.",
+    });
+    expect(first.getState().activity.at(-1)).toMatchObject({
+      actor: "human",
+      kind: "reflection_saved",
+    });
+
+    const restored = createMechanismStore(undefined, storage);
+    expect(restored.getState().history[0].reflection).toContain("carbon keeps an octet");
+    expect(restored.undoLastCommit("human").ok).toBe(true);
+    expect(restored.getState().history[0]).toMatchObject({
+      undoneAt: expect.any(String),
+      reflection:
+        "The oxygen lone pair forms the new bond while bromide leaves, so carbon keeps an octet.",
+    });
+  });
+
+  it("migrates v2 workspaces with empty reflection fields into the v3 schema", () => {
+    const storage = window.localStorage;
+    const first = createMechanismStore(undefined, storage);
+    addAcceptedBundle(first);
+    const checked = first.checkDraftStep("human");
+    expect(first.commitCheckedStep(checked.value?.validationId ?? "", "human").ok).toBe(true);
+
+    const current = JSON.parse(
+      storage.getItem("mechanism-canvas:workspace:v3") ?? "{}",
+    ) as {
+      version: number;
+      workspaces: Record<string, { history: Array<Record<string, unknown>> }>;
+    };
+    current.version = 2;
+    for (const workspace of Object.values(current.workspaces)) {
+      workspace.history = workspace.history.map(({ reflection: _reflection, reflectionUpdatedAt: _updated, ...record }) => record);
+    }
+    storage.removeItem("mechanism-canvas:workspace:v3");
+    storage.setItem("mechanism-canvas:workspace:v2", JSON.stringify(current));
+
+    const restored = createMechanismStore(undefined, storage);
+    expect(restored.getState().history[0]).toMatchObject({
+      id: "commit_1",
+      reflection: null,
+      reflectionUpdatedAt: null,
+    });
+  });
+
   it("preserves separate progress while one authoritative store switches problems", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);

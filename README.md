@@ -19,6 +19,8 @@ flowchart LR
   S --> C["2D curved-arrow canvas"]
   S --> T["Shared provenance trail"]
   S --> R["Reached-state history timeline"]
+  S --> L["Local learning record"]
+  L --> E["Privacy-safe JSON export"]
   S --> M["Graph-derived 3D inspector"]
   V --> G["Revision-bound commit gate"]
 ```
@@ -62,6 +64,9 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 - Four progressive scaffold levels per exercise.
 - A lazy-loaded Three.js inspector generated from the same molecular graph, including implicit hydrogens, bond order, lone pairs, formal charge, polarity, and VSEPR geometry.
 - A reached-state reaction timeline that locks future states and keeps history browsing read-only.
+- Learner reflections attached to exact commits, including reversed commits, without changing chemistry revision or validation authority.
+- A compact local instructor view for checks, hints, performed arrow bundles, reversals, and learner reflections.
+- An active-exercise JSON learning record with download and clipboard paths; the allowlisted schema omits accepted-answer definitions, unreached state graphs, validation IDs, and dedicated learner identity fields.
 - Thirteen top-level imperative WebMCP tools backed by the same store as the human interface.
 - An isolated `?demo=1` session that always starts from clean SN2 reactants, reports its temporary state to the agent, and never reads or changes saved practice.
 
@@ -69,7 +74,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 
 All three fixtures pass automated structure and transition checks, but they remain labeled `draft` until an independent chemistry reviewer approves the exact representations and teaching language. The app is an educational prototype, not a reaction predictor or chemistry authority.
 
-The validator is deterministic and fixture-bound. The 3D view is explanatory rather than a quantum calculation, molecular-dynamics simulation, conformer prediction, or claim about kinetics. Progress stays in the browser: there is no account, backend, model API call, telemetry pipeline, or cloud sync.
+The validator is deterministic and fixture-bound. The 3D view is explanatory rather than a quantum calculation, molecular-dynamics simulation, conformer prediction, or claim about kinetics. Progress stays in the browser: there is no account, backend, model API call, telemetry pipeline, or cloud sync. Learning-record exports are generated only after a learner selects Download JSON or Copy JSON; Mechanism Canvas does not upload them.
 
 WebMCP support depends on a compatible host exposing `document.modelContext`. The complete manual interface still works when site tools are unavailable.
 
@@ -94,6 +99,7 @@ npm run dev
 | Shared command store | `src/store/mechanism-store.ts` |
 | WebMCP registration | `src/webmcp/register-tools.ts` |
 | Visible workspace | `src/components/` |
+| Learning-record schema and privacy allowlist | `src/domain/learning-record.ts` and `docs/LEARNING_RECORD.md` |
 | Visual system | `src/index.css` and `DESIGN.md` |
 | Chemistry review packets | `docs/chemistry-review/` |
 | Product requirements | `docs/mechanism-canvas-prd.md` |

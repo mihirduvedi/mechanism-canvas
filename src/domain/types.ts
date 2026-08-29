@@ -169,6 +169,7 @@ export type ReasonCode =
   | "VALID_ACCEPTED_STEP"
   | "STALE_STATE"
   | "STALE_VALIDATION"
+  | "REFLECTION_TOO_LONG"
   | "EMPTY_DRAFT";
 
 export interface ValidationIssue {
@@ -204,7 +205,9 @@ export interface ActivityEvent {
     | "entities_focused"
     | "problem_switched"
     | "problem_reset"
-    | "history_state_viewed";
+    | "history_state_viewed"
+    | "reflection_saved"
+    | "reflection_removed";
   summary: string;
   entityIds: string[];
   timestamp: string;
@@ -220,6 +223,8 @@ export interface CommitRecord {
   actor: Extract<Actor, "human" | "agent">;
   committedAt: string;
   undoneAt: string | null;
+  reflection: string | null;
+  reflectionUpdatedAt: string | null;
 }
 
 export interface SelectionState {

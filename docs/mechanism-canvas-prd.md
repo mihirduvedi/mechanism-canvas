@@ -16,6 +16,8 @@
 
 The P1 two-step capstone is now implemented as the draft-only `ammonia_alkylation_01` fixture. Its SN2 commit advances to a charged methylammonium intermediate; a separately checked proton-transfer commit advances to products. A reached-state timeline and the `view_mechanism_history_state` site tool provide read-only history navigation, future states remain locked, and undo reverses one commit at a time. The active prototype therefore has three fixtures and thirteen site tools. The original counts and milestones below remain the build-baseline record; [README.md](../README.md) and [JUDGE_GUIDE.md](JUDGE_GUIDE.md) describe current behavior. Independent chemistry review is still required before the capstone can enter the production catalog.
 
+The P1 Learning Record slice is also implemented locally. Each commit can carry a learner-authored reflection that remains attached after undo and does not change chemistry revision or validation authority. A compact instructor view summarizes checks, hint use, active and reversed commits, performed arrow bundles, and reflections. Download JSON and Copy JSON produce an active-exercise-only export from an explicit allowlist; authored accepted bundles, unreached state graphs, validation IDs, dedicated identity fields, and other problem workspaces are omitted. Freeform reflections can contain learner-entered text and must be reviewed before sharing. Saved workspaces migrate from storage schema v2 to v3, while `?demo=1` remains memory-only. The schema and trust boundary are documented in [LEARNING_RECORD.md](LEARNING_RECORD.md).
+
 ---
 
 ## 1. Executive summary
