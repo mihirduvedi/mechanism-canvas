@@ -8,11 +8,25 @@ import {
 } from "./problem-validation";
 
 describe("problem catalog integrity", () => {
-  it("loads three structurally valid preview fixtures including a two-step capstone", () => {
-    expect(previewProblemCatalog).toHaveLength(3);
+  it("loads six structurally valid preview fixtures including a two-step capstone", () => {
+    expect(previewProblemCatalog).toHaveLength(6);
+    expect(previewProblemCatalog.map((problem) => problem.id)).toEqual([
+      "sn2_01",
+      "proton_transfer_01",
+      "ammonia_alkylation_01",
+      "sn2_02",
+      "sn2_03",
+      "proton_transfer_02",
+    ]);
     expect(new Set(previewProblemCatalog.map((problem) => problem.reactionFamily))).toEqual(
       new Set(["SN2", "proton_transfer", "SN2_proton_transfer"]),
     );
+    expect(
+      previewProblemCatalog.filter((problem) => problem.reactionFamily === "SN2"),
+    ).toHaveLength(3);
+    expect(
+      previewProblemCatalog.filter((problem) => problem.reactionFamily === "proton_transfer"),
+    ).toHaveLength(2);
     for (const problem of previewProblemCatalog) {
       expect(problemDefinitionErrors(problem)).toEqual([]);
       expect(problem.steps).toHaveLength(problem.stepCount);

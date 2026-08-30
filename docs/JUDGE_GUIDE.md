@@ -22,7 +22,7 @@ Current ChatGPT documentation says Site tools work in the desktop app's built-in
 
 | Moment | Evidence on screen | WebMCP point |
 |---|---|---|
-| State read | The agent discovers three exercises, including a two-step capstone, and the current revision. | The page exposes domain state rather than forcing screenshot inference. |
+| State read | The agent discovers six exercises, including a two-step capstone, and the current revision. | The page exposes domain state rather than forcing screenshot inference. |
 | Problem switch | The visible exercise changes to **Build methylamine in two steps**. | A tool reuses the same store and persistence path as the native selector. |
 | Partial first step | One N → C arrow appears and the validator reports an incomplete concerted substitution. | The agent can test a partial hypothesis without receiving a hidden solution. |
 | Reviewable proposal | The agent stages the missing C–Br → Br arrow in a separate panel; the draft and revision do not change until the learner accepts it. | `propose_draft_arrows` creates a real human-agent handoff. There is intentionally no site tool that can approve the proposal. |
@@ -62,6 +62,6 @@ The most important guardrails are visible in code and behavior:
 
 ## Honest boundary
 
-The current fixtures pass automated structural checks, charge conservation checks, authored transition checks, negative-case checks, store tests, and tool-journey tests. Independent chemistry review is still pending, so all three exercises are plainly marked **Prototype · review pending** and are excluded from the production fixture catalog.
+The current fixtures pass automated structural checks, charge conservation checks, authored transition checks, negative-case checks, store tests, and tool-journey tests. Independent chemistry review is still pending, so all six exercises are plainly marked **Prototype · review pending** and are excluded from the production fixture catalog.
 
 The 3D view is explanatory. It does not claim quantum chemistry, molecular dynamics, conformer prediction, kinetics, or reaction energetics.

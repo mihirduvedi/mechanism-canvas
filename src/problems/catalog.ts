@@ -1,10 +1,22 @@
 import type { ProblemDefinition } from "../domain/types";
 import { ammoniaAlkylationProblem } from "./ammonia-alkylation-01";
+import {
+  methoxideEthylSn2Problem,
+  methoxideMethylammoniumProblem,
+  methoxideMethylSn2Problem,
+} from "./library-expansion";
 import { protonTransferProblem } from "./proton-transfer-01";
 import { assertProblemCatalog, createProductionProblemCatalog } from "./problem-validation";
 import { sn2Problem } from "./sn2-01";
 
-const previewProblems = [sn2Problem, protonTransferProblem, ammoniaAlkylationProblem] as const;
+const previewProblems = [
+  sn2Problem,
+  protonTransferProblem,
+  ammoniaAlkylationProblem,
+  methoxideMethylSn2Problem,
+  methoxideEthylSn2Problem,
+  methoxideMethylammoniumProblem,
+] as const;
 
 assertProblemCatalog(previewProblems);
 

@@ -48,7 +48,7 @@ export function ProblemBrief({
         >
           {problems.map((candidate, index) => (
             <option value={candidate.id} key={candidate.id}>
-              {String(index + 1).padStart(2, "0")} · {familyLabel(candidate.reactionFamily)}
+              {String(index + 1).padStart(2, "0")} · {candidate.title} · {familyLabel(candidate.reactionFamily)}
             </option>
           ))}
         </select>

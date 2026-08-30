@@ -26,7 +26,7 @@
 
 **Narration:**
 
-> The agent discovers three authored exercises and selects a two-step capstone. Stable IDs describe two ammonia molecules, bromomethane, and one mapped hydrogen. The timeline exposes only states the learner has actually reached.
+> The agent discovers six authored exercises and selects a two-step capstone. Stable IDs describe two ammonia molecules, bromomethane, and one mapped hydrogen. The timeline exposes only states the learner has actually reached.
 
 ## 0:58–1:20 — Let an incomplete idea fail honestly
 

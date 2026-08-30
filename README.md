@@ -66,7 +66,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 
 ## What is implemented
 
-- Three structurally checked fixtures: one-step SN2, one-step proton transfer, and a two-step ammonia-alkylation capstone with a charged intermediate.
+- Six structurally checked fixtures: three SN2 exercises, two proton-transfer exercises, and a two-step ammonia-alkylation capstone with a charged intermediate.
 - Clickable and keyboard-operable SVG atoms, bonds, and lone pairs.
 - Atomic multi-arrow validation with distinct incomplete, invariant-error, authored-path, accepted, and invalid-input results.
 - Explicit check, revision-bound commit, undo, reset, per-problem local persistence, and shared actor provenance.
@@ -83,7 +83,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 
 ## Trust boundaries
 
-All three fixtures pass automated structure and transition checks, but they remain labeled `draft` until an independent chemistry reviewer approves the exact representations and teaching language. The app is an educational prototype, not a reaction predictor or chemistry authority.
+All six fixtures pass automated structure and transition checks, but they remain labeled `draft` until an independent chemistry reviewer approves the exact representations and teaching language. The app is an educational prototype, not a reaction predictor or chemistry authority.
 
 The validator is deterministic and fixture-bound. The 3D view is explanatory rather than a quantum calculation, molecular-dynamics simulation, conformer prediction, or claim about kinetics. Progress stays in the browser: there is no account, backend, model API call, telemetry pipeline, or cloud sync. Learning-record exports are generated only after a learner selects Download JSON or Copy JSON; Mechanism Canvas does not upload them.
 
@@ -114,6 +114,7 @@ npm run dev
 | Reached-step comparison engine | `src/domain/mechanism-comparison.ts` and `docs/REACTION_DIFF.md` |
 | Electron Flow Replay | `src/domain/reaction-replay.ts`, `src/components/mechanism-arrow-layout.ts`, and `docs/ELECTRON_FLOW_REPLAY.md` |
 | Reviewable agent proposals | `src/store/mechanism-store.ts`, `src/components/ReasoningPanel.tsx`, and `docs/AGENT_DRAFT_PROPOSALS.md` |
+| Six-fixture problem library | `src/problems/library-expansion.ts` and `docs/PROBLEM_LIBRARY_EXPANSION.md` |
 | Visual system | `src/index.css` and `DESIGN.md` |
 | Chemistry review packets | `docs/chemistry-review/` |
 | Product requirements | `docs/mechanism-canvas-prd.md` |

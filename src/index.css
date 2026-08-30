@@ -3282,7 +3282,7 @@ select:focus-visible {
   z-index: 0;
   inset-block-start: 29px;
   inset-inline-start: calc(-100% + 22px);
-  inline-size: 100%;
+  inline-size: calc(100% - 15px);
   block-size: 2px;
   background: #dedee3;
   content: "";

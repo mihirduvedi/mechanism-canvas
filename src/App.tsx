@@ -103,7 +103,7 @@ export function App() {
 
       <footer className="app-footer">
         <span>Prototype</span>
-        <p>Three structurally checked fixtures. Independent chemistry review is pending.</p>
+        <p>{problems.length} structurally checked fixtures. Independent chemistry review is pending.</p>
         <a href="https://learn.chatgpt.com/docs/webmcp" target="_blank" rel="noreferrer">
           About site tools
         </a>

@@ -57,6 +57,20 @@ describe("WebMCP site tool registration", () => {
       false,
     );
     expect(tools.at(-1)?.annotations?.destructiveHint).toBe(true);
+
+    const stateRead = await tools
+      .find((tool) => tool.name === "get_mechanism_state")
+      ?.execute({});
+    expect(stateRead).toMatchObject({
+      availableProblems: [
+        { id: "sn2_01", reviewStatus: "draft" },
+        { id: "proton_transfer_01", reviewStatus: "draft" },
+        { id: "ammonia_alkylation_01", reviewStatus: "draft" },
+        { id: "sn2_02", reviewStatus: "draft" },
+        { id: "sn2_03", reviewStatus: "draft" },
+        { id: "proton_transfer_02", reviewStatus: "draft" },
+      ],
+    });
   });
 
   it("stages a revision-bound proposal without changing the draft until learner approval", async () => {
