@@ -15,7 +15,10 @@ declare global {
   }
 
   interface WebMcpModelContext {
-    registerTool: (tool: WebMcpToolDefinition) => Promise<void>;
+    registerTool: (
+      tool: WebMcpToolDefinition,
+      options?: { signal?: AbortSignal },
+    ) => Promise<void>;
   }
 
   interface Document {

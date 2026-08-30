@@ -5,12 +5,18 @@ import {
   draftSignature,
   validateDraftStep,
 } from "../domain/chemistry";
+import {
+  authorizeAgentCapability,
+  cloneDefaultCollaborationContract,
+  isCollaborationContract,
+} from "../domain/collaboration-contract";
 import { buildLearningProfile } from "../domain/practice-compass";
 import type {
   Actor,
   AgentDraftProposal,
   ActivityEvent,
   ArrowDraft,
+  CollaborationContract,
   CommandResult,
   ElectronSource,
   ElectronTarget,
@@ -31,8 +37,9 @@ import {
 import { findProblem, previewProblemCatalog } from "../problems/catalog";
 import { sn2Problem } from "../problems/sn2-01";
 
-const STORAGE_KEY = "mechanism-canvas:workspace:v5";
+const STORAGE_KEY = "mechanism-canvas:workspace:v6";
 const PREVIOUS_STORAGE_KEYS = [
+  "mechanism-canvas:workspace:v5",
   "mechanism-canvas:workspace:v4",
   "mechanism-canvas:workspace:v3",
   "mechanism-canvas:workspace:v2",
@@ -61,10 +68,11 @@ interface PersistedProblemWorkspace {
 }
 
 interface PersistedCatalogWorkspace {
-  version: 5;
+  version: 6;
   activeProblemId: string;
   workspaces: Record<string, PersistedProblemWorkspace>;
   practicePlanProposal?: PracticePlanProposal | null;
+  collaborationContract?: CollaborationContract;
 }
 
 interface LegacyPersistedWorkspace extends PersistedProblemWorkspace {
@@ -97,6 +105,10 @@ export interface MechanismStore {
   getProblems: () => readonly ProblemDefinition[];
   getLearningProfile: () => LearningProfile;
   getPracticePlanProposal: () => PracticePlanProposal | null;
+  getCollaborationContract: () => CollaborationContract;
+  setCollaborationContract: (
+    next: Omit<CollaborationContract, "revision">,
+  ) => CommandResult<CollaborationContract>;
   subscribe: (listener: () => void) => () => void;
   switchProblem: (
     problemId: string,
@@ -367,12 +379,14 @@ function hydrateCatalog(
   state: MechanismState;
   workspaces: Map<string, MechanismState>;
   practicePlanProposal: PracticePlanProposal | null;
+  collaborationContract: CollaborationContract;
 } {
   const fallback = {
     problem: initialProblem,
     state: baseState(initialProblem),
     workspaces: new Map<string, MechanismState>(),
     practicePlanProposal: null,
+    collaborationContract: cloneDefaultCollaborationContract(),
   };
   if (!storage) return fallback;
 
@@ -384,7 +398,11 @@ function hydrateCatalog(
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PersistedCatalogWorkspace> & { version?: number };
       if (
-        (parsed.version === 5 || parsed.version === 4 || parsed.version === 3 || parsed.version === 2) &&
+        (parsed.version === 6 ||
+          parsed.version === 5 ||
+          parsed.version === 4 ||
+          parsed.version === 3 ||
+          parsed.version === 2) &&
         parsed.workspaces &&
         typeof parsed.workspaces === "object"
       ) {
@@ -406,6 +424,9 @@ function hydrateCatalog(
           practicePlanProposal: isPersistedPracticePlan(parsed.practicePlanProposal, catalog)
             ? parsed.practicePlanProposal
             : null,
+          collaborationContract: isCollaborationContract(parsed.collaborationContract)
+            ? { ...parsed.collaborationContract }
+            : cloneDefaultCollaborationContract(),
         };
       }
     }
@@ -426,6 +447,7 @@ function hydrateCatalog(
       state: restored,
       workspaces: new Map([[initialProblem.id, restored]]),
       practicePlanProposal: null,
+      collaborationContract: cloneDefaultCollaborationContract(),
     };
   } catch {
     return fallback;
@@ -437,6 +459,7 @@ function persist(
   state: MechanismState,
   workspaces: Map<string, MechanismState>,
   practicePlanProposal: PracticePlanProposal | null,
+  collaborationContract: CollaborationContract,
   storage: Storage | null,
 ): void {
   if (!storage) return;
@@ -452,10 +475,11 @@ function persist(
     ]),
   );
   const snapshot: PersistedCatalogWorkspace = {
-    version: 5,
+    version: 6,
     activeProblemId: activeProblem.id,
     workspaces: serializedWorkspaces,
     practicePlanProposal,
+    collaborationContract,
   };
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
@@ -495,10 +519,18 @@ export function createMechanismStore(
   let state = hydrated.state;
   const workspaces = hydrated.workspaces;
   let practicePlanProposal = hydrated.practicePlanProposal;
+  let collaborationContract = hydrated.collaborationContract;
   const listeners = new Set<() => void>();
 
   const emit = () => {
-    persist(problem, state, workspaces, practicePlanProposal, storage);
+    persist(
+      problem,
+      state,
+      workspaces,
+      practicePlanProposal,
+      collaborationContract,
+      storage,
+    );
     listeners.forEach((listener) => listener());
   };
 
@@ -552,11 +584,49 @@ export function createMechanismStore(
     getProblems: () => catalog,
     getLearningProfile: learningProfile,
     getPracticePlanProposal: () => practicePlanProposal,
+    getCollaborationContract: () => ({ ...collaborationContract }),
+    setCollaborationContract: (next) => {
+      const candidate: CollaborationContract = {
+        ...next,
+        revision: collaborationContract.revision + 1,
+      };
+      if (!isCollaborationContract(candidate)) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: "Choose a supported collaboration mode, hint ceiling, and commit boundary.",
+          },
+        };
+      }
+      if (
+        candidate.mode === collaborationContract.mode &&
+        candidate.maxAgentScaffoldLevel === collaborationContract.maxAgentScaffoldLevel &&
+        candidate.learnerCommitsOnly === collaborationContract.learnerCommitsOnly
+      ) {
+        return { ok: true, value: { ...collaborationContract } };
+      }
+      collaborationContract = candidate;
+      update(
+        withEvent(
+          state,
+          {},
+          "human",
+          "collaboration_contract_changed",
+          `Changed the collaboration contract to ${candidate.mode} mode, agent hints through level ${candidate.maxAgentScaffoldLevel}, and ${candidate.learnerCommitsOnly ? "learner-only" : "shared"} commits.`,
+        ),
+      );
+      return { ok: true, value: { ...collaborationContract } };
+    },
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
     switchProblem: (problemId, actor, expectedRevision) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability(collaborationContract, "navigate");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       if (problemId === problem.id) return { ok: true };
@@ -619,6 +689,10 @@ export function createMechanismStore(
       update({ ...state, selection: { source: null } });
     },
     addDraftArrow: ({ source, target, actor, expectedRevision }) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability<ArrowDraft>(collaborationContract, "draft_write");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision<ArrowDraft>(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       if (!isElectronSourcePresent(problem, state, source)) {
@@ -666,6 +740,8 @@ export function createMechanismStore(
       return { ok: true, value: arrow };
     },
     stageAgentProposal: ({ arrows, rationale, expectedRevision }) => {
+      const authorization = authorizeAgentCapability<AgentDraftProposal>(collaborationContract, "propose");
+      if (!authorization.ok) return authorization;
       const revisionCheck = assertExpectedRevision<AgentDraftProposal>(
         state.mechanismRevision,
         expectedRevision,
@@ -869,6 +945,8 @@ export function createMechanismStore(
       return { ok: true };
     },
     stagePracticePlan: ({ problemIds, rationale, expectedProfileRevision }) => {
+      const authorization = authorizeAgentCapability<PracticePlanProposal>(collaborationContract, "propose");
+      if (!authorization.ok) return authorization;
       const profile = learningProfile();
       if (expectedProfileRevision !== profile.profileRevision) {
         return {
@@ -1006,6 +1084,10 @@ export function createMechanismStore(
       return { ok: true };
     },
     removeDraftArrow: (arrowId, actor, expectedRevision) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability(collaborationContract, "draft_write");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       const arrow = state.draftArrows.find((candidate) => candidate.id === arrowId);
@@ -1032,6 +1114,10 @@ export function createMechanismStore(
       return { ok: true };
     },
     clearDraft: (actor) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability(collaborationContract, "draft_write");
+        if (!authorization.ok) return authorization;
+      }
       if (state.draftArrows.length === 0) return { ok: true };
       update(
         withEvent(
@@ -1053,6 +1139,10 @@ export function createMechanismStore(
       return { ok: true };
     },
     checkDraftStep: (actor, expectedRevision) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability<ValidationResult>(collaborationContract, "check");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision<ValidationResult>(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       const result = validateDraftStep(
@@ -1101,6 +1191,10 @@ export function createMechanismStore(
       return { ok: true, value: result };
     },
     commitCheckedStep: (validationId, actor, expectedRevision) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability(collaborationContract, "commit");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       const checked = state.latestValidation;
@@ -1171,6 +1265,10 @@ export function createMechanismStore(
       return { ok: true };
     },
     undoLastCommit: (actor, expectedRevision) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability(collaborationContract, "undo");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       const recordIndex = state.history.findLastIndex((record) => record.undoneAt === null);
@@ -1213,6 +1311,16 @@ export function createMechanismStore(
       return { ok: true };
     },
     requestScaffold: (level, actor) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability<ProblemStepDefinition["scaffold"][number]>(
+          collaborationContract,
+          "scaffold",
+          level,
+        );
+        if (!authorization.ok) {
+          return authorization;
+        }
+      }
       const step = problemStepForState(problem, state.currentStateId);
       const scaffold = step?.scaffold.find((entry) => entry.level === level);
       if (!scaffold) {
@@ -1362,6 +1470,10 @@ export function createMechanismStore(
       return { ok: true };
     },
     resetProblem: (actor, expectedRevision) => {
+      if (actor === "agent") {
+        const authorization = authorizeAgentCapability(collaborationContract, "reset");
+        if (!authorization.ok) return authorization;
+      }
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
       const reset = baseState(problem);

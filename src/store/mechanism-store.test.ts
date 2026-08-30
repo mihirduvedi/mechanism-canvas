@@ -147,6 +147,11 @@ describe("mechanism command store", () => {
 
   it("rejects writes made against a stale mechanism revision", () => {
     const store = createMechanismStore(undefined, null);
+    store.setCollaborationContract({
+      mode: "collaborate",
+      maxAgentScaffoldLevel: 4,
+      learnerCommitsOnly: false,
+    });
     const result = store.addDraftArrow({
       source: { kind: "lone_pair", entityId: "lp_o_1" },
       target: { kind: "atom", entityId: "c_electrophile" },
@@ -156,6 +161,89 @@ describe("mechanism command store", () => {
     expect(result.ok).toBe(false);
     expect(result.error?.code).toBe("STALE_STATE");
     expect(store.getState().draftArrows).toHaveLength(0);
+  });
+
+  it("enforces the default Coach contract in the store, not only in WebMCP registration", () => {
+    const store = createMechanismStore(undefined, null);
+    expect(store.getCollaborationContract()).toMatchObject({
+      mode: "coach",
+      maxAgentScaffoldLevel: 2,
+      learnerCommitsOnly: true,
+      revision: 0,
+    });
+
+    expect(
+      store.addDraftArrow({
+        source: { kind: "lone_pair", entityId: "lp_o_1" },
+        target: { kind: "atom", entityId: "c_electrophile" },
+        actor: "agent",
+      }),
+    ).toMatchObject({ ok: false, error: { code: "LEARNER_CONTROLLED" } });
+    expect(store.requestScaffold(2, "agent").ok).toBe(true);
+    expect(store.requestScaffold(3, "agent")).toMatchObject({
+      ok: false,
+      error: { code: "LEARNER_CONTROLLED" },
+    });
+    expect(store.getState().highestScaffoldLevel).toBe(2);
+  });
+
+  it("lets only the learner widen agent authority and keeps commits separately bounded", () => {
+    const store = createMechanismStore(undefined, null);
+    const chemistryRevision = store.getState().mechanismRevision;
+    const updated = store.setCollaborationContract({
+      mode: "collaborate",
+      maxAgentScaffoldLevel: 4,
+      learnerCommitsOnly: true,
+    });
+    expect(updated).toMatchObject({
+      ok: true,
+      value: { mode: "collaborate", revision: 1, learnerCommitsOnly: true },
+    });
+    expect(store.getState().mechanismRevision).toBe(chemistryRevision);
+    expect(store.getState().activity.at(-1)?.kind).toBe("collaboration_contract_changed");
+
+    addAcceptedBundle(store);
+    const checked = store.checkDraftStep("agent");
+    expect(checked.value?.classification).toBe("valid");
+    expect(
+      store.commitCheckedStep(checked.value?.validationId ?? "", "agent"),
+    ).toMatchObject({ ok: false, error: { code: "LEARNER_CONTROLLED" } });
+
+    store.setCollaborationContract({
+      mode: "collaborate",
+      maxAgentScaffoldLevel: 4,
+      learnerCommitsOnly: false,
+    });
+    expect(store.commitCheckedStep(checked.value?.validationId ?? "", "agent").ok).toBe(true);
+  });
+
+  it("makes Observe mode read-and-focus only", () => {
+    const store = createMechanismStore(undefined, null);
+    store.setCollaborationContract({
+      mode: "observe",
+      maxAgentScaffoldLevel: 4,
+      learnerCommitsOnly: false,
+    });
+    expect(store.focusEntities(["o_nucleophile"], "agent").ok).toBe(true);
+    expect(store.switchProblem("proton_transfer_01", "agent")).toMatchObject({
+      ok: false,
+      error: { code: "LEARNER_CONTROLLED" },
+    });
+    expect(
+      store.stageAgentProposal({
+        arrows: [
+          {
+            source: { kind: "lone_pair", entityId: "lp_o_1" },
+            target: { kind: "atom", entityId: "c_electrophile" },
+          },
+        ],
+        rationale: "Offer a visible suggestion.",
+      }),
+    ).toMatchObject({ ok: false, error: { code: "LEARNER_CONTROLLED" } });
+    expect(store.checkDraftStep("agent")).toMatchObject({
+      ok: false,
+      error: { code: "LEARNER_CONTROLLED" },
+    });
   });
 
   it("keeps an agent proposal outside the draft until the learner accepts it", () => {
@@ -295,6 +383,11 @@ describe("mechanism command store", () => {
 
   it("tracks scaffold help without changing the mechanism revision", () => {
     const store = createMechanismStore(undefined, null);
+    store.setCollaborationContract({
+      mode: "coach",
+      maxAgentScaffoldLevel: 3,
+      learnerCommitsOnly: true,
+    });
     const before = store.getState().mechanismRevision;
     const result = store.requestScaffold(3, "agent");
     expect(result.ok).toBe(true);
@@ -378,6 +471,33 @@ describe("mechanism command store", () => {
     expect(commit.error?.code).toBe("STALE_VALIDATION");
   });
 
+  it("persists the learner-owned collaboration contract in v6", () => {
+    const storage = window.localStorage;
+    const first = createMechanismStore(undefined, storage);
+    first.setCollaborationContract({
+      mode: "observe",
+      maxAgentScaffoldLevel: 1,
+      learnerCommitsOnly: true,
+    });
+
+    const persisted = JSON.parse(
+      storage.getItem("mechanism-canvas:workspace:v6") ?? "{}",
+    );
+    expect(persisted).toMatchObject({
+      version: 6,
+      collaborationContract: {
+        mode: "observe",
+        maxAgentScaffoldLevel: 1,
+        learnerCommitsOnly: true,
+        revision: 1,
+      },
+    });
+    expect(createMechanismStore(undefined, storage).getCollaborationContract()).toMatchObject({
+      mode: "observe",
+      revision: 1,
+    });
+  });
+
   it("keeps learner reflections attached to exact commits without changing chemistry authority", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);
@@ -422,7 +542,7 @@ describe("mechanism command store", () => {
     });
   });
 
-  it("migrates v2 workspaces with empty reflection fields into the v5 schema", () => {
+  it("migrates v2 workspaces with empty reflection fields into the v6 schema", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);
     addAcceptedBundle(first);
@@ -430,7 +550,7 @@ describe("mechanism command store", () => {
     expect(first.commitCheckedStep(checked.value?.validationId ?? "", "human").ok).toBe(true);
 
     const current = JSON.parse(
-      storage.getItem("mechanism-canvas:workspace:v5") ?? "{}",
+      storage.getItem("mechanism-canvas:workspace:v6") ?? "{}",
     ) as {
       version: number;
       workspaces: Record<string, { history: Array<Record<string, unknown>> }>;
@@ -439,7 +559,7 @@ describe("mechanism command store", () => {
     for (const workspace of Object.values(current.workspaces)) {
       workspace.history = workspace.history.map(({ reflection: _reflection, reflectionUpdatedAt: _updated, ...record }) => record);
     }
-    storage.removeItem("mechanism-canvas:workspace:v5");
+    storage.removeItem("mechanism-canvas:workspace:v6");
     storage.setItem("mechanism-canvas:workspace:v2", JSON.stringify(current));
 
     const restored = createMechanismStore(undefined, storage);
@@ -450,7 +570,7 @@ describe("mechanism command store", () => {
     });
   });
 
-  it("persists a current arrow proposal and its learner-review boundary in v5", () => {
+  it("persists a current arrow proposal and its learner-review boundary in v6", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);
     const staged = first.stageAgentProposal({
@@ -485,7 +605,7 @@ describe("mechanism command store", () => {
       actor: "human",
     });
     const previous = JSON.parse(
-      storage.getItem("mechanism-canvas:workspace:v5") ?? "{}",
+      storage.getItem("mechanism-canvas:workspace:v6") ?? "{}",
     ) as {
       version: number;
       workspaces: Record<string, Record<string, unknown>>;
@@ -494,7 +614,7 @@ describe("mechanism command store", () => {
     for (const workspace of Object.values(previous.workspaces)) {
       delete workspace.agentProposal;
     }
-    storage.removeItem("mechanism-canvas:workspace:v5");
+    storage.removeItem("mechanism-canvas:workspace:v6");
     storage.setItem("mechanism-canvas:workspace:v3", JSON.stringify(previous));
 
     const restored = createMechanismStore(undefined, storage);

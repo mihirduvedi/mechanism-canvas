@@ -30,7 +30,7 @@ With `prefers-reduced-motion: reduce`, replay immediately shows the complete sta
 
 ## Site Tool
 
-`replay_reached_step({ beforeStateId, afterStateId })` is one of eighteen top-level Site Tools.
+`replay_reached_step({ beforeStateId, afterStateId })` is one of nineteen top-level Site Tools and remains available in every Collaboration Contract mode.
 
 The tool:
 
@@ -44,7 +44,7 @@ Its annotations are `destructiveHint: false`, `idempotentHint: false`, `openWorl
 
 ## Verification
 
-Automated tool-contract coverage locks replay's annotations, active-commit success path, unreached-pair rejection, unchanged activity sequence, and its presence within the current eighteen-tool catalog. Shared molecule geometry tests protect label clearance and comparison view-box bounds. Browser QA separately covers the one-step SN2 fixture, one-step proton-transfer fixture, both dense capstone transitions, animated replay, reduced-motion static replay, desktop side-by-side layout, and phone stacking.
+Automated tool-contract coverage locks replay's annotations, active-commit success path, unreached-pair rejection, unchanged activity sequence, and its presence within the current adaptive nineteen-tool catalog. Shared molecule geometry tests protect label clearance and comparison view-box bounds. Browser QA separately covers the one-step SN2 fixture, one-step proton-transfer fixture, both dense capstone transitions, animated replay, reduced-motion static replay, desktop side-by-side layout, and phone stacking.
 
 Chemistry review is complete. Manual screen-reader review remains outside this automated verification boundary.
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CollaborationContract } from "./components/CollaborationContract";
 import { DemoNotice } from "./components/DemoNotice";
 import { DraftTray } from "./components/DraftTray";
 import { LearningRecord } from "./components/LearningRecord";
@@ -10,7 +11,8 @@ import { ReasoningPanel } from "./components/ReasoningPanel";
 import { demoSessionPath, savedPracticePath } from "./demo/demo-mode";
 import { activeSessionMode, mechanismStore } from "./store/active-mechanism-store";
 import { useMechanismState } from "./store/use-mechanism";
-import { MECHANISM_TOOL_COUNT } from "./webmcp/register-tools";
+import { enabledToolCount, MECHANISM_TOOL_COUNT } from "./webmcp/register-tools";
+import { COLLABORATION_MODE_LABELS } from "./domain/collaboration-contract";
 
 type ToolStatus = "ready" | "manual" | "error";
 
@@ -18,6 +20,8 @@ export function App() {
   const state = useMechanismState();
   const problem = mechanismStore.getProblem();
   const problems = mechanismStore.getProblems();
+  const collaborationContract = mechanismStore.getCollaborationContract();
+  const activeToolCount = enabledToolCount(collaborationContract);
   const [toolStatus, setToolStatus] = useState<ToolStatus>(
     typeof document !== "undefined" && document.modelContext ? "ready" : "manual",
   );
@@ -63,7 +67,7 @@ export function App() {
             <span className={`tool-status tool-status--${toolStatus}`}>
               <span aria-hidden="true" />
               {toolStatus === "ready"
-                ? `${MECHANISM_TOOL_COUNT} site tools ready`
+                ? `${activeToolCount} of ${MECHANISM_TOOL_COUNT} site tools · ${COLLABORATION_MODE_LABELS[collaborationContract.mode]}`
                 : toolStatus === "error"
                   ? "Site tools unavailable"
                   : "Manual mode"}
@@ -80,6 +84,10 @@ export function App() {
       )}
 
       <main className="workspace" id="mechanism-workspace">
+        <CollaborationContract
+          store={mechanismStore}
+          sessionMode={activeSessionMode}
+        />
         <ProblemBrief
           problem={problem}
           problems={problems}

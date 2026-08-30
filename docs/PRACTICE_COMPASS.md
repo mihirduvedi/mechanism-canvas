@@ -59,7 +59,7 @@ This mirrors the existing electron-flow proposal gate: agents can prepare a stru
 
 ## Persistence and privacy
 
-Saved practice uses `mechanism-canvas:workspace:v5`. It retains per-problem signals and an optional practice-plan proposal in local browser storage, with migrations from v4, v3, v2, and v1. `?demo=1` supplies no storage object, so profile evidence and plans reset on refresh and never touch saved practice.
+Saved practice uses `mechanism-canvas:workspace:v6`. It retains per-problem signals, an optional practice-plan proposal, and the learner-owned Collaboration Contract in local browser storage, with migrations from v5, v4, v3, v2, and v1. `?demo=1` supplies no storage object, so profile evidence, plans, and contract choices reset on refresh and never touch saved practice.
 
 The profile contains no dedicated identity field, model conversation, freeform reflection, accepted-answer definition, unreached state graph, validation token, or cloud identifier. A rationale is agent-authored display text and is bounded to 400 characters.
 
@@ -89,11 +89,11 @@ Automated coverage protects:
 - exact reason-code aggregation;
 - stable revision changes after a check;
 - cross-exercise store derivation;
-- v5 persistence and older-schema migration;
+- v6 persistence and older-schema migration;
 - proposal persistence without learner-side effects;
 - learner-only acceptance;
 - stale-plan rejection after new evidence;
-- 18-tool registration, schemas, and annotations;
+- adaptive 9–19-tool registration, schemas, and annotations;
 - no plan-acceptance Site Tool;
 - reviewed production-catalog membership.
 

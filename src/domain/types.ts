@@ -192,8 +192,18 @@ export type ReasonCode =
   | "VALID_ACCEPTED_STEP"
   | "STALE_STATE"
   | "STALE_VALIDATION"
+  | "LEARNER_CONTROLLED"
   | "REFLECTION_TOO_LONG"
   | "EMPTY_DRAFT";
+
+export type CollaborationMode = "observe" | "coach" | "collaborate";
+
+export interface CollaborationContract {
+  mode: CollaborationMode;
+  maxAgentScaffoldLevel: 0 | 1 | 2 | 3 | 4;
+  learnerCommitsOnly: boolean;
+  revision: number;
+}
 
 export interface ValidationIssue {
   code: ReasonCode;
@@ -294,7 +304,8 @@ export interface ActivityEvent {
     | "proposal_declined"
     | "practice_plan_staged"
     | "practice_plan_accepted"
-    | "practice_plan_declined";
+    | "practice_plan_declined"
+    | "collaboration_contract_changed";
   summary: string;
   entityIds: string[];
   timestamp: string;

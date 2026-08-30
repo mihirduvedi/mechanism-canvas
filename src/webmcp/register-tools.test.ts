@@ -13,14 +13,97 @@ function contextHarness() {
   return { tools, context };
 }
 
+function adaptiveContextHarness() {
+  const tools = new Map<string, WebMcpToolDefinition>();
+  const context: WebMcpModelContext = {
+    registerTool: vi.fn(async (tool, options) => {
+      tools.set(tool.name, tool);
+      options?.signal?.addEventListener(
+        "abort",
+        () => {
+          if (tools.get(tool.name) === tool) tools.delete(tool.name);
+        },
+        { once: true },
+      );
+    }),
+  };
+  return { tools, context };
+}
+
+function createCollaborativeStore() {
+  const baseStore = createMechanismStore(undefined, null);
+  baseStore.setCollaborationContract({
+    mode: "collaborate",
+    maxAgentScaffoldLevel: 4,
+    learnerCommitsOnly: false,
+  });
+  return baseStore;
+}
+
 describe("WebMCP site tool registration", () => {
-  it("registers the full eighteen-tool catalog with guarded plans, proposals, history, comparison, and replay", async () => {
+  it("adapts the discoverable tool surface to the learner-owned contract", async () => {
     const store = createMechanismStore(undefined, null);
+    const { tools, context } = adaptiveContextHarness();
+    const initialCount = await registerMechanismCanvasTools(store, context, "demo");
+
+    expect(initialCount).toBe(14);
+    expect([...tools.keys()]).toContain("get_collaboration_contract");
+    expect([...tools.keys()]).toContain("propose_draft_arrows");
+    expect([...tools.keys()]).not.toContain("add_draft_arrow");
+    expect([...tools.keys()]).not.toContain("commit_checked_step");
+
+    const contractRead = await tools.get("get_collaboration_contract")?.execute({});
+    expect(contractRead).toMatchObject({
+      ok: true,
+      contract: { mode: "coach", maxAgentScaffoldLevel: 2 },
+      enabledToolCount: 14,
+      totalToolCount: 19,
+      learnerControl: "No Site Tool can change this contract.",
+    });
+
+    store.setCollaborationContract({
+      mode: "observe",
+      maxAgentScaffoldLevel: 2,
+      learnerCommitsOnly: true,
+    });
+    await vi.waitFor(() => expect(tools.size).toBe(9));
+    expect([...tools.keys()]).not.toContain("propose_draft_arrows");
+    expect([...tools.keys()]).not.toContain("request_scaffold");
+
+    store.setCollaborationContract({
+      mode: "coach",
+      maxAgentScaffoldLevel: 0,
+      learnerCommitsOnly: true,
+    });
+    await vi.waitFor(() => expect(tools.size).toBe(13));
+    expect([...tools.keys()]).not.toContain("request_scaffold");
+
+    store.setCollaborationContract({
+      mode: "collaborate",
+      maxAgentScaffoldLevel: 4,
+      learnerCommitsOnly: true,
+    });
+    await vi.waitFor(() => expect(tools.size).toBe(18));
+    expect([...tools.keys()]).toContain("add_draft_arrow");
+    expect([...tools.keys()]).not.toContain("commit_checked_step");
+
+    store.setCollaborationContract({
+      mode: "collaborate",
+      maxAgentScaffoldLevel: 4,
+      learnerCommitsOnly: false,
+    });
+    await vi.waitFor(() => expect(tools.size).toBe(19));
+    expect([...tools.keys()]).toContain("commit_checked_step");
+  });
+
+  it("registers the full nineteen-tool catalog with a learner-owned contract, guarded plans, proposals, history, comparison, and replay", async () => {
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(18);
+    expect(count).toBe(19);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
+      "get_collaboration_contract",
       "get_learning_profile",
       "propose_practice_plan",
       "inspect_mechanism_entities",
@@ -86,7 +169,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("lets an agent read evidence and stage a plan without starting it", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const call = (name: string, input: unknown) =>
@@ -129,7 +212,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("stages a revision-bound proposal without changing the draft until learner approval", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const call = (name: string, input: unknown) =>
@@ -196,7 +279,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("rejects a proposal made against a stale revision", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const proposal = tools.find((tool) => tool.name === "propose_draft_arrows");
@@ -221,7 +304,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("completes both capstone steps and browses only reached history states", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const call = (name: string, input: unknown) =>
@@ -381,7 +464,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("switches problems and completes proton transfer through the same site-tool store", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const call = (name: string, input: unknown) =>
@@ -424,7 +507,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("runs the complete clean-demo judge journey with visible, reversible state", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context, "demo");
     const call = (name: string, input: unknown) =>
@@ -515,7 +598,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("keeps read tools free of activity side effects", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context, "demo");
     const before = store.getState().activitySequence;
@@ -524,7 +607,7 @@ describe("WebMCP site tool registration", () => {
     const activity = tools.find((tool) => tool.name === "get_activity_trail");
     const stateResult = await getState?.execute({});
     const inspectResult = await inspect?.execute({ entityIds: ["o_nucleophile"] });
-    const activityResult = await activity?.execute({});
+    const activityResult = await activity?.execute({ afterSequence: before });
     expect(stateResult).toMatchObject({
       ok: true,
       session: {
@@ -538,7 +621,8 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("reads the shared activity trail incrementally without adding activity", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
+    const contractSequence = store.getState().activitySequence;
     store.focusEntities(["o_nucleophile"], "human");
     store.addDraftArrow({
       source: { kind: "lone_pair", entityId: "lp_o_1" },
@@ -549,16 +633,16 @@ describe("WebMCP site tool registration", () => {
     await registerMechanismCanvasTools(store, context);
     const activity = tools.find((tool) => tool.name === "get_activity_trail");
     const before = store.getState().activitySequence;
-    const result = await activity?.execute({ afterSequence: 1, limit: 1 });
+    const result = await activity?.execute({ afterSequence: contractSequence + 1, limit: 1 });
 
     expect(result).toMatchObject({
       ok: true,
       problemId: "sn2_01",
-      latestSequence: 2,
+      latestSequence: contractSequence + 2,
       hasMore: false,
       events: [
         {
-          sequence: 2,
+          sequence: contractSequence + 2,
           actor: "human",
           kind: "arrow_added",
           entityIds: ["lp_o_1", "c_electrophile"],
@@ -569,7 +653,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("requires explicit confirmation and a current revision before an agent reset", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const call = (name: string, input: unknown) =>
@@ -611,7 +695,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("completes the same add, check, commit, and undo journey through site tools", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const call = (name: string, input: unknown) =>
@@ -647,7 +731,7 @@ describe("WebMCP site tool registration", () => {
   });
 
   it("returns a verifiable stale-revision error instead of changing the draft", async () => {
-    const store = createMechanismStore(undefined, null);
+    const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     await registerMechanismCanvasTools(store, context);
     const add = tools.find((tool) => tool.name === "add_draft_arrow");

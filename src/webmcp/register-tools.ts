@@ -1,4 +1,5 @@
 import { describeEntity } from "../domain/chemistry";
+import { COLLABORATION_MODE_LABELS } from "../domain/collaboration-contract";
 import {
   availableStepComparisons,
   compareReachedStep,
@@ -9,7 +10,12 @@ import {
   visibleStateId,
 } from "../domain/problem-steps";
 import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
-import type { CommandResult, ElectronSource, ProposedArrow } from "../domain/types";
+import type {
+  CollaborationContract,
+  CommandResult,
+  ElectronSource,
+  ProposedArrow,
+} from "../domain/types";
 import { activeSessionMode, mechanismStore } from "../store/active-mechanism-store";
 import {
   MAX_PRACTICE_PLAN_PROBLEMS,
@@ -19,8 +25,68 @@ import {
   type MechanismStore,
 } from "../store/mechanism-store";
 
-const registeredContexts = new WeakSet<object>();
-export const MECHANISM_TOOL_COUNT = 18;
+interface ContextRegistration {
+  controller: AbortController | null;
+  count: number;
+  signature: string;
+  unsubscribe: (() => void) | null;
+  queue: Promise<void>;
+}
+
+const registeredContexts = new WeakMap<object, ContextRegistration>();
+export const MECHANISM_TOOL_COUNT = 19;
+
+const OBSERVE_TOOL_NAMES = new Set([
+  "get_mechanism_state",
+  "get_collaboration_contract",
+  "get_learning_profile",
+  "inspect_mechanism_entities",
+  "get_activity_trail",
+  "view_mechanism_history_state",
+  "compare_reached_step",
+  "replay_reached_step",
+  "focus_mechanism_entities",
+]);
+
+const COACH_TOOL_NAMES = new Set([
+  "propose_practice_plan",
+  "propose_draft_arrows",
+  "check_draft_step",
+  "request_scaffold",
+  "switch_problem",
+]);
+
+const COLLABORATE_TOOL_NAMES = new Set([
+  "add_draft_arrow",
+  "remove_draft_arrow",
+  "undo_last_commit",
+  "reset_active_exercise",
+]);
+
+function contractSignature(contract: CollaborationContract): string {
+  return [
+    contract.mode,
+    contract.maxAgentScaffoldLevel,
+    contract.learnerCommitsOnly ? "learner_commit" : "shared_commit",
+  ].join(":");
+}
+
+export function enabledToolNames(contract: CollaborationContract): string[] {
+  const names = new Set(OBSERVE_TOOL_NAMES);
+  if (contract.mode !== "observe") {
+    COACH_TOOL_NAMES.forEach((name) => names.add(name));
+    if (contract.maxAgentScaffoldLevel === 0) names.delete("request_scaffold");
+  }
+  if (contract.mode === "collaborate") {
+    COLLABORATE_TOOL_NAMES.forEach((name) => names.add(name));
+    if (!contract.learnerCommitsOnly) names.add("commit_checked_step");
+  }
+  return [...names];
+}
+
+export function enabledToolCount(contract: CollaborationContract): number {
+  return enabledToolNames(contract).length;
+}
 
 interface ToolFailure {
   ok: false;
@@ -167,11 +233,19 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
   const activeStep = problemStepForState(problem, state.currentStateId);
   const historyStateIds = reachableHistoryStateIds(problem, state.history);
   const stepComparisons = availableStepComparisons(problem, state);
+  const contract = store.getCollaborationContract();
   return {
     ok: true,
     session: {
       mode: sessionMode,
       persistence: sessionMode === "demo" ? "memory only; resets on refresh" : "local browser storage",
+    },
+    collaborationContract: {
+      ...contract,
+      modeLabel: COLLABORATION_MODE_LABELS[contract.mode],
+      enabledToolCount: enabledToolCount(contract),
+      totalToolCount: MECHANISM_TOOL_COUNT,
+      controlledBy: "learner-facing page only",
     },
     problem: {
       id: problem.id,
@@ -275,6 +349,29 @@ function defineTools(
         const parsed = toObject(input);
         assertExactKeys(parsed, []);
         return stateOutput(store, sessionMode);
+      },
+    },
+    {
+      name: "get_collaboration_contract",
+      description:
+        "Read the learner-owned collaboration mode, agent hint ceiling, commit boundary, revision, and currently enabled Site Tool names. This contract can be changed only in the visible page, never through a Site Tool.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      execute: async (input) => {
+        const parsed = toObject(input);
+        assertExactKeys(parsed, []);
+        const contract = store.getCollaborationContract();
+        return {
+          ok: true,
+          contract: {
+            ...contract,
+            modeLabel: COLLABORATION_MODE_LABELS[contract.mode],
+          },
+          enabledTools: enabledToolNames(contract),
+          enabledToolCount: enabledToolCount(contract),
+          totalToolCount: MECHANISM_TOOL_COUNT,
+          learnerControl: "No Site Tool can change this contract.",
+        };
       },
     },
     {
@@ -811,10 +908,16 @@ function defineTools(
     {
       name: "request_scaffold",
       description:
-        "Open one authored scaffold level from 1 to 4, focus its related entities, and record an agent hint request. Level 4 reveals a non-mutating preview of the accepted arrow bundle.",
+        `Open one authored scaffold level from 1 to ${store.getCollaborationContract().maxAgentScaffoldLevel}, focus its related entities, and record an agent hint request. The learner's current collaboration contract is authoritative.`,
       inputSchema: {
         type: "object",
-        properties: { level: { type: "integer", minimum: 1, maximum: 4 } },
+        properties: {
+          level: {
+            type: "integer",
+            minimum: 1,
+            maximum: store.getCollaborationContract().maxAgentScaffoldLevel,
+          },
+        },
         required: ["level"],
         additionalProperties: false,
       },
@@ -966,20 +1069,58 @@ export async function registerMechanismCanvasTools(
     dispatchStatus("manual");
     return 0;
   }
-  if (registeredContexts.has(context)) {
+  const existing = registeredContexts.get(context);
+  if (existing) {
     dispatchStatus("ready");
-    return MECHANISM_TOOL_COUNT;
+    return existing.count;
   }
 
-  try {
-    const tools = defineTools(store, sessionMode);
+  const registration: ContextRegistration = {
+    controller: null,
+    count: 0,
+    signature: "",
+    unsubscribe: null,
+    queue: Promise.resolve(),
+  };
+  registeredContexts.set(context, registration);
+
+  const refresh = async () => {
+    const contract = store.getCollaborationContract();
+    const nextSignature = contractSignature(contract);
+    if (nextSignature === registration.signature) return;
+
+    registration.controller?.abort();
+    await Promise.resolve();
+
+    const controller = new AbortController();
+    const enabledNames = new Set(enabledToolNames(contract));
+    const tools = defineTools(store, sessionMode).filter((tool) => enabledNames.has(tool.name));
     for (const tool of tools) {
-      await context.registerTool(tool);
+      await context.registerTool(tool, { signal: controller.signal });
     }
-    registeredContexts.add(context);
+    registration.controller = controller;
+    registration.count = tools.length;
+    registration.signature = nextSignature;
     dispatchStatus("ready");
-    return tools.length;
+  };
+
+  try {
+    await refresh();
+    registration.unsubscribe = store.subscribe(() => {
+      const nextSignature = contractSignature(store.getCollaborationContract());
+      if (nextSignature === registration.signature) return;
+      registration.queue = registration.queue
+        .then(refresh)
+        .catch((error) => {
+          console.error("Mechanism Canvas could not update its WebMCP tool surface.", error);
+          dispatchStatus("error");
+        });
+    });
+    return registration.count;
   } catch (error) {
+    registration.controller?.abort();
+    registration.unsubscribe?.();
+    registeredContexts.delete(context);
     console.error("Mechanism Canvas could not register WebMCP tools.", error);
     dispatchStatus("error");
     return 0;

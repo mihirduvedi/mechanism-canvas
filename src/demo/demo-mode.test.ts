@@ -42,7 +42,7 @@ describe("judge demo mode", () => {
       demo.addDraftArrow({
         source: { kind: "lone_pair", entityId: "lp_o_2" },
         target: { kind: "atom", entityId: "c_electrophile" },
-        actor: "agent",
+        actor: "human",
       }).ok,
     ).toBe(true);
 

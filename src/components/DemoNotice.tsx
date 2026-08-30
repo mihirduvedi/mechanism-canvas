@@ -19,7 +19,7 @@ export function DemoNotice() {
     <section className="demo-notice" aria-label="Demo session status">
       <div>
         <strong>Clean demo</strong>
-        <span>This visit starts from the authored SN2 reactants. Your saved practice is untouched.</span>
+        <span>Starts in Coach mode. Choose Collaborate before using the copied judge prompt; saved practice stays untouched.</span>
       </div>
       <button type="button" onClick={copyPrompt}>
         {copyStatus === "copied" ? "First prompt copied" : "Copy first agent prompt"}
