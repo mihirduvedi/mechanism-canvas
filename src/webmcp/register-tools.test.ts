@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
 import { createMechanismStore } from "../store/mechanism-store";
 import { registerMechanismCanvasTools } from "./register-tools";
+import { createToolReceiptLedger } from "./tool-receipt-ledger";
 
 function contextHarness() {
   const tools: WebMcpToolDefinition[] = [];
@@ -46,8 +47,9 @@ describe("WebMCP site tool registration", () => {
     const { tools, context } = adaptiveContextHarness();
     const initialCount = await registerMechanismCanvasTools(store, context, "demo");
 
-    expect(initialCount).toBe(14);
+    expect(initialCount).toBe(15);
     expect([...tools.keys()]).toContain("get_collaboration_contract");
+    expect([...tools.keys()]).toContain("get_agent_action_receipts");
     expect([...tools.keys()]).toContain("propose_draft_arrows");
     expect([...tools.keys()]).not.toContain("add_draft_arrow");
     expect([...tools.keys()]).not.toContain("commit_checked_step");
@@ -56,8 +58,8 @@ describe("WebMCP site tool registration", () => {
     expect(contractRead).toMatchObject({
       ok: true,
       contract: { mode: "coach", maxAgentScaffoldLevel: 2 },
-      enabledToolCount: 14,
-      totalToolCount: 19,
+      enabledToolCount: 15,
+      totalToolCount: 20,
       learnerControl: "No Site Tool can change this contract.",
     });
 
@@ -66,7 +68,7 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 2,
       learnerCommitsOnly: true,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(9));
+    await vi.waitFor(() => expect(tools.size).toBe(10));
     expect([...tools.keys()]).not.toContain("propose_draft_arrows");
     expect([...tools.keys()]).not.toContain("request_scaffold");
 
@@ -75,7 +77,7 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 0,
       learnerCommitsOnly: true,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(13));
+    await vi.waitFor(() => expect(tools.size).toBe(14));
     expect([...tools.keys()]).not.toContain("request_scaffold");
 
     store.setCollaborationContract({
@@ -83,7 +85,7 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 4,
       learnerCommitsOnly: true,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(18));
+    await vi.waitFor(() => expect(tools.size).toBe(19));
     expect([...tools.keys()]).toContain("add_draft_arrow");
     expect([...tools.keys()]).not.toContain("commit_checked_step");
 
@@ -92,18 +94,98 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 4,
       learnerCommitsOnly: false,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(19));
+    await vi.waitFor(() => expect(tools.size).toBe(20));
     expect([...tools.keys()]).toContain("commit_checked_step");
   });
 
-  it("registers the full nineteen-tool catalog with a learner-owned contract, guarded plans, proposals, history, comparison, and replay", async () => {
+  it("records privacy-minimized proof receipts for successful, rejected, receipt-read, and canceled calls", async () => {
+    const store = createCollaborativeStore();
+    const receiptLedger = createToolReceiptLedger("receipt_session_integration");
+    const { tools, context } = contextHarness();
+    await registerMechanismCanvasTools(store, context, "demo", receiptLedger);
+    const call = (name: string, input: unknown, options?: { signal?: AbortSignal }) =>
+      tools.find((tool) => tool.name === name)?.execute(input, options);
+
+    await call("get_mechanism_state", {});
+    await call("add_draft_arrow", {
+      sourceType: "lone_pair",
+      sourceEntityId: "lp_o_1",
+      targetAtomId: "c_electrophile",
+      expectedRevision: 99,
+    });
+
+    expect(receiptLedger.getSnapshot()).toMatchObject([
+      {
+        sequence: 1,
+        toolName: "get_mechanism_state",
+        kind: "read",
+        outcome: "succeeded",
+        changed: { chemistry: false, activity: false },
+      },
+      {
+        sequence: 2,
+        toolName: "add_draft_arrow",
+        kind: "write",
+        outcome: "rejected",
+        code: "STALE_STATE",
+        entityIds: ["lp_o_1", "c_electrophile"],
+        changed: { chemistry: false, draft: false },
+      },
+    ]);
+
+    const proofRead = await call("get_agent_action_receipts", { afterSequence: 0, limit: 1 });
+    expect(proofRead).toMatchObject({
+      ok: true,
+      sessionId: "receipt_session_integration",
+      summary: { total: 2, succeeded: 1, rejected: 1 },
+      latestSequence: 2,
+      returnedThroughSequence: 1,
+      returned: 1,
+      hasMore: true,
+      receipts: [
+        { sequence: 1, toolName: "get_mechanism_state" },
+      ],
+    });
+    expect(receiptLedger.getSnapshot().at(-1)).toMatchObject({
+      sequence: 3,
+      toolName: "get_agent_action_receipts",
+      outcome: "succeeded",
+    });
+
+    const proofPageTwo = await call("get_agent_action_receipts", { afterSequence: 1, limit: 10 });
+    expect(proofPageTwo).toMatchObject({
+      latestSequence: 3,
+      returnedThroughSequence: 3,
+      returned: 2,
+      hasMore: false,
+      receipts: [
+        { sequence: 2, toolName: "add_draft_arrow", code: "STALE_STATE" },
+        { sequence: 3, toolName: "get_agent_action_receipts" },
+      ],
+    });
+
+    const controller = new AbortController();
+    controller.abort();
+    const canceled = await call("get_mechanism_state", {}, { signal: controller.signal });
+    expect(canceled).toMatchObject({ ok: false, error: { code: "EXECUTION_CANCELED" } });
+    expect(receiptLedger.getSnapshot().at(-1)).toMatchObject({
+      sequence: 5,
+      toolName: "get_mechanism_state",
+      outcome: "canceled",
+      code: "EXECUTION_CANCELED",
+    });
+    expect(store.getState().mechanismRevision).toBe(0);
+  });
+
+  it("registers the full twenty-tool catalog with proof receipts, guarded plans, proposals, history, comparison, and replay", async () => {
     const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(19);
+    expect(count).toBe(20);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "get_collaboration_contract",
+      "get_agent_action_receipts",
       "get_learning_profile",
       "propose_practice_plan",
       "inspect_mechanism_entities",

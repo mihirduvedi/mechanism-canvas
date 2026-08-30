@@ -11,7 +11,10 @@ declare global {
       idempotentHint?: boolean;
       openWorldHint?: boolean;
     };
-    execute: (input: unknown) => unknown | Promise<unknown>;
+    execute: (
+      input: unknown,
+      options?: { signal?: AbortSignal },
+    ) => unknown | Promise<unknown>;
   }
 
   interface WebMcpModelContext {

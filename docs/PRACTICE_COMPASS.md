@@ -93,7 +93,7 @@ Automated coverage protects:
 - proposal persistence without learner-side effects;
 - learner-only acceptance;
 - stale-plan rejection after new evidence;
-- adaptive 9–19-tool registration, schemas, and annotations;
+- adaptive 10–20-tool registration, schemas, and annotations;
 - no plan-acceptance Site Tool;
 - reviewed production-catalog membership.
 

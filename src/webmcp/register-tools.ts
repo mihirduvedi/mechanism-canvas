@@ -24,6 +24,20 @@ import {
   MAX_PROPOSAL_RATIONALE_LENGTH,
   type MechanismStore,
 } from "../store/mechanism-store";
+import {
+  MAX_TOOL_RECEIPTS,
+  captureToolReceiptScope,
+  captureToolState,
+  changedToolState,
+  receiptEntityIds,
+  summarizeToolIntent,
+  summarizeToolReceipts,
+  summarizeToolResult,
+  toolKind,
+  toolReceiptLedger,
+  type ToolReceiptLedger,
+  type ToolReceiptOutcome,
+} from "./tool-receipt-ledger";
 
 interface ContextRegistration {
   controller: AbortController | null;
@@ -34,11 +48,12 @@ interface ContextRegistration {
 }
 
 const registeredContexts = new WeakMap<object, ContextRegistration>();
-export const MECHANISM_TOOL_COUNT = 19;
+export const MECHANISM_TOOL_COUNT = 20;
 
 const OBSERVE_TOOL_NAMES = new Set([
   "get_mechanism_state",
   "get_collaboration_contract",
+  "get_agent_action_receipts",
   "get_learning_profile",
   "inspect_mechanism_entities",
   "get_activity_trail",
@@ -119,6 +134,87 @@ function toolError(code: string, message: string, revision?: number): ToolFailur
     ok: false,
     error: { code, message },
     ...(revision === undefined ? {} : { mechanismRevision: revision }),
+  };
+}
+
+function executionRejection(result: unknown): { rejected: boolean; code: string | null } {
+  if (!result || typeof result !== "object" || Array.isArray(result)) {
+    return { rejected: false, code: null };
+  }
+  const candidate = result as { ok?: unknown; error?: { code?: unknown } };
+  return {
+    rejected: candidate.ok === false,
+    code: candidate.ok === false && typeof candidate.error?.code === "string"
+      ? candidate.error.code
+      : null,
+  };
+}
+
+function cloneReceiptForOutput(receipt: ReturnType<ToolReceiptLedger["append"]>) {
+  return {
+    ...receipt,
+    entityIds: [...receipt.entityIds],
+    before: { ...receipt.before },
+    after: { ...receipt.after },
+    changed: { ...receipt.changed },
+  };
+}
+
+function instrumentTool(
+  tool: WebMcpToolDefinition,
+  store: MechanismStore,
+  receiptLedger: ToolReceiptLedger,
+): WebMcpToolDefinition {
+  const execute = tool.execute;
+  return {
+    ...tool,
+    execute: async (input, options) => {
+      const before = captureToolState(store);
+      const receiptScope = captureToolReceiptScope(store);
+      const startedAt = new Date().toISOString();
+      const startedMs = typeof performance === "undefined" ? Date.now() : performance.now();
+      const append = (
+        outcome: ToolReceiptOutcome,
+        code: string | null,
+        after = captureToolState(store),
+      ) => {
+        const completedMs = typeof performance === "undefined" ? Date.now() : performance.now();
+        return receiptLedger.append({
+          toolName: tool.name,
+          kind: toolKind(tool.name),
+          outcome,
+          intent: summarizeToolIntent(tool.name, input, receiptScope),
+          result: summarizeToolResult(outcome, code, before, after),
+          code,
+          entityIds: receiptEntityIds(input, receiptScope.entityIds),
+          startedAt,
+          completedAt: new Date().toISOString(),
+          durationMs: Math.max(0, Math.round((completedMs - startedMs) * 10) / 10),
+          before,
+          after,
+          changed: changedToolState(before, after),
+        });
+      };
+
+      if (options?.signal?.aborted) {
+        append("canceled", "EXECUTION_CANCELED", before);
+        return toolError(
+          "EXECUTION_CANCELED",
+          "The Site Tool call was canceled before Mechanism Canvas executed it.",
+          before.mechanismRevision,
+        );
+      }
+
+      try {
+        const result = await execute(input, options);
+        const rejection = executionRejection(result);
+        append(rejection.rejected ? "rejected" : "succeeded", rejection.code);
+        return result;
+      } catch (error) {
+        append("failed", "UNEXPECTED_TOOL_FAILURE");
+        throw error;
+      }
+    },
   };
 }
 
@@ -337,8 +433,9 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
 function defineTools(
   store: MechanismStore,
   sessionMode: "saved" | "demo",
+  receiptLedger: ToolReceiptLedger,
 ): WebMcpToolDefinition[] {
-  return [
+  const tools: WebMcpToolDefinition[] = [
     {
       name: "get_mechanism_state",
       description:
@@ -372,6 +469,54 @@ function defineTools(
           totalToolCount: MECHANISM_TOOL_COUNT,
           learnerControl: "No Site Tool can change this contract.",
         };
+      },
+    },
+    {
+      name: "get_agent_action_receipts",
+      description:
+        "Read the privacy-minimized Agent Proof Ledger for this browser tab. Returns allowlisted Site Tool names, semantic IDs, contract and mechanism state stamps, outcomes, timings, and actual page-state effects. Raw inputs, outputs, prompts, and rationales are never retained. Reading the ledger does not change chemistry; this call's own receipt is appended only after the response is assembled.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          afterSequence: { type: "integer", minimum: 0 },
+          limit: { type: "integer", minimum: 1, maximum: 30 },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["afterSequence", "limit"]);
+          const afterSequence = optionalInteger(
+            parsed,
+            "afterSequence",
+            0,
+            Number.MAX_SAFE_INTEGER,
+          );
+          const limit = optionalInteger(parsed, "limit", 12, 30);
+          const allReceipts = receiptLedger.getSnapshot();
+          const matching = allReceipts.filter((receipt) => receipt.sequence > afterSequence);
+          const receipts = matching.slice(0, limit).map(cloneReceiptForOutput);
+          return {
+            ok: true,
+            sessionId: receiptLedger.getSessionId(),
+            persistence: "memory only in this browser tab; never written to saved practice",
+            retention: `latest ${MAX_TOOL_RECEIPTS} Site Tool calls`,
+            privacy:
+              "Receipts omit raw tool inputs, outputs, prompts, rationales, and learner identity. Only bounded semantic IDs and state evidence are retained.",
+            summary: summarizeToolReceipts(allReceipts),
+            latestSequence: allReceipts.at(-1)?.sequence ?? 0,
+            returnedThroughSequence: receipts.at(-1)?.sequence ?? afterSequence,
+            returned: receipts.length,
+            hasMore: matching.length > receipts.length,
+            receipts,
+            receiptTiming:
+              "This response is assembled before get_agent_action_receipts appends its own receipt.",
+          };
+        } catch (error) {
+          return toolError("INVALID_INPUT", (error as Error).message, store.getState().mechanismRevision);
+        }
       },
     },
     {
@@ -1057,6 +1202,7 @@ function defineTools(
       },
     },
   ];
+  return tools.map((tool) => instrumentTool(tool, store, receiptLedger));
 }
 
 export async function registerMechanismCanvasTools(
@@ -1064,6 +1210,7 @@ export async function registerMechanismCanvasTools(
   context: WebMcpModelContext | undefined =
     typeof document === "undefined" ? undefined : document.modelContext,
   sessionMode: "saved" | "demo" = activeSessionMode,
+  receiptLedger: ToolReceiptLedger = toolReceiptLedger,
 ): Promise<number> {
   if (!context || typeof context.registerTool !== "function") {
     dispatchStatus("manual");
@@ -1094,7 +1241,7 @@ export async function registerMechanismCanvasTools(
 
     const controller = new AbortController();
     const enabledNames = new Set(enabledToolNames(contract));
-    const tools = defineTools(store, sessionMode).filter((tool) => enabledNames.has(tool.name));
+    const tools = defineTools(store, sessionMode, receiptLedger).filter((tool) => enabledNames.has(tool.name));
     for (const tool of tools) {
       await context.registerTool(tool, { signal: controller.signal });
     }

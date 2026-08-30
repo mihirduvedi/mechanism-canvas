@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CollaborationContract } from "./components/CollaborationContract";
+import { AgentProofLedger } from "./components/AgentProofLedger";
 import { DemoNotice } from "./components/DemoNotice";
 import { DraftTray } from "./components/DraftTray";
 import { LearningRecord } from "./components/LearningRecord";
@@ -13,6 +14,7 @@ import { activeSessionMode, mechanismStore } from "./store/active-mechanism-stor
 import { useMechanismState } from "./store/use-mechanism";
 import { enabledToolCount, MECHANISM_TOOL_COUNT } from "./webmcp/register-tools";
 import { COLLABORATION_MODE_LABELS } from "./domain/collaboration-contract";
+import { toolReceiptLedger } from "./webmcp/tool-receipt-ledger";
 
 type ToolStatus = "ready" | "manual" | "error";
 
@@ -85,6 +87,11 @@ export function App() {
 
       <main className="workspace" id="mechanism-workspace">
         <CollaborationContract
+          store={mechanismStore}
+          sessionMode={activeSessionMode}
+        />
+        <AgentProofLedger
+          ledger={toolReceiptLedger}
           store={mechanismStore}
           sessionMode={activeSessionMode}
         />

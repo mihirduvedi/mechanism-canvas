@@ -5,13 +5,13 @@ Mechanism Canvas is a proof-carrying visual tutor. The learner controls what an 
 ## Fastest live path
 
 1. Open <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> in ChatGPT's built-in browser. The demo uses memory only, so it starts clean without erasing saved practice.
-2. The page starts in **Coach** mode. Confirm the contract shows **14 / 19 tools**, open the Site Tools menu, and ask the agent to call `get_collaboration_contract`.
-3. Select **Collaborate** but leave **Only I can commit checked steps** enabled. Confirm the page and Site Tools menu update to **18 / 19 tools**. This proves live capability discovery; no Site Tool can widen the contract.
+2. The page starts in **Coach** mode. Confirm the contract shows **15 / 20 tools**, the Agent Proof Ledger is empty, open the Site Tools menu, and ask the agent to call `get_collaboration_contract`.
+3. Select **Collaborate** but leave **Only I can commit checked steps** enabled. Confirm the page and Site Tools menu update to **19 / 20 tools**. This proves live capability discovery; no Site Tool can widen the contract.
 4. Paste the first prompt below.
 5. When the proposal appears, select **Add to my draft**. Ask the agent to check the complete draft, then select **Commit checked step** yourself because the commit tool remains absent.
-6. Keep the contract receipt, molecular canvas, proposal gate, and activity trail visible during the flow.
+6. Keep the contract receipt, Agent Proof Ledger, molecular canvas, proposal gate, and activity trail visible during the flow.
 
-> Use this page's Site Tools and keep every change visible. Read the collaboration contract and clean demo state, confirm that direct editing is enabled but commits are learner-only, then switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. Confirm that staging did not change the draft or mechanism revision, then stop for my decision.
+> Use this page's Site Tools and keep every change visible. Read the collaboration contract and clean demo state, confirm that direct editing is enabled but commits are learner-only, then switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. Confirm that staging did not change the draft or mechanism revision, then call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the receipt evidence from your explanation, then stop for my decision.
 
 After selecting **Add to my draft**, ask:
 
@@ -35,13 +35,14 @@ Current ChatGPT documentation says Site tools work in the desktop app's built-in
 
 | Moment | Evidence on screen | WebMCP point |
 |---|---|---|
-| Coach contract | The page and Site Tools menu show 14 of 19 tools; direct editing and commits are absent. | The learner's page controls capability discovery instead of relying on a prompt instruction. |
-| Collaborate contract | Selecting one native radio changes the live surface to 18 tools while commit remains absent. | Abortable registrations publish a new WebMCP surface; the store repeats the same authorization checks. |
+| Coach contract | The page and Site Tools menu show 15 of 20 tools; direct editing and commits are absent. | The learner's page controls capability discovery instead of relying on a prompt instruction. |
+| Collaborate contract | Selecting one native radio changes the live surface to 19 of 20 tools while commit remains absent. | Abortable registrations publish a new WebMCP surface; the store repeats the same authorization checks. |
 | Contract read | `get_collaboration_contract` returns the mode, hint ceiling, commit boundary, revision, and exact enabled names. | The agent can reason about its permissions, but no Site Tool can expand them. |
 | State read | The agent discovers six exercises, including a two-step capstone, and the current revision. | The page exposes domain state rather than forcing screenshot inference. |
 | Problem switch | The visible exercise changes to **Build methylamine in two steps**. | A tool reuses the same store and persistence path as the native selector. |
 | Partial first step | One N → C arrow appears and the validator reports an incomplete concerted substitution. | The agent can test a partial hypothesis without receiving a hidden solution. |
 | Reviewable proposal | The agent stages the missing C–Br → Br arrow in a separate panel; the draft and revision do not change until the learner accepts it. | `propose_draft_arrows` creates a real human-agent handoff. There is intentionally no site tool that can approve the proposal. |
+| Execution proof | The visible ledger and `get_agent_action_receipts` show verified reads, writes, checking, and proposal staging with the same before/after stamps. | Actual page execution—not tool prose or the chat transcript—produces privacy-minimized, inspectable evidence. |
 | Learner approval | The learner selects **Add to my draft** and the proposed arrow appears with agent provenance. | Human consent, agent authorship, and deterministic validation remain distinct events in the same store. |
 | First commit | The learner selects **Commit checked step** and the canvas advances to charged methylammonium bromide plus ammonia. | The agent can check, but the contract omits commit; deterministic app logic consumes the valid token after a visible learner action. |
 | Reaction Diff | The learner opens a side-by-side structure comparison while the agent reads the same bond, charge, and lone-pair deltas. | `compare_reached_step` reuses one pure comparison engine and rejects any pair not listed as active reached evidence. |
@@ -62,7 +63,7 @@ This fallback proves the human experience and shared command layer. It does not 
 
 ## Architecture in one sentence
 
-Reviewed fixtures, the React interface, a learner-owned 9–19-tool WebMCP surface, v6 local persistence, deterministic validation, cross-exercise evidence, provenance, comparison and replay, history navigation, and the 3D inspector all converge on one `MechanismStore`.
+Reviewed fixtures, the React interface, a learner-owned 10–20-tool WebMCP surface, a page-side proof ledger, v6 local persistence, deterministic validation, cross-exercise evidence, provenance, comparison and replay, history navigation, and the 3D inspector converge on one `MechanismStore`.
 
 The most important guardrails are visible in code and behavior:
 
@@ -78,6 +79,7 @@ The most important guardrails are visible in code and behavior:
 - A commit requires a valid check token bound to the exact revision and arrow signature.
 - Reset is destructive and requires both explicit confirmation and a current revision.
 - Tool actions appear in the same activity trail as learner actions.
+- Every registered Site Tool callback is centrally instrumented; its memory-only receipt shows the active contract, outcome, bounded semantic IDs, and before/after page stamps without retaining prompts, rationales, or raw inputs and outputs.
 - History navigation permits only reached states, leaves chemistry and revision unchanged, and makes the canvas read-only until the current step is restored.
 - Reached-step comparison and `compare_reached_step` accept only active committed transitions, return the same deterministic graph delta, and never add activity or change revision.
 - Electron Flow Replay and `replay_reached_step` present only the performed arrows from an active commit. Replay is transient UI state, not a chemistry transition, and reduced-motion users receive the complete static bundle.

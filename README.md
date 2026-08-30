@@ -2,6 +2,8 @@
 
 Mechanism Canvas is a **proof-carrying visual tutor**: a learner decides how much help an agent may provide, WebMCP exposes only those permitted actions, and a deterministic domain engine—not the model—decides whether the work is correct.
 
+Its **Agent Proof Ledger** closes the loop between a tool definition and what the page actually did. Every Site Tool invocation produces a visible, privacy-minimized receipt with the active contract, outcome, affected semantic IDs, and before/after state stamps. Learners and judges can inspect or export the same evidence the agent can read.
+
 Organic chemistry is the first proving ground. The broader contribution is a human-agent contract for any visual STEM workspace where meaning lives behind pixels: circuit editors, geometry canvases, data-flow diagrams, CAD tools, and simulations.
 
 [Open a clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) · [Read the judge guide](docs/JUDGE_GUIDE.md) · [View the demo script](docs/DEMO_SCRIPT.md)
@@ -18,9 +20,9 @@ That last distinction matters. A field experiment with nearly 1,000 students fou
 
 The learner-owned **Collaboration Contract** has three modes:
 
-- **Observe** exposes 9 read, focus, comparison, and replay tools.
-- **Coach** exposes 14 tools, including bounded checks, hints, and reviewable proposals, while the learner owns every arrow and commit.
-- **Collaborate** exposes up to 19 revision-bound tools; the learner can still keep final commits learner-only.
+- **Observe** exposes 10 read, focus, comparison, replay, and receipt tools.
+- **Coach** exposes 15 tools, including bounded checks, hints, and reviewable proposals, while the learner owns every arrow and commit.
+- **Collaborate** exposes up to 20 revision-bound tools; the learner can still keep final commits learner-only.
 
 Changing the contract updates the live WebMCP tool surface. There is deliberately no Site Tool that can change the contract. The store also rejects forbidden agent calls, so hiding a tool is not the only guard.
 
@@ -35,8 +37,9 @@ The result is not “AI that answers chemistry.” It is a shared workspace wher
 ```mermaid
 flowchart LR
   H["Learner"] --> C["Collaboration Contract"]
-  C --> A["Adaptive WebMCP surface<br/>9–19 tools"]
+  C --> A["Adaptive WebMCP surface<br/>10–20 tools"]
   A --> S["One revisioned mechanism store"]
+  A --> Q["Visible Agent Proof Ledger"]
   H --> S
   A --> P["Reviewable agent proposals"]
   H --> P
@@ -56,9 +59,9 @@ There is no agent-only state, hidden model grader, prompt-only permission, or se
 
 ## The judge path
 
-Open the [clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) in ChatGPT's built-in browser. It starts in **Coach** mode with 14 of 19 tools. Select **Collaborate** but leave **Only I can commit checked steps** enabled; the discoverable surface expands to 18 of 19 tools. Then ask:
+Open the [clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) in ChatGPT's built-in browser. It starts in **Coach** mode with 15 of 20 tools. Select **Collaborate** but leave **Only I can commit checked steps** enabled; the discoverable surface expands to 19 of 20 tools. Then ask:
 
-> Use this page's Site Tools and keep every change visible. Read the collaboration contract and clean demo state, confirm that direct editing is enabled but commits are learner-only, then switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a brief rationale, confirm that staging did not change the draft or revision, then stop for my decision.
+> Use this page's Site Tools and keep every change visible. Read the collaboration contract and clean demo state, confirm that direct editing is enabled but commits are learner-only, then switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a brief rationale, confirm that staging did not change the draft or revision, then call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the receipt evidence from your explanation, then stop for my decision.
 
 Select **Add to my draft**, ask the agent to check the now-complete draft, then select **Commit checked step** yourself—the commit tool is absent because the learner kept that boundary. Continue with comparison, replay, the second step, the shared activity trail, and one-step undo.
 
@@ -70,6 +73,7 @@ That journey demonstrates adaptive tool discovery, stable entity IDs, an intenti
 |---|---|---|
 | `get_mechanism_state` | All modes | Read the active problem, revision, draft, check, stable entity IDs, and current collaboration contract. |
 | `get_collaboration_contract` | All modes | Read the learner-owned mode, hint ceiling, commit boundary, revision, and enabled tool names. No tool can change it. |
+| `get_agent_action_receipts` | All modes | Read privacy-minimized execution receipts incrementally, including page outcomes and before/after state stamps. |
 | `get_learning_profile` | All modes | Read privacy-local cross-exercise evidence and next-practice rankings without exposing answers. |
 | `inspect_mechanism_entities` | All modes | Read atom, bond, or lone-pair data for named IDs. |
 | `get_activity_trail` | All modes | Read human, agent, validator, and contract events incrementally. |
@@ -106,8 +110,9 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 - A privacy-local Practice Compass that derives cross-exercise evidence from exact checks, hints, and completed steps, then ranks next practice without claiming mastery.
 - A second human-agent approval gate: WebMCP can stage a revision-bound practice plan, but only the learner-facing UI can start or dismiss it.
 - An active-exercise JSON learning record with download and clipboard paths; the allowlisted schema omits accepted-answer definitions, unreached state graphs, validation IDs, and dedicated learner identity fields.
-- A learner-owned Collaboration Contract whose three modes expose 9–19 WebMCP tools, cap agent hints, and optionally keep commits learner-only.
-- Nineteen top-level imperative WebMCP tools backed by the same store as the human interface, registered through an abortable adaptive surface.
+- A learner-owned Collaboration Contract whose three modes expose 10–20 WebMCP tools, cap agent hints, and optionally keep commits learner-only.
+- An Agent Proof Ledger that centrally instruments every Site Tool call, distinguishes verified, guarded, failed, and canceled outcomes, and exposes the privacy-minimized receipts to both the page and agent.
+- Twenty top-level imperative WebMCP tools backed by the same store as the human interface, registered through an abortable adaptive surface.
 - An isolated `?demo=1` session that always starts from clean SN2 reactants, reports its temporary state to the agent, and never reads or changes saved practice.
 
 ## Trust boundaries
@@ -139,6 +144,7 @@ npm run dev
 | Shared command store and v6 persistence | `src/store/mechanism-store.ts` |
 | Collaboration Contract policy | `src/domain/collaboration-contract.ts`, `src/components/CollaborationContract.tsx`, and `docs/COLLABORATION_CONTRACT.md` |
 | WebMCP registration | `src/webmcp/register-tools.ts` |
+| Agent Proof Ledger | `src/webmcp/tool-receipt-ledger.ts`, `src/components/AgentProofLedger.tsx`, and `docs/AGENT_PROOF_LEDGER.md` |
 | Visible workspace | `src/components/` |
 | Learning-record schema and privacy allowlist | `src/domain/learning-record.ts` and `docs/LEARNING_RECORD.md` |
 | Reached-step comparison engine | `src/domain/mechanism-comparison.ts` and `docs/REACTION_DIFF.md` |
