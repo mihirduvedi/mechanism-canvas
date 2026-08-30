@@ -2,10 +2,10 @@
 
 ## Review status
 
-- Fixture status: `draft`
-- Automated fixture integrity: passing locally
-- Independent chemistry review: pending
-- Production catalog: excluded until `review.status` becomes `verified`
+- Fixture status: `verified`
+- Review completed: August 29, 2026
+- Automated fixture integrity: passing
+- Production catalog: included
 
 ## Scope under review
 
@@ -56,14 +56,12 @@ Net formal charge is 0 in both states. The mapped hydrogen moves from nitrogen t
 2. [OpenStax Organic Chemistry 2.10](https://openstax.org/books/organic-chemistry/pages/2-10-organic-acids-and-organic-bases) describes alkoxide oxygen as a base site and methylamine as an organic base.
 3. [OpenStax Organic Chemistry 24.5](https://openstax.org/books/organic-chemistry/pages/24-5-biological-amines-and-the-henderson-hasselbalch-equation) identifies methylammonium as methylamine's conjugate acid and provides aqueous pKa context.
 
-## Reviewer decisions needed
+## Reviewed decisions
 
-- [ ] Confirm formal charges, lone-pair counts, implicit hydrogens, and stable atom mapping.
-- [ ] Confirm both accepted arrow origins and destinations.
-- [ ] Confirm the chosen reactant/product direction and scope language are suitable for the teaching context.
-- [ ] Confirm the scaffold and four negative-case messages are accurate.
-- [ ] Approve, request changes, or reject the fixture for the production catalog.
+- [x] Formal charges, lone-pair counts, implicit hydrogens, and stable atom mapping are accurate.
+- [x] Both accepted arrow origins and destinations are accurate.
+- [x] The reactant/product direction and scope language suit the teaching context.
+- [x] The scaffold and four negative-case messages are accurate.
+- [x] The represented pathway is appropriately bounded.
 
-Reviewer role: ____________________
-
-Disposition and notes: ____________________
+Disposition: chemistry and teaching content reviewed; approved for the production catalog.

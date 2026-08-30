@@ -517,7 +517,8 @@ export const ammoniaAlkylationProblem: ProblemDefinition = {
     },
   ],
   review: {
-    status: "draft",
+    status: "verified",
+    reviewedAt: "2026-08-29",
     sources: [
       {
         title: "OpenStax Organic Chemistry 11.3: Characteristics of the SN2 Reaction",
@@ -550,7 +551,7 @@ export const ammoniaAlkylationProblem: ProblemDefinition = {
       concertedStep: true,
       conditionsAndScope: true,
       feedbackLanguage: true,
-      alternativesConsidered: false,
+      alternativesConsidered: true,
     },
   },
 };

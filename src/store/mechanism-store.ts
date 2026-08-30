@@ -5,6 +5,7 @@ import {
   draftSignature,
   validateDraftStep,
 } from "../domain/chemistry";
+import { buildLearningProfile } from "../domain/practice-compass";
 import type {
   Actor,
   AgentDraftProposal,
@@ -13,7 +14,10 @@ import type {
   CommandResult,
   ElectronSource,
   ElectronTarget,
+  LearningProfile,
+  LearningSignal,
   MechanismState,
+  PracticePlanProposal,
   ProblemDefinition,
   ProblemStepDefinition,
   ProposedArrow,
@@ -27,8 +31,9 @@ import {
 import { findProblem, previewProblemCatalog } from "../problems/catalog";
 import { sn2Problem } from "../problems/sn2-01";
 
-const STORAGE_KEY = "mechanism-canvas:workspace:v4";
+const STORAGE_KEY = "mechanism-canvas:workspace:v5";
 const PREVIOUS_STORAGE_KEYS = [
+  "mechanism-canvas:workspace:v4",
   "mechanism-canvas:workspace:v3",
   "mechanism-canvas:workspace:v2",
 ] as const;
@@ -36,6 +41,8 @@ const LEGACY_STORAGE_KEY = "mechanism-canvas:workspace:v1";
 export const MAX_REFLECTION_LENGTH = 1200;
 export const MAX_PROPOSAL_RATIONALE_LENGTH = 400;
 export const MAX_PROPOSAL_ARROWS = 4;
+export const MAX_PRACTICE_PLAN_PROBLEMS = 3;
+export const MAX_PRACTICE_PLAN_RATIONALE_LENGTH = 400;
 
 interface PersistedProblemWorkspace {
   currentStateId: string;
@@ -50,12 +57,14 @@ interface PersistedProblemWorkspace {
   visibleScaffoldLevel?: MechanismState["visibleScaffoldLevel"];
   attemptCount: number;
   hintCount: number;
+  learningSignals?: LearningSignal[];
 }
 
 interface PersistedCatalogWorkspace {
-  version: 4;
+  version: 5;
   activeProblemId: string;
   workspaces: Record<string, PersistedProblemWorkspace>;
+  practicePlanProposal?: PracticePlanProposal | null;
 }
 
 interface LegacyPersistedWorkspace extends PersistedProblemWorkspace {
@@ -76,10 +85,18 @@ export interface StageAgentProposalInput {
   expectedRevision?: number;
 }
 
+export interface StagePracticePlanInput {
+  problemIds: string[];
+  rationale: string;
+  expectedProfileRevision: string;
+}
+
 export interface MechanismStore {
   getState: () => MechanismState;
   getProblem: () => ProblemDefinition;
   getProblems: () => readonly ProblemDefinition[];
+  getLearningProfile: () => LearningProfile;
+  getPracticePlanProposal: () => PracticePlanProposal | null;
   subscribe: (listener: () => void) => () => void;
   switchProblem: (
     problemId: string,
@@ -94,6 +111,9 @@ export interface MechanismStore {
   ) => CommandResult<AgentDraftProposal>;
   acceptAgentProposal: (proposalId: string) => CommandResult<ArrowDraft[]>;
   declineAgentProposal: (proposalId: string) => CommandResult;
+  stagePracticePlan: (input: StagePracticePlanInput) => CommandResult<PracticePlanProposal>;
+  acceptPracticePlan: (proposalId: string) => CommandResult;
+  declinePracticePlan: (proposalId: string) => CommandResult;
   removeDraftArrow: (
     arrowId: string,
     actor: Extract<Actor, "human" | "agent">,
@@ -148,6 +168,7 @@ function baseState(problem: ProblemDefinition): MechanismState {
     visibleScaffoldLevel: 0,
     attemptCount: 0,
     hintCount: 0,
+    learningSignals: [],
     hydrated: true,
   };
 }
@@ -224,6 +245,34 @@ function isPersistedAgentProposal(
   });
 }
 
+function isPersistedLearningSignal(
+  value: unknown,
+  problem: ProblemDefinition,
+): value is LearningSignal {
+  if (!value || typeof value !== "object") return false;
+  const signal = value as Partial<LearningSignal>;
+  return (
+    typeof signal.id === "string" &&
+    signal.problemId === problem.id &&
+    typeof signal.stepId === "string" &&
+    problem.steps.some((step) => step.id === signal.stepId) &&
+    typeof signal.checkedAt === "string" &&
+    typeof signal.mechanismRevision === "number" &&
+    Number.isSafeInteger(signal.mechanismRevision) &&
+    signal.mechanismRevision >= 0 &&
+    typeof signal.draftArrowCount === "number" &&
+    Number.isSafeInteger(signal.draftArrowCount) &&
+    signal.draftArrowCount >= 0 &&
+    (signal.classification === "valid" ||
+      signal.classification === "incomplete" ||
+      signal.classification === "invalid_invariant" ||
+      signal.classification === "not_accepted_path" ||
+      signal.classification === "invalid_input") &&
+    Array.isArray(signal.reasonCodes) &&
+    signal.reasonCodes.every((code) => typeof code === "string")
+  );
+}
+
 function restoreProblemState(
   problem: ProblemDefinition,
   persisted: PersistedProblemWorkspace,
@@ -257,6 +306,9 @@ function restoreProblemState(
     visibleScaffoldLevel: persisted.visibleScaffoldLevel ?? 0,
     attemptCount: persisted.attemptCount,
     hintCount: persisted.hintCount,
+    learningSignals: Array.isArray(persisted.learningSignals)
+      ? persisted.learningSignals.filter((signal) => isPersistedLearningSignal(signal, problem)).slice(-120)
+      : [],
     latestValidation: null,
     selection: { source: null },
   };
@@ -276,7 +328,34 @@ function toPersistedProblem(state: MechanismState): PersistedProblemWorkspace {
     visibleScaffoldLevel: state.visibleScaffoldLevel,
     attemptCount: state.attemptCount,
     hintCount: state.hintCount,
+    learningSignals: state.learningSignals.slice(-120),
   };
+}
+
+function isPersistedPracticePlan(
+  value: unknown,
+  catalog: readonly ProblemDefinition[],
+): value is PracticePlanProposal {
+  if (!value || typeof value !== "object") return false;
+  const proposal = value as Partial<PracticePlanProposal>;
+  if (
+    typeof proposal.id !== "string" ||
+    typeof proposal.baseProfileRevision !== "string" ||
+    typeof proposal.rationale !== "string" ||
+    proposal.rationale.trim().length < 1 ||
+    proposal.rationale.length > MAX_PRACTICE_PLAN_RATIONALE_LENGTH ||
+    typeof proposal.createdAt !== "string" ||
+    !Array.isArray(proposal.problemIds) ||
+    proposal.problemIds.length < 1 ||
+    proposal.problemIds.length > MAX_PRACTICE_PLAN_PROBLEMS ||
+    new Set(proposal.problemIds).size !== proposal.problemIds.length
+  ) {
+    return false;
+  }
+  return proposal.problemIds.every(
+    (problemId) =>
+      typeof problemId === "string" && catalog.some((problem) => problem.id === problemId),
+  );
 }
 
 function hydrateCatalog(
@@ -287,11 +366,13 @@ function hydrateCatalog(
   problem: ProblemDefinition;
   state: MechanismState;
   workspaces: Map<string, MechanismState>;
+  practicePlanProposal: PracticePlanProposal | null;
 } {
   const fallback = {
     problem: initialProblem,
     state: baseState(initialProblem),
     workspaces: new Map<string, MechanismState>(),
+    practicePlanProposal: null,
   };
   if (!storage) return fallback;
 
@@ -303,7 +384,7 @@ function hydrateCatalog(
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PersistedCatalogWorkspace> & { version?: number };
       if (
-        (parsed.version === 4 || parsed.version === 3 || parsed.version === 2) &&
+        (parsed.version === 5 || parsed.version === 4 || parsed.version === 3 || parsed.version === 2) &&
         parsed.workspaces &&
         typeof parsed.workspaces === "object"
       ) {
@@ -322,6 +403,9 @@ function hydrateCatalog(
           problem: activeProblem,
           state: workspaces.get(activeProblem.id) ?? baseState(activeProblem),
           workspaces,
+          practicePlanProposal: isPersistedPracticePlan(parsed.practicePlanProposal, catalog)
+            ? parsed.practicePlanProposal
+            : null,
         };
       }
     }
@@ -341,6 +425,7 @@ function hydrateCatalog(
       problem: initialProblem,
       state: restored,
       workspaces: new Map([[initialProblem.id, restored]]),
+      practicePlanProposal: null,
     };
   } catch {
     return fallback;
@@ -351,6 +436,7 @@ function persist(
   activeProblem: ProblemDefinition,
   state: MechanismState,
   workspaces: Map<string, MechanismState>,
+  practicePlanProposal: PracticePlanProposal | null,
   storage: Storage | null,
 ): void {
   if (!storage) return;
@@ -366,9 +452,10 @@ function persist(
     ]),
   );
   const snapshot: PersistedCatalogWorkspace = {
-    version: 4,
+    version: 5,
     activeProblemId: activeProblem.id,
     workspaces: serializedWorkspaces,
+    practicePlanProposal,
   };
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
@@ -407,10 +494,11 @@ export function createMechanismStore(
   let problem = hydrated.problem;
   let state = hydrated.state;
   const workspaces = hydrated.workspaces;
+  let practicePlanProposal = hydrated.practicePlanProposal;
   const listeners = new Set<() => void>();
 
   const emit = () => {
-    persist(problem, state, workspaces, storage);
+    persist(problem, state, workspaces, practicePlanProposal, storage);
     listeners.forEach((listener) => listener());
   };
 
@@ -447,10 +535,23 @@ export function createMechanismStore(
     };
   };
 
+  const learningProfile = (): LearningProfile =>
+    buildLearningProfile(
+      catalog.map((catalogProblem) => ({
+        problem: catalogProblem,
+        state:
+          catalogProblem.id === problem.id
+            ? state
+            : workspaces.get(catalogProblem.id) ?? baseState(catalogProblem),
+      })),
+    );
+
   return {
     getState: () => state,
     getProblem: () => problem,
     getProblems: () => catalog,
+    getLearningProfile: learningProfile,
+    getPracticePlanProposal: () => practicePlanProposal,
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -767,6 +868,143 @@ export function createMechanismStore(
       );
       return { ok: true };
     },
+    stagePracticePlan: ({ problemIds, rationale, expectedProfileRevision }) => {
+      const profile = learningProfile();
+      if (expectedProfileRevision !== profile.profileRevision) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_STATE",
+            message: "The learning evidence changed. Read the current profile before proposing a plan.",
+          },
+        };
+      }
+      const normalizedRationale = rationale.trim();
+      const uniqueProblemIds = [...new Set(problemIds)];
+      if (
+        uniqueProblemIds.length !== problemIds.length ||
+        problemIds.length < 1 ||
+        problemIds.length > MAX_PRACTICE_PLAN_PROBLEMS ||
+        problemIds.some((problemId) => !catalog.some((candidate) => candidate.id === problemId))
+      ) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: `Choose 1 to ${MAX_PRACTICE_PLAN_PROBLEMS} unique problem IDs from the learning profile.`,
+          },
+        };
+      }
+      if (
+        normalizedRationale.length < 1 ||
+        normalizedRationale.length > MAX_PRACTICE_PLAN_RATIONALE_LENGTH
+      ) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: `Give the learner a rationale from 1 to ${MAX_PRACTICE_PLAN_RATIONALE_LENGTH} characters.`,
+          },
+        };
+      }
+      const proposal: PracticePlanProposal = {
+        id: `practice_plan_${state.activitySequence + 1}_${profile.profileRevision}`,
+        baseProfileRevision: profile.profileRevision,
+        problemIds: uniqueProblemIds,
+        rationale: normalizedRationale,
+        createdAt: new Date().toISOString(),
+      };
+      practicePlanProposal = proposal;
+      update(
+        withEvent(
+          state,
+          {},
+          "agent",
+          "practice_plan_staged",
+          `Agent staged a ${proposal.problemIds.length}-exercise practice plan for learner review.`,
+        ),
+      );
+      return { ok: true, value: proposal };
+    },
+    acceptPracticePlan: (proposalId) => {
+      const proposal = practicePlanProposal;
+      if (!proposal || proposal.id !== proposalId) {
+        return {
+          ok: false,
+          error: { code: "STALE_STATE", message: "That practice plan is no longer available." },
+        };
+      }
+      if (proposal.baseProfileRevision !== learningProfile().profileRevision) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_STATE",
+            message: "The learning evidence changed after this plan was staged. Dismiss it and request a current plan.",
+          },
+        };
+      }
+      const nextProblem = findProblem(catalog, proposal.problemIds[0]);
+      if (!nextProblem) {
+        return {
+          ok: false,
+          error: { code: "TARGET_NOT_SUPPORTED", message: "The first planned exercise is unavailable." },
+        };
+      }
+      if (nextProblem.id !== problem.id) {
+        workspaces.set(problem.id, {
+          ...state,
+          latestValidation: null,
+          selection: { source: null },
+        });
+        problem = nextProblem;
+        const restored = workspaces.get(problem.id) ?? baseState(problem);
+        state = withEvent(
+          restored,
+          {
+            mechanismRevision: restored.mechanismRevision + 1,
+            latestValidation: null,
+            selection: { source: null },
+            focusEntityIds: [],
+            visibleScaffoldLevel: 0,
+            historyViewStateId: null,
+          },
+          "human",
+          "practice_plan_accepted",
+          `Started the learner-approved practice plan with ${problem.title}.`,
+        );
+      } else {
+        state = withEvent(
+          state,
+          {},
+          "human",
+          "practice_plan_accepted",
+          `Started the learner-approved practice plan with ${problem.title}.`,
+        );
+      }
+      practicePlanProposal = null;
+      emit();
+      return { ok: true };
+    },
+    declinePracticePlan: (proposalId) => {
+      const proposal = practicePlanProposal;
+      if (!proposal || proposal.id !== proposalId) {
+        return {
+          ok: false,
+          error: { code: "STALE_STATE", message: "That practice plan is no longer available." },
+        };
+      }
+      practicePlanProposal = null;
+      update(
+        withEvent(
+          state,
+          {},
+          "human",
+          "practice_plan_declined",
+          "Dismissed the agent practice plan; exercise progress stayed unchanged.",
+        ),
+      );
+      return { ok: true };
+    },
     removeDraftArrow: (arrowId, actor, expectedRevision) => {
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
       if (!revisionCheck.ok) return revisionCheck;
@@ -824,12 +1062,28 @@ export function createMechanismStore(
         state.mechanismRevision,
       );
       const focusIds = result.issues.flatMap((validationIssue) => validationIssue.focusEntityIds);
+      const activeStep = problemStepForState(problem, state.currentStateId);
+      const learningSignal: LearningSignal | null = activeStep
+        ? {
+            id: `signal_${state.attemptCount + 1}_${state.mechanismRevision}`,
+            problemId: problem.id,
+            stepId: activeStep.id,
+            checkedAt: new Date().toISOString(),
+            mechanismRevision: state.mechanismRevision,
+            draftArrowCount: state.draftArrows.length,
+            classification: result.classification,
+            reasonCodes: result.issues.map((issue) => issue.code),
+          }
+        : null;
       update(
         withEvent(
           state,
           {
             latestValidation: result,
             attemptCount: state.attemptCount + 1,
+            learningSignals: learningSignal
+              ? [...state.learningSignals, learningSignal].slice(-120)
+              : state.learningSignals,
             focusEntityIds: [...new Set(focusIds)],
             historyViewStateId: null,
           },

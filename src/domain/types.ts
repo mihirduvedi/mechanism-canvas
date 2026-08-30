@@ -68,6 +68,14 @@ export interface AgentDraftProposal {
   createdAt: string;
 }
 
+export interface PracticePlanProposal {
+  id: string;
+  baseProfileRevision: string;
+  problemIds: string[];
+  rationale: string;
+  createdAt: string;
+}
+
 export interface AcceptedArrow {
   source: ElectronSource;
   target: ElectronTarget;
@@ -205,6 +213,64 @@ export interface ValidationResult {
   draftSignature: string;
 }
 
+export interface LearningSignal {
+  id: string;
+  problemId: string;
+  stepId: string;
+  checkedAt: string;
+  mechanismRevision: number;
+  draftArrowCount: number;
+  classification: ValidationClass;
+  reasonCodes: ReasonCode[];
+}
+
+export type PracticeEvidenceStatus = "not_started" | "building" | "demonstrated";
+
+export type PracticeSkillId =
+  | "electron_sources"
+  | "concerted_steps"
+  | "bond_direction"
+  | "sn2_pathways"
+  | "proton_transfer";
+
+export interface PracticeSkillEvidence {
+  id: PracticeSkillId;
+  label: string;
+  description: string;
+  status: PracticeEvidenceStatus;
+  relevantSteps: number;
+  completedSteps: number;
+  checkCount: number;
+  issueCount: number;
+}
+
+export interface PracticeProblemProgress {
+  problemId: string;
+  title: string;
+  reactionFamily: ProblemDefinition["reactionFamily"];
+  difficulty: ProblemDefinition["difficulty"];
+  completedSteps: number;
+  totalSteps: number;
+  attemptCount: number;
+  hintCount: number;
+  status: "not_started" | "in_progress" | "complete";
+}
+
+export interface PracticeRecommendation extends PracticeProblemProgress {
+  reason: string;
+}
+
+export interface LearningProfile {
+  profileRevision: string;
+  completedSteps: number;
+  totalSteps: number;
+  completedProblems: number;
+  totalProblems: number;
+  skills: PracticeSkillEvidence[];
+  problems: PracticeProblemProgress[];
+  recommendations: PracticeRecommendation[];
+}
+
 export interface ActivityEvent {
   id: string;
   sequence: number;
@@ -225,7 +291,10 @@ export interface ActivityEvent {
     | "reflection_removed"
     | "proposal_staged"
     | "proposal_accepted"
-    | "proposal_declined";
+    | "proposal_declined"
+    | "practice_plan_staged"
+    | "practice_plan_accepted"
+    | "practice_plan_declined";
   summary: string;
   entityIds: string[];
   timestamp: string;
@@ -266,6 +335,7 @@ export interface MechanismState {
   visibleScaffoldLevel: 0 | 1 | 2 | 3 | 4;
   attemptCount: number;
   hintCount: number;
+  learningSignals: LearningSignal[];
   hydrated: boolean;
 }
 

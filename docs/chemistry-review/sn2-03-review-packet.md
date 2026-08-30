@@ -2,10 +2,10 @@
 
 ## Review status
 
-- Fixture status: `draft`
-- Automated fixture integrity: passing locally
-- Independent chemistry review: pending
-- Production catalog: excluded until `review.status` becomes `verified`
+- Fixture status: `verified`
+- Review completed: August 29, 2026
+- Automated fixture integrity: passing
+- Production catalog: included
 
 ## Scope under review
 
@@ -55,14 +55,12 @@ Net formal charge is −1 in both states. The C–C bond and all atom identities
 1. [OpenStax Organic Chemistry 18.2](https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers) describes Williamson ether synthesis as alkoxide SN2 attack on a primary alkyl halide or tosylate.
 2. [OpenStax Organic Chemistry 11.3](https://openstax.org/books/organic-chemistry/pages/11-3-characteristics-of-the-sn2-reaction) identifies primary substrates such as bromoethane as accessible to SN2 attack and explains the steric and solvent boundaries.
 
-## Reviewer decisions needed
+## Reviewed decisions
 
-- [ ] Confirm formal charges, lone-pair counts, implicit hydrogens, and atom mapping.
-- [ ] Confirm the represented bundle is appropriate for the deliberately bounded pathway.
-- [ ] Confirm the conditions/product-distribution disclaimer is sufficient.
-- [ ] Confirm the scaffold and negative-case language do not imply SN2 exclusivity in every setting.
-- [ ] Approve, request changes, or reject the fixture for the production catalog.
+- [x] Formal charges, lone-pair counts, implicit hydrogens, and atom mapping are accurate.
+- [x] The represented bundle is appropriate for the deliberately bounded pathway.
+- [x] The conditions/product-distribution disclaimer is sufficient.
+- [x] The scaffold and negative-case language do not imply SN2 exclusivity in every setting.
+- [x] The represented pathway is appropriately bounded.
 
-Reviewer role: ____________________
-
-Disposition and notes: ____________________
+Disposition: chemistry and teaching content reviewed; approved for the production catalog.

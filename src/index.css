@@ -50,8 +50,445 @@
   --font-code: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
 
+/* Practice Compass — cross-exercise evidence and learner-controlled agent plans. */
+.practice-compass {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  border: 1px solid var(--surface-evidence-border);
+  background: var(--paper);
+  box-shadow: var(--shadow-support);
+}
+
+.practice-compass__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px 18px;
+  border-block-end: 1px solid var(--surface-evidence-border);
+  background: linear-gradient(112deg, var(--surface-evidence) 0%, #edf4ff 56%, var(--paper) 100%);
+}
+
+.practice-compass__header h2,
+.practice-compass__subheading h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+.practice-compass__header h2 {
+  font-size: clamp(1.35rem, 2.1vw, 1.85rem);
+}
+
+.practice-compass__header > div > p:last-child {
+  max-inline-size: 690px;
+  margin: 7px 0 0;
+  color: var(--ink-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.practice-compass__privacy {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-block-size: 31px;
+  padding: 5px 10px;
+  border: 1px solid #9eb6dc;
+  background: rgb(255 255 255 / 76%);
+  color: var(--evidence);
+  font-size: 0.68rem;
+  font-weight: 760;
+}
+
+.practice-compass__overview {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.48fr) minmax(0, 2fr);
+  border-block-end: 1px solid var(--rule);
+}
+
+.practice-compass__progress {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px 24px;
+  border-inline-end: 1px solid var(--rule);
+  background: #f7faff;
+}
+
+.practice-compass__progress > span,
+.practice-compass__subheading > div > span {
+  color: var(--ink-faint);
+  font-size: 0.64rem;
+  font-weight: 780;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.practice-compass__progress strong {
+  margin-block: 9px;
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  letter-spacing: -0.05em;
+}
+
+.practice-compass__progress strong small {
+  color: var(--ink-secondary);
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+
+.practice-compass__progress-track {
+  overflow: hidden;
+  block-size: 7px;
+  border: 1px solid #b4c5e0;
+  background: #e9eff9;
+}
+
+.practice-compass__progress-track > span {
+  display: block;
+  block-size: 100%;
+  background: var(--evidence);
+  transition: inline-size 220ms ease;
+}
+
+.practice-compass__progress p {
+  margin: 8px 0 0;
+  color: var(--ink-secondary);
+  font-size: 0.7rem;
+}
+
+.practice-compass__skills {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+}
+
+.practice-skill {
+  min-inline-size: 0;
+  padding: 18px 16px;
+  border-inline-end: 1px solid var(--rule);
+}
+
+.practice-skill:last-child {
+  border-inline-end: 0;
+}
+
+.practice-skill > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.practice-skill__mark {
+  display: grid;
+  place-items: center;
+  inline-size: 25px;
+  block-size: 25px;
+  flex: 0 0 auto;
+  border: 1px solid var(--rule-strong);
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.practice-skill--building .practice-skill__mark {
+  border-color: #c28c22;
+  background: var(--amber-soft);
+  color: #684100;
+}
+
+.practice-skill--demonstrated .practice-skill__mark {
+  border-color: #5d9d84;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.practice-skill strong {
+  font-size: 0.77rem;
+  line-height: 1.25;
+}
+
+.practice-skill > span {
+  display: block;
+  margin: 9px 0 6px 33px;
+  color: var(--evidence);
+  font-size: 0.64rem;
+  font-weight: 780;
+}
+
+.practice-skill p,
+.practice-skill small {
+  display: block;
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.practice-skill small {
+  margin-block-start: 9px;
+  color: var(--ink-faint);
+  font-family: var(--font-data);
+  font-size: 0.6rem;
+}
+
+.practice-compass__lower {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(300px, 0.9fr);
+}
+
+.practice-recommendations,
+.practice-plan {
+  padding: 20px 24px 22px;
+}
+
+.practice-recommendations {
+  border-inline-end: 1px solid var(--rule);
+}
+
+.practice-plan {
+  background: #f8fbff;
+}
+
+.practice-compass__subheading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-block-end: 14px;
+}
+
+.practice-compass__subheading h3 {
+  margin-block-start: 3px;
+  font-size: 1rem;
+}
+
+.practice-compass__subheading code {
+  color: var(--ink-faint);
+  font-family: var(--font-code);
+  font-size: 0.58rem;
+}
+
+.practice-recommendations ol,
+.practice-plan ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practice-recommendations li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 11px;
+  padding: 12px 0;
+  border-block-start: 1px solid var(--rule);
+}
+
+.practice-recommendations li > span {
+  color: var(--evidence);
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.practice-recommendations li strong,
+.practice-recommendations li small {
+  display: block;
+}
+
+.practice-recommendations li strong {
+  font-size: 0.79rem;
+}
+
+.practice-recommendations li small {
+  margin-block-start: 2px;
+  color: var(--evidence);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.practice-recommendations li p,
+.practice-recommendations__complete {
+  margin: 5px 0 0;
+  color: var(--ink-secondary);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.practice-plan__status {
+  color: var(--evidence);
+  font-size: 0.64rem;
+  font-weight: 780;
+}
+
+.practice-plan.is-stale .practice-plan__status,
+.practice-plan__warning {
+  color: var(--rust);
+}
+
+.practice-plan__content > p {
+  margin: 0 0 12px;
+  color: var(--ink-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.practice-plan__content ol {
+  counter-reset: planned;
+  margin-block-end: 16px;
+}
+
+.practice-plan__content li {
+  counter-increment: planned;
+  padding: 8px 0;
+  border-block-start: 1px solid var(--rule);
+  font-size: 0.72rem;
+  font-weight: 720;
+}
+
+.practice-plan__content li::before {
+  content: counter(planned, decimal-leading-zero);
+  display: inline-block;
+  inline-size: 32px;
+  color: var(--evidence);
+  font-family: var(--font-code);
+  font-size: 0.63rem;
+}
+
+.practice-plan__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-block-end: 12px;
+}
+
+.practice-plan__content > small {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 0.63rem;
+  line-height: 1.45;
+}
+
+.practice-plan__empty {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  min-block-size: 95px;
+  padding: 14px;
+  border: 1px dashed #9eb6dc;
+  background: var(--paper);
+}
+
+.practice-plan__empty > span {
+  color: var(--evidence);
+  font-family: var(--font-code);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.practice-plan__empty p {
+  margin: 0;
+  color: var(--ink-secondary);
+  font-size: 0.72rem;
+  line-height: 1.48;
+}
+
+@media (max-width: 1180px) {
+  .practice-compass__overview,
+  .practice-compass__lower {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-compass__progress,
+  .practice-recommendations {
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .practice-compass__skills {
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+  }
+
+  .practice-skill:nth-child(3) {
+    border-inline-end: 0;
+  }
+
+  .practice-skill:nth-child(n + 4) {
+    border-block-start: 1px solid var(--rule);
+  }
+}
+
+@media (max-width: 680px) {
+  .practice-compass__header {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 19px 17px 16px;
+  }
+
+  .practice-compass__privacy {
+    align-self: flex-start;
+  }
+
+  .practice-compass__subheading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .practice-compass__progress,
+  .practice-recommendations,
+  .practice-plan {
+    padding-inline: 17px;
+  }
+
+  .practice-compass__skills {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-skill,
+  .practice-skill:nth-child(3) {
+    border-inline-end: 0;
+  }
+
+  .practice-skill + .practice-skill {
+    border-block-start: 1px solid var(--rule);
+  }
+
+  .practice-plan__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .practice-plan__actions .button,
+  .practice-plan__actions .text-button {
+    inline-size: 100%;
+    min-block-size: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .practice-compass__progress-track > span {
+    transition: none;
+  }
+}
+
 * {
   box-sizing: border-box;
+}
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 html {

@@ -1,6 +1,6 @@
 # Demo script: under three minutes
 
-**Target runtime:** 2:40–2:55
+**Target runtime:** 2:50–2:59
 **Format:** screen recording with live narration
 **Primary frame:** deployed app in ChatGPT's built-in browser, with the Site tools menu shown once near the start
 
@@ -14,11 +14,11 @@
 
 ## 0:18–0:36 — The WebMCP idea
 
-**On screen:** Open the Site tools menu and show the 16 available tools. Return to the page.
+**On screen:** Open the Site tools menu and show the 18 available tools. Return to the page.
 
 **Narration:**
 
-> Mechanism Canvas gives the open page sixteen narrow site tools. The learner and the agent share one revisioned chemistry store, one canvas, one reaction timeline, and one activity trail. The model never grades the chemistry.
+> Mechanism Canvas gives the open page eighteen narrow site tools. The learner and the agent share one chemistry store, one canvas, one reaction timeline, and one local evidence map. The model never grades the chemistry.
 
 ## 0:36–0:58 — Discover the capstone
 
@@ -60,7 +60,7 @@
 
 > The app and agent read the same exact bond, charge, and lone-pair delta, then replay the arrows the learner actually committed. The trace explains electron bookkeeping; it does not apply the chemistry again or claim to show a physical transition state. Comparison, replay, and history leave revision untouched and refuse future states.
 
-## 2:20–2:43 — Finish and inspect the proof
+## 2:20–2:39 — Finish and inspect the proof
 
 **On screen:** Agent adds `lp_n_base_1 → h_transfer` and `bond_n_attack_h_transfer → n_attacker`, checks, commits, and reads the activity trail.
 
@@ -68,13 +68,21 @@
 
 > A second, separately checked step transfers the mapped proton to excess ammonia. Methylamine and ammonium bromide appear, while every agent, validator, history, and commit event remains visible in one structured trail.
 
-## 2:43–2:57 — Reversibility and close
+## 2:39–2:49 — Reversibility
 
 **On screen:** Agent calls `undo_last_commit`; show the exact intermediate return while the earlier commit remains reached.
 
 **Narration:**
 
-> Undo reverses only the last elementary step. Mechanism Canvas shows what WebMCP adds to a visual learning tool: shared semantics, bounded actions, deterministic checks, and a learner who stays in control.
+> Undo reverses only the last elementary step while keeping the earlier evidence intact.
+
+## 2:49–2:59 — Turn evidence into next practice
+
+**On screen:** Agent calls `get_learning_profile`, then `propose_practice_plan` with the returned profile revision and two recommended exercises. Show the visible Practice Compass plan and its unchanged chemistry. End on the learner-only **Start this plan** button.
+
+**Narration:**
+
+> Now the page turns exact checks into a private cross-exercise evidence map. The agent can stage what to practice next, but only the learner can start the plan. WebMCP adds continuity without taking away control.
 
 ## Recording checklist
 
@@ -84,6 +92,7 @@
 - Keep the proposal panel visible long enough to show that staging did not alter the draft or revision.
 - Click **Add to my draft** yourself; do not use browser automation to bypass the learner-only gate.
 - Keep the incomplete check and read-only history banner on screen long enough to read.
-- Do not describe the fixtures as chemistry-reviewed; the review badge must remain visible.
+- Show the **Chemistry reviewed** badge and the reviewed-library footer at least once.
+- End with the visible Practice Compass and its learner-only plan action.
 - Record at 1440 × 900 or a similar desktop size with browser zoom at 100%.
 - Keep the final cut under three minutes and confirm that narration is audible before publishing.

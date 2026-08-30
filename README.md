@@ -46,6 +46,8 @@ That journey demonstrates discovery, stable entity IDs, an intentionally incompl
 | Tool | Contract |
 |---|---|
 | `get_mechanism_state` | Read the active problem, revision, draft, check, and stable entity IDs. |
+| `get_learning_profile` | Read privacy-local cross-exercise evidence, progress, and deterministic next-practice rankings without exposing answers. |
+| `propose_practice_plan` | Stage an ordered 1–3 exercise plan against the current profile revision for visible learner approval. |
 | `inspect_mechanism_entities` | Read atom, bond, or lone-pair data for named IDs. |
 | `get_activity_trail` | Read human, agent, and validator events incrementally without changing state. |
 | `view_mechanism_history_state` | Show a reached reactant, intermediate, or product state without changing committed chemistry. |
@@ -66,7 +68,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 
 ## What is implemented
 
-- Six structurally checked fixtures: three SN2 exercises, two proton-transfer exercises, and a two-step ammonia-alkylation capstone with a charged intermediate.
+- Six chemistry-reviewed fixtures: three SN2 exercises, two proton-transfer exercises, and a two-step ammonia-alkylation capstone with a charged intermediate.
 - Clickable and keyboard-operable SVG atoms, bonds, and lone pairs.
 - Atomic multi-arrow validation with distinct incomplete, invariant-error, authored-path, accepted, and invalid-input results.
 - Explicit check, revision-bound commit, undo, reset, per-problem local persistence, and shared actor provenance.
@@ -77,13 +79,15 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 - Reached-step evidence: a responsive before/after comparison with collision-safe shared molecule rendering, exact bond and atom-property deltas, undo-aware reachability, and an Electron Flow Replay of the performed arrows.
 - Learner reflections attached to exact commits, including reversed commits, without changing chemistry revision or validation authority.
 - A compact local instructor view for checks, hints, performed arrow bundles, reversals, and learner reflections.
+- A privacy-local Practice Compass that derives cross-exercise evidence from exact checks, hints, and completed steps, then ranks next practice without claiming mastery.
+- A second human-agent approval gate: WebMCP can stage a revision-bound practice plan, but only the learner-facing UI can start or dismiss it.
 - An active-exercise JSON learning record with download and clipboard paths; the allowlisted schema omits accepted-answer definitions, unreached state graphs, validation IDs, and dedicated learner identity fields.
-- Sixteen top-level imperative WebMCP tools backed by the same store as the human interface.
+- Eighteen top-level imperative WebMCP tools backed by the same store as the human interface.
 - An isolated `?demo=1` session that always starts from clean SN2 reactants, reports its temporary state to the agent, and never reads or changes saved practice.
 
 ## Trust boundaries
 
-All six fixtures pass automated structure and transition checks, but they remain labeled `draft` until an independent chemistry reviewer approves the exact representations and teaching language. The app is an educational prototype, not a reaction predictor or chemistry authority.
+All six fixtures are chemistry reviewed and pass automated structure, transition, and negative-case checks. The app remains a bounded educational tool, not a reaction predictor or chemistry authority.
 
 The validator is deterministic and fixture-bound. The 3D view is explanatory rather than a quantum calculation, molecular-dynamics simulation, conformer prediction, or claim about kinetics. Progress stays in the browser: there is no account, backend, model API call, telemetry pipeline, or cloud sync. Learning-record exports are generated only after a learner selects Download JSON or Copy JSON; Mechanism Canvas does not upload them.
 
@@ -107,13 +111,14 @@ npm run dev
 |---|---|
 | Domain model and validator | `src/domain/` |
 | Reviewed fixture boundary | `src/problems/` |
-| Shared command store | `src/store/mechanism-store.ts` |
+| Shared command store and v5 persistence | `src/store/mechanism-store.ts` |
 | WebMCP registration | `src/webmcp/register-tools.ts` |
 | Visible workspace | `src/components/` |
 | Learning-record schema and privacy allowlist | `src/domain/learning-record.ts` and `docs/LEARNING_RECORD.md` |
 | Reached-step comparison engine | `src/domain/mechanism-comparison.ts` and `docs/REACTION_DIFF.md` |
 | Electron Flow Replay | `src/domain/reaction-replay.ts`, `src/components/mechanism-arrow-layout.ts`, and `docs/ELECTRON_FLOW_REPLAY.md` |
 | Reviewable agent proposals | `src/store/mechanism-store.ts`, `src/components/ReasoningPanel.tsx`, and `docs/AGENT_DRAFT_PROPOSALS.md` |
+| Practice Compass | `src/domain/practice-compass.ts`, `src/components/PracticeCompass.tsx`, and `docs/PRACTICE_COMPASS.md` |
 | Six-fixture problem library | `src/problems/library-expansion.ts` and `docs/PROBLEM_LIBRARY_EXPANSION.md` |
 | Visual system | `src/index.css` and `DESIGN.md` |
 | Chemistry review packets | `docs/chemistry-review/` |

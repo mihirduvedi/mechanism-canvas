@@ -5,7 +5,7 @@ Mechanism Canvas turns curved-arrow chemistry into a shared human-agent workspac
 ## Fastest live path
 
 1. Open <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> in ChatGPT's built-in browser. The demo uses memory only, so it starts clean without erasing saved practice.
-2. Confirm that the address bar's Site tools menu lists 16 tools.
+2. Confirm that the address bar's Site tools menu lists 18 tools.
 3. Paste the first prompt below.
 4. When the visible proposal appears, select **Add to my draft** and tell the agent to continue.
 5. Keep the molecular canvas, proposal gate, and activity trail visible while the agent works.
@@ -15,6 +15,12 @@ Mechanism Canvas turns curved-arrow chemistry into a shared human-agent workspac
 After selecting **Add to my draft**, continue with:
 
 > Read the current state again. Check and commit the intermediate. Call compare_reached_step for amine_reactants → methylammonium_intermediate, summarize the exact bond and charge changes, then call replay_reached_step for the same pair. Return to the current intermediate if needed. Add lp_n_base_1 → h_transfer and bond_n_attack_h_transfer → n_attacker, check, and commit the products. Read back the shared activity trail, then undo only the last commit.
+
+Finish with the new cross-exercise loop:
+
+> Call get_learning_profile and summarize only the evidence it returns, without calling it mastery. Then call propose_practice_plan with the current profile revision and up to three recommended exercise IDs. Explain that the plan did not switch exercises or change chemistry, then stop for my decision.
+
+The learner—not the agent—can now select **Start this plan** in the visible Practice Compass.
 
 Current ChatGPT documentation says Site tools work in the desktop app's built-in browser with supported models and may depend on account rollout. The full interface remains usable when `document.modelContext` is unavailable.
 
@@ -34,6 +40,9 @@ Current ChatGPT documentation says Site tools work in the desktop app's built-in
 | Second commit | Two proton-transfer arrows advance the same mapped atoms to methylamine plus ammonium bromide. | Each elementary step has a separate revision-bound validation and commit gate. |
 | Activity read | Human, agent, validator, history-view, and commit events match the visible trail. | The collaboration record is structured and inspectable. |
 | Undo | Only the second commit reverses; the exact charged intermediate returns. | Multi-step agent writes remain controlled and recoverable in LIFO order. |
+| Practice Compass read | Exact checks, hints, and completed steps become a local evidence map and ranked next-practice list. | `get_learning_profile` turns prior interaction into useful cross-exercise context without identities, cloud data, or authored answers. |
+| Practice-plan handoff | An ordered plan appears without switching the exercise or changing chemistry. | `propose_practice_plan` is bound to an evidence revision; there is intentionally no Site Tool that can start it. |
+| Learner starts plan | The first planned exercise opens only after the visible **Start this plan** action. | Agent recommendation and learner authority remain separate, inspectable events. |
 
 ## Manual fallback
 
@@ -43,12 +52,13 @@ This fallback proves the human experience and shared command layer. It does not 
 
 ## Architecture in one sentence
 
-Problem fixtures, the React interface, sixteen top-level site tools, local persistence, deterministic validation, provenance, reached-state comparison and replay, history navigation, and the 3D inspector all converge on one revisioned `MechanismStore`.
+Reviewed problem fixtures, the React interface, eighteen top-level site tools, v5 local persistence, deterministic validation, cross-exercise evidence, provenance, reached-state comparison and replay, history navigation, and the 3D inspector all converge on one `MechanismStore`.
 
 The most important guardrails are visible in code and behavior:
 
 - Every mutating tool uses the current `mechanismRevision`.
 - A staged proposal is bound to the current problem, state, and revision; it cannot change the draft or be approved through WebMCP.
+- A staged practice plan is bound to the current evidence revision; it cannot switch exercises, change chemistry, count progress, or be approved through WebMCP.
 - Learner acceptance adds the proposal as agent-authored draft arrows, increments the revision once, and still grants no validation or commit authority.
 - Editing a draft invalidates its previous check.
 - A commit requires a valid check token bound to the exact revision and arrow signature.
@@ -62,6 +72,6 @@ The most important guardrails are visible in code and behavior:
 
 ## Honest boundary
 
-The current fixtures pass automated structural checks, charge conservation checks, authored transition checks, negative-case checks, store tests, and tool-journey tests. Independent chemistry review is still pending, so all six exercises are plainly marked **Prototype · review pending** and are excluded from the production fixture catalog.
+All six fixtures are chemistry reviewed and enter the production catalog. They also pass automated structural checks, charge-conservation checks, authored-transition checks, negative-case checks, store tests, and tool-journey tests. Review status and automated verification remain separate metadata and evidence layers.
 
 The 3D view is explanatory. It does not claim quantum chemistry, molecular dynamics, conformer prediction, kinetics, or reaction energetics.

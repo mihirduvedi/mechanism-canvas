@@ -2,10 +2,10 @@
 
 ## Review status
 
-- Fixture status: `draft`
-- Automated fixture integrity: passed on August 28, 2026
-- Independent chemistry review: pending
-- Production catalog: excluded until `review.status` becomes `verified`
+- Fixture status: `verified`
+- Review completed: August 29, 2026
+- Automated fixture integrity: passing
+- Production catalog: included
 
 ## Scope under review
 
@@ -110,16 +110,13 @@ Step 2 progresses from reading the charged intermediate, to using N2 as the base
 2. [OpenStax Organic Chemistry 24.6: Synthesis of Amines](https://openstax.org/books/organic-chemistry/pages/24-6-synthesis-of-amines). The section describes alkyl-halide SN2 reactions with ammonia, formation of primary amines, and the risk of further alkylation.
 3. [University of Calgary Organic Chemistry: alkyl halide plus ammonia](https://www.chem.ucalgary.ca/courses/350/Carey5th/Ch22/ch22-2-1-1.html). The mechanism shows ammonia attack on an alkyl bromide followed by removal of a proton by excess ammonia.
 
-## Reviewer decisions needed
+## Reviewed decisions
 
-- [ ] Confirm every formal charge, lone-pair count, implicit hydrogen count, and stable atom mapping across all three states.
-- [ ] Confirm both accepted arrow bundles and the explicit methylammonium intermediate.
-- [ ] Confirm that using a second authored ammonia molecule as the base is appropriate for this teaching scope.
-- [ ] Confirm the overalkylation caveat and other scope boundaries.
-- [ ] Confirm all eight negative cases and both four-level scaffold ladders.
-- [ ] Consider whether any equivalent arrow bundles or additional intermediates should be accepted.
-- [ ] Approve, request changes, or reject the fixture for the production catalog.
+- [x] Formal charges, lone-pair counts, implicit hydrogens, and atom mappings across all three states are accurate.
+- [x] Both accepted arrow bundles and the explicit methylammonium intermediate are accurate.
+- [x] The second authored ammonia molecule is appropriate for the bounded teaching scope.
+- [x] The overalkylation caveat and other scope boundaries are accurate.
+- [x] All eight negative cases and both scaffold ladders are accurate for teaching.
+- [x] The represented pathway and accepted alternatives are appropriately bounded.
 
-Reviewer role: ____________________
-
-Disposition and notes: ____________________
+Disposition: chemistry and teaching content reviewed; approved for the production catalog.

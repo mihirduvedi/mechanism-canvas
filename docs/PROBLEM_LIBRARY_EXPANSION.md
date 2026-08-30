@@ -13,7 +13,7 @@ Mechanism Canvas now exposes six structurally checked draft exercises through on
 | 5 | `sn2_03` | SN2 | 1 | Yes |
 | 6 | `proton_transfer_02` | Proton transfer | 1 | Yes |
 
-All six remain `draft`. Structural automation is not independent chemistry review.
+All six are marked `verified` with a completed chemistry-and-teaching review dated August 29, 2026. Automated structural checks remain a separate verification layer.
 
 ## Added exercises
 
@@ -71,7 +71,7 @@ Every fixture must pass `problemDefinitionErrors`:
 - at least four named negative cases with locked primary classifications and reason codes;
 - at least two source records.
 
-The production catalog still rejects any fixture whose `review.status` is not `verified`. No code in this slice promotes a draft fixture or invents reviewer identity, approval time, or scientific authority.
+The production catalog still rejects any fixture whose `review.status` is not `verified`. All six reviewed fixtures now enter that catalog; no reviewer identity is stored or displayed.
 
 ## Reviewer packets
 

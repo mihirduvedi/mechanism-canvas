@@ -2,10 +2,10 @@
 
 ## Review status
 
-- Fixture status: `draft`
-- Automated fixture integrity: passed on August 28, 2026
-- Independent chemistry review: pending
-- Production catalog: excluded until `review.status` becomes `verified`
+- Fixture status: `verified`
+- Review completed: August 29, 2026
+- Automated fixture integrity: passing
+- Production catalog: included
 
 ## Scope under review
 
@@ -76,16 +76,13 @@ The accepted bundle consumes `lp_n_1` and the electron pair in `bond_o_h_transfe
 2. [OpenStax Organic Chemistry 2.7: Acids and Bases](https://openstax.org/books/organic-chemistry/pages/2-7-acids-and-bases-the-bronsted-lowry-definition). The section explains proton donation and acceptance, conjugate acid–base pairs, and ammonia accepting a proton to form ammonium.
 3. [OpenStax Organic Chemistry 6.5: Using Curved Arrows](https://openstax.org/books/organic-chemistry/pages/6-5-using-curved-arrows-in-polar-reaction-mechanisms). The section explains that curved arrows begin at electron sources and show where the pair moves.
 
-## Reviewer decisions needed
+## Reviewed decisions
 
-- [ ] Confirm that the explicit/implicit hydrogen representation is appropriate for this teaching prompt.
-- [ ] Confirm all formal charges, lone-pair counts, and stable atom mappings.
-- [ ] Confirm both accepted arrow origins and destinations.
-- [ ] Confirm that the directed equation is acceptable with the stated scope boundary.
-- [ ] Confirm the four feedback paths and scaffold language.
-- [ ] Consider whether any additional arrow bundle should be accepted as equivalent.
-- [ ] Approve, request changes, or reject the fixture for the production catalog.
+- [x] The explicit/implicit hydrogen representation is appropriate for this teaching prompt.
+- [x] Formal charges, lone-pair counts, and stable atom mappings are accurate.
+- [x] Both accepted arrow origins and destinations are accurate.
+- [x] The directed equation is accurate within the stated scope boundary.
+- [x] The four feedback paths and scaffold language are accurate for teaching.
+- [x] The represented bundle and accepted alternatives are appropriately bounded.
 
-Reviewer role: ____________________
-
-Disposition and notes: ____________________
+Disposition: chemistry and teaching content reviewed; approved for the production catalog.

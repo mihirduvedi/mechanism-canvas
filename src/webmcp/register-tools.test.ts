@@ -14,13 +14,15 @@ function contextHarness() {
 }
 
 describe("WebMCP site tool registration", () => {
-  it("registers the full sixteen-tool catalog with guarded proposals, history, comparison, and replay", async () => {
+  it("registers the full eighteen-tool catalog with guarded plans, proposals, history, comparison, and replay", async () => {
     const store = createMechanismStore(undefined, null);
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(16);
+    expect(count).toBe(18);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
+      "get_learning_profile",
+      "propose_practice_plan",
       "inspect_mechanism_entities",
       "get_activity_trail",
       "view_mechanism_history_state",
@@ -53,6 +55,16 @@ describe("WebMCP site tool registration", () => {
       readOnlyHint: false,
       destructiveHint: false,
     });
+    expect(tools.find((tool) => tool.name === "get_learning_profile")?.annotations).toMatchObject({
+      readOnlyHint: true,
+      idempotentHint: true,
+      openWorldHint: false,
+    });
+    expect(tools.find((tool) => tool.name === "propose_practice_plan")?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: false,
+    });
     expect(tools.some((tool) => tool.name.includes("accept") && tool.name.includes("proposal"))).toBe(
       false,
     );
@@ -63,14 +75,57 @@ describe("WebMCP site tool registration", () => {
       ?.execute({});
     expect(stateRead).toMatchObject({
       availableProblems: [
-        { id: "sn2_01", reviewStatus: "draft" },
-        { id: "proton_transfer_01", reviewStatus: "draft" },
-        { id: "ammonia_alkylation_01", reviewStatus: "draft" },
-        { id: "sn2_02", reviewStatus: "draft" },
-        { id: "sn2_03", reviewStatus: "draft" },
-        { id: "proton_transfer_02", reviewStatus: "draft" },
+        { id: "sn2_01", reviewStatus: "verified" },
+        { id: "proton_transfer_01", reviewStatus: "verified" },
+        { id: "ammonia_alkylation_01", reviewStatus: "verified" },
+        { id: "sn2_02", reviewStatus: "verified" },
+        { id: "sn2_03", reviewStatus: "verified" },
+        { id: "proton_transfer_02", reviewStatus: "verified" },
       ],
     });
+  });
+
+  it("lets an agent read evidence and stage a plan without starting it", async () => {
+    const store = createMechanismStore(undefined, null);
+    const { tools, context } = contextHarness();
+    await registerMechanismCanvasTools(store, context);
+    const call = (name: string, input: unknown) =>
+      tools.find((tool) => tool.name === name)?.execute(input);
+
+    const read = (await call("get_learning_profile", {})) as {
+      profile: { profileRevision: string; completedSteps: number };
+      pendingProposal: null;
+    };
+    expect(read).toMatchObject({
+      ok: true,
+      privacy: "local browser storage",
+      profile: { completedSteps: 0, totalProblems: 6 },
+      pendingProposal: null,
+    });
+
+    const proposed = await call("propose_practice_plan", {
+      problemIds: ["proton_transfer_01", "sn2_01"],
+      rationale: "Start with a mapped proton, then compare the same concerted-arrow discipline in substitution.",
+      expectedProfileRevision: read.profile.profileRevision,
+    });
+    expect(proposed).toMatchObject({
+      ok: true,
+      mechanismRevision: 0,
+      profileRevision: read.profile.profileRevision,
+      awaitingLearnerApproval: true,
+      proposal: { problemIds: ["proton_transfer_01", "sn2_01"] },
+    });
+    expect(store.getProblem().id).toBe("sn2_01");
+    expect(store.getState().mechanismRevision).toBe(0);
+    expect(store.getPracticePlanProposal()).not.toBeNull();
+    expect(tools.some((tool) => tool.name === "accept_practice_plan")).toBe(false);
+
+    const stale = await call("propose_practice_plan", {
+      problemIds: ["sn2_02"],
+      rationale: "Use a different substrate.",
+      expectedProfileRevision: "profile_stale",
+    });
+    expect(stale).toMatchObject({ ok: false, error: { code: "STALE_STATE" } });
   });
 
   it("stages a revision-bound proposal without changing the draft until learner approval", async () => {

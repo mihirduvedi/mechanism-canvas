@@ -55,7 +55,7 @@ It never serializes authored accepted bundles, negative cases, unreached graphs,
 
 ## Site Tool
 
-`compare_reached_step({ beforeStateId, afterStateId })` is the fourteenth top-level Site Tool. It is read-only, idempotent, and closed-world. `replay_reached_step` is the fifteenth tool and uses the same reachability gate; the later learner-review proposal tool is the sixteenth. See [ELECTRON_FLOW_REPLAY.md](ELECTRON_FLOW_REPLAY.md) for replay's transient presentation contract.
+`compare_reached_step({ beforeStateId, afterStateId })` is one of eighteen top-level Site Tools. It is read-only, idempotent, and closed-world. `replay_reached_step` uses the same reachability gate. See [ELECTRON_FLOW_REPLAY.md](ELECTRON_FLOW_REPLAY.md) for replay's transient presentation contract.
 
 The exact state pair must appear in `get_mechanism_state().mechanism.availableStepComparisons`. Success returns:
 

@@ -57,10 +57,18 @@ describe("problem catalog integrity", () => {
     }
   });
 
-  it("keeps draft fixtures out of the production registry", () => {
-    expect(productionProblemCatalog).toEqual([]);
-    expect(() => createProductionProblemCatalog(previewProblemCatalog)).toThrow(
-      /rejected unverified fixtures/,
+  it("publishes only fully reviewed fixtures in the production registry", () => {
+    expect(productionProblemCatalog).toHaveLength(6);
+    expect(createProductionProblemCatalog(previewProblemCatalog)).toEqual(
+      previewProblemCatalog,
     );
+    for (const problem of productionProblemCatalog) {
+      expect(problem.review).toMatchObject({
+        status: "verified",
+        reviewedAt: "2026-08-29",
+      });
+      expect(Object.values(problem.review.checklist).every(Boolean)).toBe(true);
+      expect(problem.review.reviewerRole).toBeUndefined();
+    }
   });
 });

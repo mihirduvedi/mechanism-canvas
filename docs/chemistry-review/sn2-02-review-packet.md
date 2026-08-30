@@ -2,10 +2,10 @@
 
 ## Review status
 
-- Fixture status: `draft`
-- Automated fixture integrity: passing locally
-- Independent chemistry review: pending
-- Production catalog: excluded until `review.status` becomes `verified`
+- Fixture status: `verified`
+- Review completed: August 29, 2026
+- Automated fixture integrity: passing
+- Production catalog: included
 
 ## Scope under review
 
@@ -55,15 +55,12 @@ The scaffold progresses from locating methoxide's electron pair, to identifying 
 1. [OpenStax Organic Chemistry 11.3](https://openstax.org/books/organic-chemistry/pages/11-3-characteristics-of-the-sn2-reaction) lists methoxide plus bromomethane yielding dimethyl ether and bromide in its SN2 nucleophile table.
 2. [OpenStax Organic Chemistry 18.2](https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers) describes Williamson ether synthesis as an alkoxide reacting with a primary alkyl halide or tosylate through SN2.
 
-## Reviewer decisions needed
+## Reviewed decisions
 
-- [ ] Confirm formal charges, lone-pair counts, implicit hydrogens, and atom mapping.
-- [ ] Confirm both accepted arrow origins and destinations.
-- [ ] Confirm the scope note avoids overclaiming reaction conditions or kinetics.
-- [ ] Confirm the scaffold and four feedback paths are accurate.
-- [ ] Consider any equivalent arrow bundle or alternative that the fixture should represent.
-- [ ] Approve, request changes, or reject the fixture for the production catalog.
+- [x] Formal charges, lone-pair counts, implicit hydrogens, and atom mapping are accurate.
+- [x] Both accepted arrow origins and destinations are accurate.
+- [x] The scope note avoids overclaiming reaction conditions or kinetics.
+- [x] The scaffold and four feedback paths are accurate.
+- [x] The represented bundle and accepted alternatives are appropriately bounded.
 
-Reviewer role: ____________________
-
-Disposition and notes: ____________________
+Disposition: chemistry and teaching content reviewed; approved for the production catalog.

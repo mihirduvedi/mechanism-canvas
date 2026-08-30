@@ -12,13 +12,15 @@ import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
 import type { CommandResult, ElectronSource, ProposedArrow } from "../domain/types";
 import { activeSessionMode, mechanismStore } from "../store/active-mechanism-store";
 import {
+  MAX_PRACTICE_PLAN_PROBLEMS,
+  MAX_PRACTICE_PLAN_RATIONALE_LENGTH,
   MAX_PROPOSAL_ARROWS,
   MAX_PROPOSAL_RATIONALE_LENGTH,
   type MechanismStore,
 } from "../store/mechanism-store";
 
 const registeredContexts = new WeakSet<object>();
-export const MECHANISM_TOOL_COUNT = 16;
+export const MECHANISM_TOOL_COUNT = 18;
 
 interface ToolFailure {
   ok: false;
@@ -273,6 +275,100 @@ function defineTools(
         const parsed = toObject(input);
         assertExactKeys(parsed, []);
         return stateOutput(store, sessionMode);
+      },
+    },
+    {
+      name: "get_learning_profile",
+      description:
+        "Read the privacy-local Practice Compass profile derived from deterministic checks, hints, and completed steps across all exercises. Returns evidence statuses and bounded recommendations without exposing authored answers or changing the page.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, []);
+          const profile = store.getLearningProfile();
+          const pendingProposal = store.getPracticePlanProposal();
+          return {
+            ok: true,
+            privacy: sessionMode === "demo" ? "memory only; resets on refresh" : "local browser storage",
+            learnerControl: "An agent may stage a plan, but only the learner can start or dismiss it in the page.",
+            profile,
+            pendingProposal: pendingProposal
+              ? {
+                  ...pendingProposal,
+                  stale: pendingProposal.baseProfileRevision !== profile.profileRevision,
+                }
+              : null,
+          };
+        } catch (error) {
+          return toolError("INVALID_INPUT", (error as Error).message);
+        }
+      },
+    },
+    {
+      name: "propose_practice_plan",
+      description:
+        "Stage an ordered plan of 1 to 3 existing exercises against the current Practice Compass revision. This does not switch exercises, change chemistry, or count progress; the learner must explicitly start or dismiss the plan in the page.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          problemIds: {
+            type: "array",
+            items: { type: "string" },
+            minItems: 1,
+            maxItems: MAX_PRACTICE_PLAN_PROBLEMS,
+          },
+          rationale: {
+            type: "string",
+            minLength: 1,
+            maxLength: MAX_PRACTICE_PLAN_RATIONALE_LENGTH,
+          },
+          expectedProfileRevision: { type: "string" },
+        },
+        required: ["problemIds", "rationale", "expectedProfileRevision"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["problemIds", "rationale", "expectedProfileRevision"]);
+          const problemIds = requiredStringArray(parsed, "problemIds");
+          if (problemIds.length < 1 || problemIds.length > MAX_PRACTICE_PLAN_PROBLEMS) {
+            throw new Error(`problemIds must contain 1 to ${MAX_PRACTICE_PLAN_PROBLEMS} IDs.`);
+          }
+          const rationale = requiredString(parsed, "rationale").trim();
+          if (rationale.length > MAX_PRACTICE_PLAN_RATIONALE_LENGTH) {
+            throw new Error(
+              `rationale must be ${MAX_PRACTICE_PLAN_RATIONALE_LENGTH} characters or fewer.`,
+            );
+          }
+          const result = store.stagePracticePlan({
+            problemIds,
+            rationale,
+            expectedProfileRevision: requiredString(parsed, "expectedProfileRevision"),
+          });
+          if (!result.ok) return commandOutput(store, result);
+          return {
+            ok: true,
+            mechanismRevision: store.getState().mechanismRevision,
+            profileRevision: store.getLearningProfile().profileRevision,
+            awaitingLearnerApproval: true,
+            proposal: result.value,
+          };
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
+        }
       },
     },
     {

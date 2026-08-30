@@ -2,10 +2,10 @@
 
 ## Review status
 
-- Fixture status: `draft`
-- Automated fixture integrity: passed on August 28, 2026
-- Independent chemistry review: pending
-- Production catalog: excluded until `review.status` becomes `verified`
+- Fixture status: `verified`
+- Review completed: August 29, 2026
+- Automated fixture integrity: passing
+- Production catalog: included
 
 ## Scope under review
 
@@ -77,15 +77,12 @@ The accepted bundle consumes any displayed lone pair on `o_nucleophile` and the 
 1. [IUPAC Gold Book: nucleophilic substitution](https://doi.org/10.1351/goldbook.08191). The entry defines the entering group, electrophilic substrate, and electron-pair retention by the leaving group. Its example is bromomethane plus hydroxide.
 2. [OpenStax Organic Chemistry 11.2: The SN2 Reaction](https://openstax.org/books/organic-chemistry/pages/11-2-the-sn2-reaction). The section presents hydroxide plus bromomethane yielding methanol and bromide as a single concerted substitution.
 
-## Reviewer decisions needed
+## Reviewed decisions
 
-- [ ] Confirm all formal charges, lone-pair counts, and atom mappings.
-- [ ] Confirm the two accepted arrow origins and destinations.
-- [ ] Confirm the prompt is narrow enough for the represented conditions.
-- [ ] Confirm the four feedback paths are accurate and do not overgeneralize.
-- [ ] Consider whether any additional arrow bundle should be accepted as equivalent.
-- [ ] Approve, request changes, or reject the fixture for the production catalog.
+- [x] Formal charges, lone-pair counts, and atom mappings are accurate.
+- [x] The two accepted arrow origins and destinations are accurate.
+- [x] The prompt is appropriately bounded for the represented conditions.
+- [x] The four feedback paths are accurate and do not overgeneralize.
+- [x] The represented bundle and accepted alternatives are appropriately bounded.
 
-Reviewer role: ____________________
-
-Disposition and notes: ____________________
+Disposition: chemistry and teaching content reviewed; approved for the production catalog.

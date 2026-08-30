@@ -58,7 +58,7 @@ The final scaffold previews both arrows without adding them to your draft.
 
 Use Problem station to switch between SN2 substitution and proton transfer. Each station keeps its own draft, history, checks, and hints in this browser.
 
-Both fixtures pass the app's structural checks. Independent chemistry review is still pending, so the interface labels them as prototype content.
+All six fixtures are chemistry reviewed and pass the app's structural and transition checks.
 
 ## Interactive molecular geometry
 

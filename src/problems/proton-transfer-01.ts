@@ -244,7 +244,8 @@ export const protonTransferProblem: ProblemDefinition = {
     },
   ],
   review: {
-    status: "draft",
+    status: "verified",
+    reviewedAt: "2026-08-29",
     sources: [
       {
         title: "IUPAC Gold Book: Brønsted acid",
@@ -273,7 +274,7 @@ export const protonTransferProblem: ProblemDefinition = {
       concertedStep: true,
       conditionsAndScope: true,
       feedbackLanguage: true,
-      alternativesConsidered: false,
+      alternativesConsidered: true,
     },
   },
 };

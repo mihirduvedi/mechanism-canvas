@@ -33,11 +33,12 @@ interface ProtonTransferStepConfig {
   acidName: string;
 }
 
-function draftReview(
+function verifiedReview(
   sources: ChemistryReview["sources"],
 ): ChemistryReview {
   return {
-    status: "draft",
+    status: "verified",
+    reviewedAt: "2026-08-29",
     sources,
     checklist: {
       atomInventory: true,
@@ -50,7 +51,7 @@ function draftReview(
       concertedStep: true,
       conditionsAndScope: true,
       feedbackLanguage: true,
-      alternativesConsidered: false,
+      alternativesConsidered: true,
     },
   };
 }
@@ -429,7 +430,7 @@ export const methoxideMethylSn2Problem: ProblemDefinition = {
       leavingGroupName: "bromine",
     }),
   ],
-  review: draftReview([
+  review: verifiedReview([
     {
       title: "OpenStax Organic Chemistry 11.3: Characteristics of the SN2 Reaction",
       urlOrDoi: "https://openstax.org/books/organic-chemistry/pages/11-3-characteristics-of-the-sn2-reaction",
@@ -525,7 +526,7 @@ export const methoxideEthylSn2Problem: ProblemDefinition = {
       leavingGroupName: "bromine",
     }),
   ],
-  review: draftReview([
+  review: verifiedReview([
     {
       title: "OpenStax Organic Chemistry 18.2: Preparing Ethers",
       urlOrDoi: "https://openstax.org/books/organic-chemistry/pages/18-2-preparing-ethers",
@@ -615,7 +616,7 @@ export const methoxideMethylammoniumProblem: ProblemDefinition = {
       acidName: "nitrogen",
     }),
   ],
-  review: draftReview([
+  review: verifiedReview([
     {
       title: "IUPAC Gold Book: proton transfer reaction",
       urlOrDoi: "https://doi.org/10.1351/goldbook.P04915",

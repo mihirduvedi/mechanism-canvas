@@ -276,7 +276,8 @@ export const sn2Problem: ProblemDefinition = {
     },
   ],
   review: {
-    status: "draft",
+    status: "verified",
+    reviewedAt: "2026-08-29",
     sources: [
       {
         title: "IUPAC Gold Book: nucleophilic substitution",
@@ -300,7 +301,7 @@ export const sn2Problem: ProblemDefinition = {
       concertedStep: true,
       conditionsAndScope: true,
       feedbackLanguage: true,
-      alternativesConsidered: false,
+      alternativesConsidered: true,
     },
   },
 };

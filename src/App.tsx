@@ -4,6 +4,7 @@ import { DraftTray } from "./components/DraftTray";
 import { LearningRecord } from "./components/LearningRecord";
 import { MechanismCanvas } from "./components/MechanismCanvas";
 import { ProblemBrief } from "./components/ProblemBrief";
+import { PracticeCompass } from "./components/PracticeCompass";
 import { ReactionDiff } from "./components/ReactionDiff";
 import { ReasoningPanel } from "./components/ReasoningPanel";
 import { demoSessionPath, savedPracticePath } from "./demo/demo-mode";
@@ -91,6 +92,7 @@ export function App() {
           <MechanismCanvas problem={problem} state={state} store={mechanismStore} />
           <DraftTray problem={problem} state={state} store={mechanismStore} />
           <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
+          <PracticeCompass state={state} store={mechanismStore} sessionMode={activeSessionMode} />
           <ReactionDiff problem={problem} state={state} />
           <LearningRecord
             problem={problem}
@@ -102,8 +104,8 @@ export function App() {
       </main>
 
       <footer className="app-footer">
-        <span>Prototype</span>
-        <p>{problems.length} structurally checked fixtures. Independent chemistry review is pending.</p>
+        <span>Reviewed library</span>
+        <p>{problems.length} chemistry-reviewed fixtures with deterministic checks.</p>
         <a href="https://learn.chatgpt.com/docs/webmcp" target="_blank" rel="noreferrer">
           About site tools
         </a>

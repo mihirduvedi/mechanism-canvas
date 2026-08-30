@@ -422,7 +422,7 @@ describe("mechanism command store", () => {
     });
   });
 
-  it("migrates v2 workspaces with empty reflection fields into the v4 schema", () => {
+  it("migrates v2 workspaces with empty reflection fields into the v5 schema", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);
     addAcceptedBundle(first);
@@ -430,7 +430,7 @@ describe("mechanism command store", () => {
     expect(first.commitCheckedStep(checked.value?.validationId ?? "", "human").ok).toBe(true);
 
     const current = JSON.parse(
-      storage.getItem("mechanism-canvas:workspace:v4") ?? "{}",
+      storage.getItem("mechanism-canvas:workspace:v5") ?? "{}",
     ) as {
       version: number;
       workspaces: Record<string, { history: Array<Record<string, unknown>> }>;
@@ -439,7 +439,7 @@ describe("mechanism command store", () => {
     for (const workspace of Object.values(current.workspaces)) {
       workspace.history = workspace.history.map(({ reflection: _reflection, reflectionUpdatedAt: _updated, ...record }) => record);
     }
-    storage.removeItem("mechanism-canvas:workspace:v4");
+    storage.removeItem("mechanism-canvas:workspace:v5");
     storage.setItem("mechanism-canvas:workspace:v2", JSON.stringify(current));
 
     const restored = createMechanismStore(undefined, storage);
@@ -450,7 +450,7 @@ describe("mechanism command store", () => {
     });
   });
 
-  it("persists a current proposal and its learner-review boundary in v4", () => {
+  it("persists a current arrow proposal and its learner-review boundary in v5", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);
     const staged = first.stageAgentProposal({
@@ -485,7 +485,7 @@ describe("mechanism command store", () => {
       actor: "human",
     });
     const previous = JSON.parse(
-      storage.getItem("mechanism-canvas:workspace:v4") ?? "{}",
+      storage.getItem("mechanism-canvas:workspace:v5") ?? "{}",
     ) as {
       version: number;
       workspaces: Record<string, Record<string, unknown>>;
@@ -494,7 +494,7 @@ describe("mechanism command store", () => {
     for (const workspace of Object.values(previous.workspaces)) {
       delete workspace.agentProposal;
     }
-    storage.removeItem("mechanism-canvas:workspace:v4");
+    storage.removeItem("mechanism-canvas:workspace:v5");
     storage.setItem("mechanism-canvas:workspace:v3", JSON.stringify(previous));
 
     const restored = createMechanismStore(undefined, storage);
@@ -531,6 +531,71 @@ describe("mechanism command store", () => {
     expect(restored.getState().draftArrows).toHaveLength(1);
     expect(restored.getState().draftArrows[0].source.entityId).toBe("lp_o_1");
     expect(restored.getState().latestValidation).toBeNull();
+  });
+
+  it("derives a cross-exercise profile from exact checks and completed steps", () => {
+    const store = createMechanismStore(undefined, null);
+    const initialRevision = store.getLearningProfile().profileRevision;
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_o_1" },
+      target: { kind: "atom", entityId: "c_electrophile" },
+      actor: "human",
+    });
+    store.checkDraftStep("human");
+
+    const profile = store.getLearningProfile();
+    expect(profile.profileRevision).not.toBe(initialRevision);
+    expect(profile.problems.find((item) => item.problemId === "sn2_01")).toMatchObject({
+      attemptCount: 1,
+      status: "in_progress",
+    });
+    expect(profile.skills.find((skill) => skill.id === "concerted_steps")).toMatchObject({
+      status: "building",
+      issueCount: 1,
+    });
+  });
+
+  it("keeps an agent practice plan outside learner progress until human approval", () => {
+    const storage = window.localStorage;
+    const store = createMechanismStore(undefined, storage);
+    const profile = store.getLearningProfile();
+    const mechanismRevision = store.getState().mechanismRevision;
+    const staged = store.stagePracticePlan({
+      problemIds: ["proton_transfer_01", "sn2_01"],
+      rationale: "Start with a focused proton transfer, then compare the same two-arrow discipline in substitution.",
+      expectedProfileRevision: profile.profileRevision,
+    });
+
+    expect(staged.ok).toBe(true);
+    expect(store.getState().mechanismRevision).toBe(mechanismRevision);
+    expect(store.getProblem().id).toBe("sn2_01");
+    expect(store.getPracticePlanProposal()).toMatchObject({
+      problemIds: ["proton_transfer_01", "sn2_01"],
+      baseProfileRevision: profile.profileRevision,
+    });
+
+    const restored = createMechanismStore(undefined, storage);
+    expect(restored.getPracticePlanProposal()?.id).toBe(staged.value?.id);
+    expect(restored.acceptPracticePlan(staged.value?.id ?? "").ok).toBe(true);
+    expect(restored.getProblem().id).toBe("proton_transfer_01");
+    expect(restored.getPracticePlanProposal()).toBeNull();
+    expect(restored.getState().activity.at(-1)?.kind).toBe("practice_plan_accepted");
+  });
+
+  it("rejects a stale practice plan after new learning evidence arrives", () => {
+    const store = createMechanismStore(undefined, null);
+    const staged = store.stagePracticePlan({
+      problemIds: ["sn2_01"],
+      rationale: "Continue with the current substitution exercise.",
+      expectedProfileRevision: store.getLearningProfile().profileRevision,
+    });
+    addAcceptedBundle(store);
+    store.checkDraftStep("human");
+
+    expect(store.acceptPracticePlan(staged.value?.id ?? "")).toMatchObject({
+      ok: false,
+      error: { code: "STALE_STATE" },
+    });
   });
 
   it("resets every exercise artifact while keeping the revision monotonic", () => {

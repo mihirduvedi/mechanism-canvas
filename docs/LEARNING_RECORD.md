@@ -15,7 +15,7 @@ Reflection text is limited to 1,200 characters. Removing a saved reflection requ
 
 ## Storage and migration
 
-- Saved practice uses `mechanism-canvas:workspace:v4` in browser local storage.
+- Saved practice uses `mechanism-canvas:workspace:v5` in browser local storage, with migration support for v4 and earlier records.
 - The loader accepts the previous v3 and v2 catalogs. Older v2 commit records are normalized with `reflection: null` and `reflectionUpdatedAt: null`; older catalogs restore with no pending agent proposal.
 - The original v1 single-workspace migration remains supported.
 - `?demo=1` still passes `null` storage to the same store, so demo records reset on refresh and never read or write saved practice.
