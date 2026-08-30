@@ -14,11 +14,11 @@ function contextHarness() {
 }
 
 describe("WebMCP site tool registration", () => {
-  it("registers the full fifteen-tool catalog with guarded history, comparison, and replay", async () => {
+  it("registers the full sixteen-tool catalog with guarded proposals, history, comparison, and replay", async () => {
     const store = createMechanismStore(undefined, null);
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(15);
+    expect(count).toBe(16);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "inspect_mechanism_entities",
@@ -27,6 +27,7 @@ describe("WebMCP site tool registration", () => {
       "compare_reached_step",
       "replay_reached_step",
       "focus_mechanism_entities",
+      "propose_draft_arrows",
       "add_draft_arrow",
       "remove_draft_arrow",
       "check_draft_step",
@@ -48,7 +49,106 @@ describe("WebMCP site tool registration", () => {
     expect(tools.find((tool) => tool.name === "add_draft_arrow")?.inputSchema.additionalProperties).toBe(
       false,
     );
+    expect(tools.find((tool) => tool.name === "propose_draft_arrows")?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+    });
+    expect(tools.some((tool) => tool.name.includes("accept") && tool.name.includes("proposal"))).toBe(
+      false,
+    );
     expect(tools.at(-1)?.annotations?.destructiveHint).toBe(true);
+  });
+
+  it("stages a revision-bound proposal without changing the draft until learner approval", async () => {
+    const store = createMechanismStore(undefined, null);
+    const { tools, context } = contextHarness();
+    await registerMechanismCanvasTools(store, context);
+    const call = (name: string, input: unknown) =>
+      tools.find((tool) => tool.name === name)?.execute(input);
+
+    const proposed = await call("propose_draft_arrows", {
+      arrows: [
+        {
+          sourceType: "lone_pair",
+          sourceEntityId: "lp_o_1",
+          targetAtomId: "c_electrophile",
+        },
+      ],
+      rationale:
+        "Consider whether the nucleophile's available pair should begin the bond-forming move.",
+      expectedRevision: 0,
+    });
+
+    expect(proposed).toMatchObject({
+      ok: true,
+      mechanismRevision: 0,
+      draftArrowCount: 0,
+      awaitingLearnerApproval: true,
+      proposal: {
+        baseRevision: 0,
+        stateId: "sn2_reactants",
+        arrows: [
+          {
+            source: { kind: "lone_pair", entityId: "lp_o_1" },
+            target: { kind: "atom", entityId: "c_electrophile" },
+          },
+        ],
+      },
+    });
+    expect(store.getState()).toMatchObject({
+      mechanismRevision: 0,
+      draftArrows: [],
+      agentProposal: { baseRevision: 0 },
+    });
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      actor: "agent",
+      kind: "proposal_staged",
+    });
+
+    const stateRead = await call("get_mechanism_state", {});
+    expect(stateRead).toMatchObject({
+      mechanism: {
+        draftArrows: [],
+        agentProposal: { stale: false, baseRevision: 0 },
+      },
+    });
+
+    const proposalId = store.getState().agentProposal?.id ?? "";
+    expect(store.acceptAgentProposal(proposalId).ok).toBe(true);
+    expect(store.getState()).toMatchObject({
+      mechanismRevision: 1,
+      agentProposal: null,
+    });
+    expect(store.getState().draftArrows[0].actor).toBe("agent");
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      actor: "human",
+      kind: "proposal_accepted",
+    });
+  });
+
+  it("rejects a proposal made against a stale revision", async () => {
+    const store = createMechanismStore(undefined, null);
+    const { tools, context } = contextHarness();
+    await registerMechanismCanvasTools(store, context);
+    const proposal = tools.find((tool) => tool.name === "propose_draft_arrows");
+    const result = await proposal?.execute({
+      arrows: [
+        {
+          sourceType: "bond",
+          sourceEntityId: "bond_c_br",
+          targetAtomId: "br_leaving",
+        },
+      ],
+      rationale: "Account for the leaving-group electron pair in the same step.",
+      expectedRevision: 7,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "STALE_STATE" },
+      mechanismRevision: 0,
+    });
+    expect(store.getState().agentProposal).toBeNull();
   });
 
   it("completes both capstone steps and browses only reached history states", async () => {

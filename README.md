@@ -8,13 +8,16 @@ Mechanism Canvas is a shared organic chemistry workspace where a learner and a W
 
 A curved-arrow mechanism is easy to see and surprisingly hard to operate from pixels. The same dot can mean a lone pair, the same line can mean a bond, and a chemically valid step may require multiple arrows applied together. Coordinate clicks do not tell an agent which electron pair moved or whether it acted on the learner's current revision.
 
-Mechanism Canvas exposes that meaning directly. An agent can discover the available exercises, inspect atom and bond IDs, add one visible arrow, ask the deterministic validator to check the full bundle, and commit only a current valid result. Every action lands in the same store, canvas, and activity trail the learner sees.
+Mechanism Canvas exposes that meaning directly. An agent can discover the available exercises, inspect atom and bond IDs, stage a structured electron-flow proposal for learner review, ask the deterministic validator to check the resulting draft, and commit only a current valid result. Every action lands in the same store, canvas, and activity trail the learner sees.
 
 ```mermaid
 flowchart LR
   P["Authored prototype fixtures"] --> S["One revisioned mechanism store"]
   H["Learner controls"] --> S
-  A["15 WebMCP site tools"] --> S
+  A["16 WebMCP site tools"] --> S
+  A --> P["Reviewable agent proposal"]
+  H --> P
+  P --> S
   S --> V["Deterministic chemistry validator"]
   S --> C["2D curved-arrow canvas"]
   S --> T["Shared provenance trail"]
@@ -32,7 +35,9 @@ There is no agent-only state, hidden model grader, or second implementation of t
 
 Open the [clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) in ChatGPT's built-in browser with Site tools enabled, then ask:
 
-> Use this page's site tools and keep every change visible. Read the clean demo state and switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Add bond_c_br → br_leaving, check again, and commit the intermediate. Call compare_reached_step for amine_reactants → methylammonium_intermediate, summarize the exact bond and charge changes, then call replay_reached_step for the same pair so the learner can watch the performed electron flow. Use view_mechanism_history_state to show the reactants, then return to the current intermediate. Add lp_n_base_1 → h_transfer and bond_n_attack_h_transfer → n_attacker, check, and commit the products. Read back the shared activity trail, then undo only the last commit.
+> Use this page's site tools and keep every change visible. Read the clean demo state and switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step. Then use propose_draft_arrows to stage bond_c_br → br_leaving with a brief rationale, without changing the draft, and stop for my decision.
+
+Select **Add to my draft** in the visible proposal, then ask the agent to continue: check and commit the intermediate, compare and replay the reached step, finish the proton-transfer step, read the shared activity trail, and undo only the last commit.
 
 That journey demonstrates discovery, stable entity IDs, an intentionally incomplete attempt, deterministic feedback, two guarded commits, reached-state navigation, structured provenance, and one-step-at-a-time reversibility. The [judge guide](docs/JUDGE_GUIDE.md) includes a shorter fallback route for ordinary browsers.
 
@@ -47,6 +52,7 @@ That journey demonstrates discovery, stable entity IDs, an intentionally incompl
 | `compare_reached_step` | Read exact graph and electron-bookkeeping changes for one active committed transition; reject undone and future pairs. |
 | `replay_reached_step` | Open the same reached-step evidence and replay its performed arrow bundle without changing chemistry, revision, persistence, or activity. |
 | `focus_mechanism_entities` | Focus named entities on the visible canvas and record the action. |
+| `propose_draft_arrows` | Stage 1–4 revision-bound arrows and a rationale for visible learner approval without changing the draft. |
 | `add_draft_arrow` | Add one arrow against an expected revision. |
 | `remove_draft_arrow` | Remove one named draft arrow against an expected revision. |
 | `check_draft_step` | Run the deterministic validator without committing chemistry. |
@@ -64,6 +70,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 - Clickable and keyboard-operable SVG atoms, bonds, and lone pairs.
 - Atomic multi-arrow validation with distinct incomplete, invariant-error, authored-path, accepted, and invalid-input results.
 - Explicit check, revision-bound commit, undo, reset, per-problem local persistence, and shared actor provenance.
+- A reviewable agent-proposal gate: WebMCP can stage structured arrows, but only the learner-facing UI can accept or decline them; accepting still requires a separate deterministic check.
 - Four progressive scaffold levels per exercise.
 - A lazy-loaded Three.js inspector generated from the same molecular graph, including implicit hydrogens, bond order, lone pairs, formal charge, polarity, and VSEPR geometry.
 - A reached-state reaction timeline that locks future states and keeps history browsing read-only.
@@ -71,7 +78,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 - Learner reflections attached to exact commits, including reversed commits, without changing chemistry revision or validation authority.
 - A compact local instructor view for checks, hints, performed arrow bundles, reversals, and learner reflections.
 - An active-exercise JSON learning record with download and clipboard paths; the allowlisted schema omits accepted-answer definitions, unreached state graphs, validation IDs, and dedicated learner identity fields.
-- Fifteen top-level imperative WebMCP tools backed by the same store as the human interface.
+- Sixteen top-level imperative WebMCP tools backed by the same store as the human interface.
 - An isolated `?demo=1` session that always starts from clean SN2 reactants, reports its temporary state to the agent, and never reads or changes saved practice.
 
 ## Trust boundaries
@@ -106,6 +113,7 @@ npm run dev
 | Learning-record schema and privacy allowlist | `src/domain/learning-record.ts` and `docs/LEARNING_RECORD.md` |
 | Reached-step comparison engine | `src/domain/mechanism-comparison.ts` and `docs/REACTION_DIFF.md` |
 | Electron Flow Replay | `src/domain/reaction-replay.ts`, `src/components/mechanism-arrow-layout.ts`, and `docs/ELECTRON_FLOW_REPLAY.md` |
+| Reviewable agent proposals | `src/store/mechanism-store.ts`, `src/components/ReasoningPanel.tsx`, and `docs/AGENT_DRAFT_PROPOSALS.md` |
 | Visual system | `src/index.css` and `DESIGN.md` |
 | Chemistry review packets | `docs/chemistry-review/` |
 | Product requirements | `docs/mechanism-canvas-prd.md` |

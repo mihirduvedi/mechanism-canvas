@@ -22,7 +22,7 @@ export function DemoNotice() {
         <span>This visit starts from the authored SN2 reactants. Your saved practice is untouched.</span>
       </div>
       <button type="button" onClick={copyPrompt}>
-        {copyStatus === "copied" ? "Agent prompt copied" : "Copy agent prompt"}
+        {copyStatus === "copied" ? "First prompt copied" : "Copy first agent prompt"}
       </button>
       {copyStatus === "failed" && (
         <span className="demo-notice__error" role="status">

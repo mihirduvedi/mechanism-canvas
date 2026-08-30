@@ -5,6 +5,7 @@ import {
   isDemoSessionRequested,
   savedPracticePath,
 } from "./demo-mode";
+import { JUDGE_AGENT_PROMPT } from "./judge-prompt";
 
 describe("judge demo mode", () => {
   it("recognizes only the explicit demo query value", () => {
@@ -52,5 +53,11 @@ describe("judge demo mode", () => {
     const reloadedDemo = createMechanismStore(undefined, null);
     expect(reloadedDemo.getState().draftArrows).toHaveLength(0);
     expect(reloadedDemo.getState().mechanismRevision).toBe(0);
+  });
+
+  it("copies a first-turn prompt that stops at the learner proposal gate", () => {
+    expect(JUDGE_AGENT_PROMPT).toContain("propose_draft_arrows");
+    expect(JUDGE_AGENT_PROMPT).toContain("stop for my decision");
+    expect(JUDGE_AGENT_PROMPT).not.toContain("commit the intermediate");
   });
 });

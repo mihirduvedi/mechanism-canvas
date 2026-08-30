@@ -9,12 +9,16 @@ import {
   visibleStateId,
 } from "../domain/problem-steps";
 import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
-import type { CommandResult, ElectronSource } from "../domain/types";
+import type { CommandResult, ElectronSource, ProposedArrow } from "../domain/types";
 import { activeSessionMode, mechanismStore } from "../store/active-mechanism-store";
-import type { MechanismStore } from "../store/mechanism-store";
+import {
+  MAX_PROPOSAL_ARROWS,
+  MAX_PROPOSAL_RATIONALE_LENGTH,
+  type MechanismStore,
+} from "../store/mechanism-store";
 
 const registeredContexts = new WeakSet<object>();
-export const MECHANISM_TOOL_COUNT = 15;
+export const MECHANISM_TOOL_COUNT = 16;
 
 interface ToolFailure {
   ok: false;
@@ -109,6 +113,34 @@ function requiredStringArray(input: Record<string, unknown>, key: string): strin
   return value as string[];
 }
 
+function requiredProposedArrows(
+  input: Record<string, unknown>,
+  key: string,
+): ProposedArrow[] {
+  const value = input[key];
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_PROPOSAL_ARROWS) {
+    throw new Error(`${key} must contain between 1 and ${MAX_PROPOSAL_ARROWS} arrows.`);
+  }
+  return value.map((item, index) => {
+    const arrow = toObject(item);
+    assertExactKeys(arrow, ["sourceType", "sourceEntityId", "targetAtomId"]);
+    const sourceType = requiredString(arrow, "sourceType");
+    if (sourceType !== "lone_pair" && sourceType !== "bond") {
+      throw new Error(`${key}[${index}].sourceType must be lone_pair or bond.`);
+    }
+    return {
+      source: {
+        kind: sourceType,
+        entityId: requiredString(arrow, "sourceEntityId"),
+      },
+      target: {
+        kind: "atom",
+        entityId: requiredString(arrow, "targetAtomId"),
+      },
+    };
+  });
+}
+
 function commandOutput<T>(store: MechanismStore, result: CommandResult<T>) {
   if (!result.ok) {
     return toolError(
@@ -176,6 +208,19 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
         : null,
       mechanismRevision: state.mechanismRevision,
       draftArrows: state.draftArrows.map((arrow) => ({ ...arrow })),
+      agentProposal: state.agentProposal
+        ? {
+            ...state.agentProposal,
+            arrows: state.agentProposal.arrows.map((arrow) => ({
+              source: { ...arrow.source },
+              target: { ...arrow.target },
+            })),
+            stale:
+              state.agentProposal.problemId !== problem.id ||
+              state.agentProposal.stateId !== state.currentStateId ||
+              state.agentProposal.baseRevision !== state.mechanismRevision,
+          }
+        : null,
       latestValidation: state.latestValidation ? { ...state.latestValidation } : null,
       highestScaffoldLevel: state.highestScaffoldLevel,
       visibleScaffoldLevel: state.visibleScaffoldLevel,
@@ -491,6 +536,76 @@ function defineTools(
           return commandOutput(store, store.focusEntities(entityIds, "agent"));
         } catch (error) {
           return toolError("INVALID_INPUT", (error as Error).message, store.getState().mechanismRevision);
+        }
+      },
+    },
+    {
+      name: "propose_draft_arrows",
+      description:
+        "Stage 1–4 structured electron-flow arrows and a brief rationale for the learner to review on the shared page. This does not change the draft, chemistry, validation, or revision. Only the learner can accept or decline the visible proposal; no site tool can approve it.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          arrows: {
+            type: "array",
+            minItems: 1,
+            maxItems: MAX_PROPOSAL_ARROWS,
+            items: {
+              type: "object",
+              properties: {
+                sourceType: { type: "string", enum: ["lone_pair", "bond"] },
+                sourceEntityId: { type: "string" },
+                targetAtomId: { type: "string" },
+              },
+              required: ["sourceType", "sourceEntityId", "targetAtomId"],
+              additionalProperties: false,
+            },
+          },
+          rationale: {
+            type: "string",
+            minLength: 1,
+            maxLength: MAX_PROPOSAL_RATIONALE_LENGTH,
+          },
+          expectedRevision: { type: "integer", minimum: 0 },
+        },
+        required: ["arrows", "rationale", "expectedRevision"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["arrows", "rationale", "expectedRevision"]);
+          const rationale = requiredString(parsed, "rationale").trim();
+          if (rationale.length > MAX_PROPOSAL_RATIONALE_LENGTH) {
+            throw new Error(
+              `rationale must be ${MAX_PROPOSAL_RATIONALE_LENGTH} characters or fewer.`,
+            );
+          }
+          const result = store.stageAgentProposal({
+            arrows: requiredProposedArrows(parsed, "arrows"),
+            rationale,
+            expectedRevision: requiredInteger(parsed, "expectedRevision"),
+          });
+          if (!result.ok) return commandOutput(store, result);
+          return {
+            ok: true,
+            mechanismRevision: store.getState().mechanismRevision,
+            draftArrowCount: store.getState().draftArrows.length,
+            awaitingLearnerApproval: true,
+            proposal: result.value,
+          };
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
         }
       },
     },

@@ -15,8 +15,8 @@ Reflection text is limited to 1,200 characters. Removing a saved reflection requ
 
 ## Storage and migration
 
-- Saved practice uses `mechanism-canvas:workspace:v3` in browser local storage.
-- The loader accepts the previous v2 catalog and normalizes older commit records with `reflection: null` and `reflectionUpdatedAt: null`.
+- Saved practice uses `mechanism-canvas:workspace:v4` in browser local storage.
+- The loader accepts the previous v3 and v2 catalogs. Older v2 commit records are normalized with `reflection: null` and `reflectionUpdatedAt: null`; older catalogs restore with no pending agent proposal.
 - The original v1 single-workspace migration remains supported.
 - `?demo=1` still passes `null` storage to the same store, so demo records reset on refresh and never read or write saved practice.
 - Reset clears the active exercise's reflections with its commit history after the existing explicit confirmation.
@@ -41,6 +41,7 @@ It intentionally omits:
 - `ProblemDefinition.steps` as a serialized structure;
 - authored `acceptedBundles` and negative cases;
 - unreached state graphs;
+- a pending agent proposal and its rationale;
 - validation IDs, draft signatures, and commit authority;
 - dedicated learner name, email, course, account, or other identity fields;
 - other exercise workspaces and unrelated browser storage.
@@ -53,7 +54,7 @@ A committed record can include the arrow bundle the learner or agent actually pe
 |---|---|
 | Commit/reflection types | `src/domain/types.ts` |
 | Export allowlist and filename | `src/domain/learning-record.ts` |
-| v2 to v3 migration and reflection command | `src/store/mechanism-store.ts` |
+| v2/v3 to v4 migration, proposal persistence, and reflection command | `src/store/mechanism-store.ts` |
 | Reflection, instructor view, download, and copy UI | `src/components/LearningRecord.tsx` |
 | Responsive and dialog styling | `src/index.css` |
 | Privacy/answer-leak tests | `src/domain/learning-record.test.ts` |

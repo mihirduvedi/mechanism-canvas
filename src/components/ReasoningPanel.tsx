@@ -1,3 +1,4 @@
+import { describeArrow } from "../domain/chemistry";
 import type { MechanismState, ProblemDefinition, ValidationClass } from "../domain/types";
 import { problemStepForState } from "../domain/problem-steps";
 import type { MechanismStore } from "../store/mechanism-store";
@@ -60,6 +61,23 @@ function formatEventTime(timestamp: string): string {
 export function ReasoningPanel({ problem, state, store }: ReasoningPanelProps) {
   const validation = state.latestValidation;
   const complete = state.currentStateId === problem.completedStateId;
+  const molecule = problem.states[state.currentStateId];
+  const proposal = state.agentProposal;
+  const proposalMolecule = proposal ? problem.states[proposal.stateId] ?? molecule : molecule;
+  const proposalStale = Boolean(
+    proposal &&
+      (proposal.problemId !== problem.id ||
+        proposal.stateId !== state.currentStateId ||
+        proposal.baseRevision !== state.mechanismRevision),
+  );
+  const proposalAcceptBlocked = proposalStale || state.historyViewStateId !== null || complete;
+  const proposalBlockedReason = proposalStale
+    ? "The draft or committed state changed after this proposal was staged."
+    : state.historyViewStateId !== null
+      ? "Return to the current mechanism state before reviewing this proposal."
+      : complete
+        ? "This mechanism is already complete."
+        : null;
   const activeStep = problemStepForState(problem, state.currentStateId);
   const latestActiveCommit = state.history.findLast((record) => record.undoneAt === null);
   const latestCommittedStep = latestActiveCommit
@@ -127,6 +145,77 @@ export function ReasoningPanel({ problem, state, store }: ReasoningPanelProps) {
           <div className="feedback-empty">
             <span aria-hidden="true">↳</span>
             <p>Check the draft when the complete electron movement is ready.</p>
+          </div>
+        )}
+      </section>
+
+      <section
+        className="agent-proposal-section"
+        aria-labelledby="agent-proposal-heading"
+        aria-live="polite"
+      >
+        <div className="section-heading-row">
+          <div>
+            <p className="section-kicker">Human-in-the-loop handoff</p>
+            <h2 id="agent-proposal-heading">Agent proposal</h2>
+          </div>
+          <span className={proposalStale ? "proposal-status is-stale" : "proposal-status"}>
+            {proposal ? (proposalStale ? "Outdated" : "Your decision") : "Waiting"}
+          </span>
+        </div>
+        {proposal ? (
+          <div className={proposalStale ? "agent-proposal is-stale" : "agent-proposal"}>
+            <div className="agent-proposal__note">
+              <span>Agent note · not validation</span>
+              <p>{proposal.rationale}</p>
+            </div>
+            <ol className="agent-proposal__arrows">
+              {proposal.arrows.map((arrow, index) => (
+                <li key={`${arrow.source.kind}:${arrow.source.entityId}:${arrow.target.entityId}`}>
+                  <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <strong>
+                    {describeArrow(proposalMolecule, {
+                      id: `${proposal.id}_arrow_${index + 1}`,
+                      source: arrow.source,
+                      target: arrow.target,
+                      actor: "agent",
+                    })}
+                  </strong>
+                </li>
+              ))}
+            </ol>
+            {proposalBlockedReason && (
+              <p className="agent-proposal__warning">{proposalBlockedReason}</p>
+            )}
+            <div className="agent-proposal__actions">
+              <button
+                className="button button--primary"
+                type="button"
+                disabled={proposalAcceptBlocked}
+                onClick={() => store.acceptAgentProposal(proposal.id)}
+              >
+                Add to my draft
+              </button>
+              <button
+                className="text-button"
+                type="button"
+                onClick={() => store.declineAgentProposal(proposal.id)}
+              >
+                {proposalStale ? "Dismiss outdated proposal" : "Decline proposal"}
+              </button>
+            </div>
+            <p className="agent-proposal__boundary">
+              Bound to revision {proposal.baseRevision}. Accepting adds visible draft arrows;
+              it never checks or commits chemistry.
+            </p>
+          </div>
+        ) : (
+          <div className="agent-proposal-empty">
+            <span aria-hidden="true">A→Y</span>
+            <p>
+              A site-tools agent can stage an electron-flow idea here. Nothing enters your
+              draft until you approve it.
+            </p>
           </div>
         )}
       </section>

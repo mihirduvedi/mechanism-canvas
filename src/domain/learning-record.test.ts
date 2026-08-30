@@ -90,4 +90,32 @@ describe("learning record export", () => {
       "mechanism-canvas-sn2_01-learning-record-2026-08-29.json",
     );
   });
+
+  it("keeps a pending agent proposal and its rationale out of the export", () => {
+    const store = createMechanismStore(sn2Problem, null, [sn2Problem]);
+    expect(
+      store.stageAgentProposal({
+        arrows: [
+          {
+            source: { kind: "lone_pair", entityId: "lp_o_1" },
+            target: { kind: "atom", entityId: "c_electrophile" },
+          },
+        ],
+        rationale: "PRIVATE PROPOSAL RATIONALE",
+        expectedRevision: 0,
+      }).ok,
+    ).toBe(true);
+
+    const record = buildLearningRecord(
+      sn2Problem,
+      store.getState(),
+      "saved",
+      "2026-08-29T02:00:00.000Z",
+    );
+    const serialized = serializeLearningRecord(record);
+
+    expect(serialized).not.toContain("agentProposal");
+    expect(serialized).not.toContain("PRIVATE PROPOSAL RATIONALE");
+    expect(record.privacy.excludes).toContain("pending agent proposal and its rationale");
+  });
 });

@@ -53,6 +53,21 @@ export interface ArrowDraft {
   actor: Extract<Actor, "human" | "agent">;
 }
 
+export interface ProposedArrow {
+  source: ElectronSource;
+  target: ElectronTarget;
+}
+
+export interface AgentDraftProposal {
+  id: string;
+  problemId: string;
+  stateId: string;
+  baseRevision: number;
+  arrows: ProposedArrow[];
+  rationale: string;
+  createdAt: string;
+}
+
 export interface AcceptedArrow {
   source: ElectronSource;
   target: ElectronTarget;
@@ -207,7 +222,10 @@ export interface ActivityEvent {
     | "problem_reset"
     | "history_state_viewed"
     | "reflection_saved"
-    | "reflection_removed";
+    | "reflection_removed"
+    | "proposal_staged"
+    | "proposal_accepted"
+    | "proposal_declined";
   summary: string;
   entityIds: string[];
   timestamp: string;
@@ -235,6 +253,7 @@ export interface MechanismState {
   problemId: string;
   currentStateId: string;
   draftArrows: ArrowDraft[];
+  agentProposal: AgentDraftProposal | null;
   selection: SelectionState;
   latestValidation: ValidationResult | null;
   mechanismRevision: number;

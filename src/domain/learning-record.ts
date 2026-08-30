@@ -209,6 +209,7 @@ export function buildLearningRecord(
       excludes: [
         "learner name, email, course, and account identifiers",
         "authored accepted bundles and unreached state graphs",
+        "pending agent proposal and its rationale",
         "validation IDs and commit authority",
         "browser storage outside the active exercise",
       ],

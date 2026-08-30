@@ -158,6 +158,141 @@ describe("mechanism command store", () => {
     expect(store.getState().draftArrows).toHaveLength(0);
   });
 
+  it("keeps an agent proposal outside the draft until the learner accepts it", () => {
+    const store = createMechanismStore(undefined, null);
+    expect(
+      store.addDraftArrow({
+        source: { kind: "lone_pair", entityId: "lp_o_1" },
+        target: { kind: "atom", entityId: "c_electrophile" },
+        actor: "human",
+      }).ok,
+    ).toBe(true);
+
+    const staged = store.stageAgentProposal({
+      arrows: [
+        {
+          source: { kind: "bond", entityId: "bond_c_br" },
+          target: { kind: "atom", entityId: "br_leaving" },
+        },
+      ],
+      rationale:
+        "The companion arrow accounts for the carbon–bromine electron pair while the new bond forms.",
+      expectedRevision: 1,
+    });
+
+    expect(staged.ok).toBe(true);
+    expect(store.getState()).toMatchObject({
+      mechanismRevision: 1,
+      draftArrows: [expect.objectContaining({ actor: "human" })],
+      agentProposal: {
+        id: "proposal_2",
+        baseRevision: 1,
+        stateId: "sn2_reactants",
+      },
+    });
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      actor: "agent",
+      kind: "proposal_staged",
+    });
+
+    const accepted = store.acceptAgentProposal(staged.value?.id ?? "");
+    expect(accepted.ok).toBe(true);
+    expect(store.getState()).toMatchObject({
+      mechanismRevision: 2,
+      agentProposal: null,
+    });
+    expect(store.getState().draftArrows).toHaveLength(2);
+    expect(store.getState().draftArrows[1]).toMatchObject({
+      actor: "agent",
+      source: { kind: "bond", entityId: "bond_c_br" },
+      target: { kind: "atom", entityId: "br_leaving" },
+    });
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      actor: "human",
+      kind: "proposal_accepted",
+    });
+    expect(store.checkDraftStep("human").value?.classification).toBe("valid");
+  });
+
+  it("lets the learner decline a proposal without changing the chemistry revision", () => {
+    const store = createMechanismStore(undefined, null);
+    const staged = store.stageAgentProposal({
+      arrows: [
+        {
+          source: { kind: "lone_pair", entityId: "lp_o_1" },
+          target: { kind: "atom", entityId: "c_electrophile" },
+        },
+      ],
+      rationale: "Consider beginning with the nucleophile's available lone pair.",
+      expectedRevision: 0,
+    });
+    expect(staged.ok).toBe(true);
+
+    const declined = store.declineAgentProposal(staged.value?.id ?? "");
+    expect(declined.ok).toBe(true);
+    expect(store.getState()).toMatchObject({
+      mechanismRevision: 0,
+      draftArrows: [],
+      agentProposal: null,
+    });
+    expect(store.getState().activity.at(-1)).toMatchObject({
+      actor: "human",
+      kind: "proposal_declined",
+    });
+  });
+
+  it("refuses to accept an outdated proposal after the draft changes", () => {
+    const store = createMechanismStore(undefined, null);
+    const staged = store.stageAgentProposal({
+      arrows: [
+        {
+          source: { kind: "bond", entityId: "bond_c_br" },
+          target: { kind: "atom", entityId: "br_leaving" },
+        },
+      ],
+      rationale: "Account for the leaving-group bond as part of the same elementary step.",
+      expectedRevision: 0,
+    });
+    expect(staged.ok).toBe(true);
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_o_1" },
+      target: { kind: "atom", entityId: "c_electrophile" },
+      actor: "human",
+    });
+
+    expect(store.acceptAgentProposal(staged.value?.id ?? "")).toMatchObject({
+      ok: false,
+      error: { code: "STALE_STATE" },
+    });
+    expect(store.getState().agentProposal?.baseRevision).toBe(0);
+    expect(store.declineAgentProposal(staged.value?.id ?? "").ok).toBe(true);
+  });
+
+  it("rejects proposals that duplicate an electron source already in the draft", () => {
+    const store = createMechanismStore(undefined, null);
+    store.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_o_1" },
+      target: { kind: "atom", entityId: "c_electrophile" },
+      actor: "human",
+    });
+    expect(
+      store.stageAgentProposal({
+        arrows: [
+          {
+            source: { kind: "lone_pair", entityId: "lp_o_1" },
+            target: { kind: "atom", entityId: "c_electrophile" },
+          },
+        ],
+        rationale: "Repeat the learner's existing arrow.",
+        expectedRevision: 1,
+      }),
+    ).toMatchObject({
+      ok: false,
+      error: { code: "DUPLICATE_ELECTRON_SOURCE" },
+    });
+    expect(store.getState().agentProposal).toBeNull();
+  });
+
   it("tracks scaffold help without changing the mechanism revision", () => {
     const store = createMechanismStore(undefined, null);
     const before = store.getState().mechanismRevision;
@@ -287,7 +422,7 @@ describe("mechanism command store", () => {
     });
   });
 
-  it("migrates v2 workspaces with empty reflection fields into the v3 schema", () => {
+  it("migrates v2 workspaces with empty reflection fields into the v4 schema", () => {
     const storage = window.localStorage;
     const first = createMechanismStore(undefined, storage);
     addAcceptedBundle(first);
@@ -295,7 +430,7 @@ describe("mechanism command store", () => {
     expect(first.commitCheckedStep(checked.value?.validationId ?? "", "human").ok).toBe(true);
 
     const current = JSON.parse(
-      storage.getItem("mechanism-canvas:workspace:v3") ?? "{}",
+      storage.getItem("mechanism-canvas:workspace:v4") ?? "{}",
     ) as {
       version: number;
       workspaces: Record<string, { history: Array<Record<string, unknown>> }>;
@@ -304,7 +439,7 @@ describe("mechanism command store", () => {
     for (const workspace of Object.values(current.workspaces)) {
       workspace.history = workspace.history.map(({ reflection: _reflection, reflectionUpdatedAt: _updated, ...record }) => record);
     }
-    storage.removeItem("mechanism-canvas:workspace:v3");
+    storage.removeItem("mechanism-canvas:workspace:v4");
     storage.setItem("mechanism-canvas:workspace:v2", JSON.stringify(current));
 
     const restored = createMechanismStore(undefined, storage);
@@ -313,6 +448,61 @@ describe("mechanism command store", () => {
       reflection: null,
       reflectionUpdatedAt: null,
     });
+  });
+
+  it("persists a current proposal and its learner-review boundary in v4", () => {
+    const storage = window.localStorage;
+    const first = createMechanismStore(undefined, storage);
+    const staged = first.stageAgentProposal({
+      arrows: [
+        {
+          source: { kind: "lone_pair", entityId: "lp_o_1" },
+          target: { kind: "atom", entityId: "c_electrophile" },
+        },
+      ],
+      rationale: "Start by considering the nucleophile's available electron pair.",
+      expectedRevision: 0,
+    });
+    expect(staged.ok).toBe(true);
+
+    const restored = createMechanismStore(undefined, storage);
+    expect(restored.getState().agentProposal).toMatchObject({
+      id: staged.value?.id,
+      baseRevision: 0,
+      rationale: "Start by considering the nucleophile's available electron pair.",
+    });
+    expect(restored.getState().draftArrows).toHaveLength(0);
+    expect(restored.acceptAgentProposal(staged.value?.id ?? "").ok).toBe(true);
+    expect(restored.getState().draftArrows[0].actor).toBe("agent");
+  });
+
+  it("migrates the immediately previous v3 workspace with no invented proposal", () => {
+    const storage = window.localStorage;
+    const first = createMechanismStore(undefined, storage);
+    first.addDraftArrow({
+      source: { kind: "lone_pair", entityId: "lp_o_1" },
+      target: { kind: "atom", entityId: "c_electrophile" },
+      actor: "human",
+    });
+    const previous = JSON.parse(
+      storage.getItem("mechanism-canvas:workspace:v4") ?? "{}",
+    ) as {
+      version: number;
+      workspaces: Record<string, Record<string, unknown>>;
+    };
+    previous.version = 3;
+    for (const workspace of Object.values(previous.workspaces)) {
+      delete workspace.agentProposal;
+    }
+    storage.removeItem("mechanism-canvas:workspace:v4");
+    storage.setItem("mechanism-canvas:workspace:v3", JSON.stringify(previous));
+
+    const restored = createMechanismStore(undefined, storage);
+    expect(restored.getState()).toMatchObject({
+      mechanismRevision: 1,
+      agentProposal: null,
+    });
+    expect(restored.getState().draftArrows[0].source.entityId).toBe("lp_o_1");
   });
 
   it("preserves separate progress while one authoritative store switches problems", () => {

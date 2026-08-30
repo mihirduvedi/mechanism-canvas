@@ -5,11 +5,16 @@ Mechanism Canvas turns curved-arrow chemistry into a shared human-agent workspac
 ## Fastest live path
 
 1. Open <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> in ChatGPT's built-in browser. The demo uses memory only, so it starts clean without erasing saved practice.
-2. Confirm that the address bar's Site tools menu lists 15 tools.
-3. Paste the prompt below.
-4. Keep the molecular canvas and activity trail visible while the agent works.
+2. Confirm that the address bar's Site tools menu lists 16 tools.
+3. Paste the first prompt below.
+4. When the visible proposal appears, select **Add to my draft** and tell the agent to continue.
+5. Keep the molecular canvas, proposal gate, and activity trail visible while the agent works.
 
-> Use this page's site tools and keep every change visible. Read the clean demo state and switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Add bond_c_br → br_leaving, check again, and commit the intermediate. Call compare_reached_step for amine_reactants → methylammonium_intermediate, summarize the exact bond and charge changes, then call replay_reached_step for the same pair so the learner can watch the performed electron flow. Use view_mechanism_history_state to show the reactants, then return to the current intermediate. Add lp_n_base_1 → h_transfer and bond_n_attack_h_transfer → n_attacker, check, and commit the products. Read back the shared activity trail, then undo only the last commit.
+> Use this page's site tools and keep every change visible. Read the clean demo state and switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. Confirm that the draft and mechanism revision did not change, then stop for my decision.
+
+After selecting **Add to my draft**, continue with:
+
+> Read the current state again. Check and commit the intermediate. Call compare_reached_step for amine_reactants → methylammonium_intermediate, summarize the exact bond and charge changes, then call replay_reached_step for the same pair. Return to the current intermediate if needed. Add lp_n_base_1 → h_transfer and bond_n_attack_h_transfer → n_attacker, check, and commit the products. Read back the shared activity trail, then undo only the last commit.
 
 Current ChatGPT documentation says Site tools work in the desktop app's built-in browser with supported models and may depend on account rollout. The full interface remains usable when `document.modelContext` is unavailable.
 
@@ -20,6 +25,8 @@ Current ChatGPT documentation says Site tools work in the desktop app's built-in
 | State read | The agent discovers three exercises, including a two-step capstone, and the current revision. | The page exposes domain state rather than forcing screenshot inference. |
 | Problem switch | The visible exercise changes to **Build methylamine in two steps**. | A tool reuses the same store and persistence path as the native selector. |
 | Partial first step | One N → C arrow appears and the validator reports an incomplete concerted substitution. | The agent can test a partial hypothesis without receiving a hidden solution. |
+| Reviewable proposal | The agent stages the missing C–Br → Br arrow in a separate panel; the draft and revision do not change until the learner accepts it. | `propose_draft_arrows` creates a real human-agent handoff. There is intentionally no site tool that can approve the proposal. |
+| Learner approval | The learner selects **Add to my draft** and the proposed arrow appears with agent provenance. | Human consent, agent authorship, and deterministic validation remain distinct events in the same store. |
 | First commit | The canvas advances to charged methylammonium bromide plus ammonia. | Deterministic application logic, not the model, decides the authored transition. |
 | Reaction Diff | The learner opens a side-by-side structure comparison while the agent reads the same bond, charge, and lone-pair deltas. | `compare_reached_step` reuses one pure comparison engine and rejects any pair not listed as active reached evidence. |
 | Electron Flow Replay | The same performed curved arrows replay over the reached before-state without applying chemistry again. | `replay_reached_step` presents only the exact active commit requested and leaves revision, activity, and persistence unchanged. |
@@ -36,11 +43,13 @@ This fallback proves the human experience and shared command layer. It does not 
 
 ## Architecture in one sentence
 
-Problem fixtures, the React interface, fifteen top-level site tools, local persistence, deterministic validation, provenance, reached-state comparison and replay, history navigation, and the 3D inspector all converge on one revisioned `MechanismStore`.
+Problem fixtures, the React interface, sixteen top-level site tools, local persistence, deterministic validation, provenance, reached-state comparison and replay, history navigation, and the 3D inspector all converge on one revisioned `MechanismStore`.
 
 The most important guardrails are visible in code and behavior:
 
 - Every mutating tool uses the current `mechanismRevision`.
+- A staged proposal is bound to the current problem, state, and revision; it cannot change the draft or be approved through WebMCP.
+- Learner acceptance adds the proposal as agent-authored draft arrows, increments the revision once, and still grants no validation or commit authority.
 - Editing a draft invalidates its previous check.
 - A commit requires a valid check token bound to the exact revision and arrow signature.
 - Reset is destructive and requires both explicit confirmation and a current revision.

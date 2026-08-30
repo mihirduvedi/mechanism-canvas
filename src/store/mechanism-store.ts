@@ -7,6 +7,7 @@ import {
 } from "../domain/chemistry";
 import type {
   Actor,
+  AgentDraftProposal,
   ActivityEvent,
   ArrowDraft,
   CommandResult,
@@ -15,6 +16,7 @@ import type {
   MechanismState,
   ProblemDefinition,
   ProblemStepDefinition,
+  ProposedArrow,
   ValidationResult,
 } from "../domain/types";
 import {
@@ -25,14 +27,20 @@ import {
 import { findProblem, previewProblemCatalog } from "../problems/catalog";
 import { sn2Problem } from "../problems/sn2-01";
 
-const STORAGE_KEY = "mechanism-canvas:workspace:v3";
-const PREVIOUS_STORAGE_KEY = "mechanism-canvas:workspace:v2";
+const STORAGE_KEY = "mechanism-canvas:workspace:v4";
+const PREVIOUS_STORAGE_KEYS = [
+  "mechanism-canvas:workspace:v3",
+  "mechanism-canvas:workspace:v2",
+] as const;
 const LEGACY_STORAGE_KEY = "mechanism-canvas:workspace:v1";
 export const MAX_REFLECTION_LENGTH = 1200;
+export const MAX_PROPOSAL_RATIONALE_LENGTH = 400;
+export const MAX_PROPOSAL_ARROWS = 4;
 
 interface PersistedProblemWorkspace {
   currentStateId: string;
   draftArrows: ArrowDraft[];
+  agentProposal?: AgentDraftProposal | null;
   mechanismRevision: number;
   activitySequence: number;
   activity: MechanismState["activity"];
@@ -45,7 +53,7 @@ interface PersistedProblemWorkspace {
 }
 
 interface PersistedCatalogWorkspace {
-  version: 3;
+  version: 4;
   activeProblemId: string;
   workspaces: Record<string, PersistedProblemWorkspace>;
 }
@@ -62,6 +70,12 @@ export interface AddArrowInput {
   expectedRevision?: number;
 }
 
+export interface StageAgentProposalInput {
+  arrows: ProposedArrow[];
+  rationale: string;
+  expectedRevision?: number;
+}
+
 export interface MechanismStore {
   getState: () => MechanismState;
   getProblem: () => ProblemDefinition;
@@ -75,6 +89,11 @@ export interface MechanismStore {
   selectSource: (source: ElectronSource) => CommandResult;
   cancelSelection: () => void;
   addDraftArrow: (input: AddArrowInput) => CommandResult<ArrowDraft>;
+  stageAgentProposal: (
+    input: StageAgentProposalInput,
+  ) => CommandResult<AgentDraftProposal>;
+  acceptAgentProposal: (proposalId: string) => CommandResult<ArrowDraft[]>;
+  declineAgentProposal: (proposalId: string) => CommandResult;
   removeDraftArrow: (
     arrowId: string,
     actor: Extract<Actor, "human" | "agent">,
@@ -116,6 +135,7 @@ function baseState(problem: ProblemDefinition): MechanismState {
     problemId: problem.id,
     currentStateId: problem.currentStateId,
     draftArrows: [],
+    agentProposal: null,
     selection: { source: null },
     latestValidation: null,
     mechanismRevision: 0,
@@ -153,6 +173,57 @@ function isPersistedProblemWorkspace(
   );
 }
 
+function isPersistedAgentProposal(
+  value: unknown,
+  problem: ProblemDefinition,
+): value is AgentDraftProposal {
+  if (!value || typeof value !== "object") return false;
+  const proposal = value as Partial<AgentDraftProposal>;
+  if (
+    typeof proposal.id !== "string" ||
+    proposal.problemId !== problem.id ||
+    typeof proposal.stateId !== "string" ||
+    !(proposal.stateId in problem.states) ||
+    typeof proposal.baseRevision !== "number" ||
+    !Number.isSafeInteger(proposal.baseRevision) ||
+    proposal.baseRevision < 0 ||
+    typeof proposal.rationale !== "string" ||
+    proposal.rationale.trim().length < 1 ||
+    proposal.rationale.length > MAX_PROPOSAL_RATIONALE_LENGTH ||
+    typeof proposal.createdAt !== "string" ||
+    !Array.isArray(proposal.arrows) ||
+    proposal.arrows.length < 1 ||
+    proposal.arrows.length > MAX_PROPOSAL_ARROWS
+  ) {
+    return false;
+  }
+  const molecule = problem.states[proposal.stateId];
+  const sources = new Set<string>();
+  return proposal.arrows.every((arrow) => {
+    if (!arrow || typeof arrow !== "object") return false;
+    const source = arrow.source;
+    const target = arrow.target;
+    if (
+      !source ||
+      (source.kind !== "bond" && source.kind !== "lone_pair") ||
+      typeof source.entityId !== "string" ||
+      !target ||
+      target.kind !== "atom" ||
+      typeof target.entityId !== "string"
+    ) {
+      return false;
+    }
+    const sourceKey = `${source.kind}:${source.entityId}`;
+    if (sources.has(sourceKey)) return false;
+    sources.add(sourceKey);
+    const sourceExists =
+      source.kind === "bond"
+        ? molecule.bonds.some((bond) => bond.id === source.entityId)
+        : molecule.lonePairSites.some((site) => site.id === source.entityId);
+    return sourceExists && molecule.atoms.some((atom) => atom.id === target.entityId);
+  });
+}
+
 function restoreProblemState(
   problem: ProblemDefinition,
   persisted: PersistedProblemWorkspace,
@@ -161,6 +232,9 @@ function restoreProblemState(
     ...baseState(problem),
     currentStateId: persisted.currentStateId,
     draftArrows: persisted.draftArrows,
+    agentProposal: isPersistedAgentProposal(persisted.agentProposal, problem)
+      ? persisted.agentProposal
+      : null,
     mechanismRevision: persisted.mechanismRevision,
     activitySequence: persisted.activitySequence,
     activity: persisted.activity.slice(-80),
@@ -192,6 +266,7 @@ function toPersistedProblem(state: MechanismState): PersistedProblemWorkspace {
   return {
     currentStateId: state.currentStateId,
     draftArrows: state.draftArrows,
+    agentProposal: state.agentProposal,
     mechanismRevision: state.mechanismRevision,
     activitySequence: state.activitySequence,
     activity: state.activity.slice(-80),
@@ -221,11 +296,14 @@ function hydrateCatalog(
   if (!storage) return fallback;
 
   try {
-    const raw = storage.getItem(STORAGE_KEY) ?? storage.getItem(PREVIOUS_STORAGE_KEY);
+    const raw =
+      storage.getItem(STORAGE_KEY) ??
+      PREVIOUS_STORAGE_KEYS.map((key) => storage.getItem(key)).find(Boolean) ??
+      null;
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PersistedCatalogWorkspace> & { version?: number };
       if (
-        (parsed.version === 3 || parsed.version === 2) &&
+        (parsed.version === 4 || parsed.version === 3 || parsed.version === 2) &&
         parsed.workspaces &&
         typeof parsed.workspaces === "object"
       ) {
@@ -288,7 +366,7 @@ function persist(
     ]),
   );
   const snapshot: PersistedCatalogWorkspace = {
-    version: 3,
+    version: 4,
     activeProblemId: activeProblem.id,
     workspaces: serializedWorkspaces,
   };
@@ -307,6 +385,14 @@ function isElectronSourcePresent(problem: ProblemDefinition, state: MechanismSta
 
 function isAtomPresent(problem: ProblemDefinition, state: MechanismState, atomId: string): boolean {
   return problem.states[state.currentStateId].atoms.some((atom) => atom.id === atomId);
+}
+
+function sameElectronSource(left: ElectronSource, right: ElectronSource): boolean {
+  return left.kind === right.kind && left.entityId === right.entityId;
+}
+
+function proposalEntityIds(arrows: readonly ProposedArrow[]): string[] {
+  return [...new Set(arrows.flatMap((arrow) => [arrow.source.entityId, arrow.target.entityId]))];
 }
 
 export function createMechanismStore(
@@ -477,6 +563,209 @@ export function createMechanismStore(
         ),
       );
       return { ok: true, value: arrow };
+    },
+    stageAgentProposal: ({ arrows, rationale, expectedRevision }) => {
+      const revisionCheck = assertExpectedRevision<AgentDraftProposal>(
+        state.mechanismRevision,
+        expectedRevision,
+      );
+      if (!revisionCheck.ok) return revisionCheck;
+      if (state.historyViewStateId !== null) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_STATE",
+            message: "Return to the current mechanism state before staging a proposal.",
+          },
+        };
+      }
+      if (state.currentStateId === problem.completedStateId) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: "This mechanism is complete, so there is no current draft to propose.",
+          },
+        };
+      }
+      if (arrows.length < 1 || arrows.length > MAX_PROPOSAL_ARROWS) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: `A proposal must contain between 1 and ${MAX_PROPOSAL_ARROWS} arrows.`,
+          },
+        };
+      }
+      const normalizedRationale = rationale.trim();
+      if (
+        normalizedRationale.length < 1 ||
+        normalizedRationale.length > MAX_PROPOSAL_RATIONALE_LENGTH
+      ) {
+        return {
+          ok: false,
+          error: {
+            code: "TARGET_NOT_SUPPORTED",
+            message: `Give the learner a rationale from 1 to ${MAX_PROPOSAL_RATIONALE_LENGTH} characters.`,
+          },
+        };
+      }
+
+      const seenSources: ElectronSource[] = [];
+      for (const arrow of arrows) {
+        if (!isElectronSourcePresent(problem, state, arrow.source)) {
+          return {
+            ok: false,
+            error: {
+              code: "SOURCE_HAS_NO_ELECTRON_PAIR",
+              message: `Electron source ${arrow.source.entityId} is not present in the current structure.`,
+            },
+          };
+        }
+        if (!isAtomPresent(problem, state, arrow.target.entityId)) {
+          return {
+            ok: false,
+            error: {
+              code: "TARGET_NOT_SUPPORTED",
+              message: `Target atom ${arrow.target.entityId} is not present in the current structure.`,
+            },
+          };
+        }
+        if (seenSources.some((source) => sameElectronSource(source, arrow.source))) {
+          return {
+            ok: false,
+            error: {
+              code: "DUPLICATE_ELECTRON_SOURCE",
+              message: `A proposal can move electron source ${arrow.source.entityId} only once.`,
+            },
+          };
+        }
+        const existingArrow = state.draftArrows.find((draft) =>
+          sameElectronSource(draft.source, arrow.source),
+        );
+        if (existingArrow) {
+          const alreadyPresent = existingArrow.target.entityId === arrow.target.entityId;
+          return {
+            ok: false,
+            error: {
+              code: "DUPLICATE_ELECTRON_SOURCE",
+              message: alreadyPresent
+                ? `The draft already contains the proposed move from ${arrow.source.entityId}.`
+                : `The draft already moves ${arrow.source.entityId} to a different target. Propose only compatible additions.`,
+            },
+          };
+        }
+        seenSources.push(arrow.source);
+      }
+
+      const proposal: AgentDraftProposal = {
+        id: `proposal_${state.activitySequence + 1}`,
+        problemId: problem.id,
+        stateId: state.currentStateId,
+        baseRevision: state.mechanismRevision,
+        arrows: arrows.map((arrow) => ({
+          source: { ...arrow.source },
+          target: { ...arrow.target },
+        })),
+        rationale: normalizedRationale,
+        createdAt: new Date().toISOString(),
+      };
+      update(
+        withEvent(
+          state,
+          {
+            agentProposal: proposal,
+            focusEntityIds: proposalEntityIds(proposal.arrows),
+            visibleScaffoldLevel: 0,
+          },
+          "agent",
+          "proposal_staged",
+          `Agent staged ${proposal.arrows.length} electron-flow ${proposal.arrows.length === 1 ? "arrow" : "arrows"} for learner review.`,
+          proposalEntityIds(proposal.arrows),
+        ),
+      );
+      return { ok: true, value: proposal };
+    },
+    acceptAgentProposal: (proposalId) => {
+      const proposal = state.agentProposal;
+      if (!proposal || proposal.id !== proposalId) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_STATE",
+            message: "That agent proposal is no longer available.",
+          },
+        };
+      }
+      if (
+        proposal.problemId !== problem.id ||
+        proposal.stateId !== state.currentStateId ||
+        proposal.baseRevision !== state.mechanismRevision ||
+        state.historyViewStateId !== null ||
+        !isPersistedAgentProposal(proposal, problem) ||
+        proposal.arrows.some((arrow) =>
+          state.draftArrows.some((draft) => sameElectronSource(draft.source, arrow.source)),
+        )
+      ) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_STATE",
+            message: "The mechanism changed after this proposal was staged. Dismiss it and ask for a current proposal.",
+          },
+        };
+      }
+
+      const nextRevision = state.mechanismRevision + 1;
+      const acceptedArrows: ArrowDraft[] = proposal.arrows.map((arrow, index) => ({
+        id: `arrow_${nextRevision}_${state.draftArrows.length + index + 1}`,
+        source: { ...arrow.source },
+        target: { ...arrow.target },
+        actor: "agent",
+      }));
+      update(
+        withEvent(
+          state,
+          {
+            draftArrows: [...state.draftArrows, ...acceptedArrows],
+            agentProposal: null,
+            selection: { source: null },
+            latestValidation: null,
+            mechanismRevision: nextRevision,
+            focusEntityIds: proposalEntityIds(proposal.arrows),
+            visibleScaffoldLevel: 0,
+            historyViewStateId: null,
+          },
+          "human",
+          "proposal_accepted",
+          `Accepted ${acceptedArrows.length} agent-proposed ${acceptedArrows.length === 1 ? "arrow" : "arrows"} into the draft; deterministic checking is still required.`,
+          proposalEntityIds(proposal.arrows),
+        ),
+      );
+      return { ok: true, value: acceptedArrows };
+    },
+    declineAgentProposal: (proposalId) => {
+      const proposal = state.agentProposal;
+      if (!proposal || proposal.id !== proposalId) {
+        return {
+          ok: false,
+          error: {
+            code: "STALE_STATE",
+            message: "That agent proposal is no longer available.",
+          },
+        };
+      }
+      update(
+        withEvent(
+          state,
+          { agentProposal: null, focusEntityIds: [] },
+          "human",
+          "proposal_declined",
+          "Declined the agent proposal; the draft and chemistry stayed unchanged.",
+          proposalEntityIds(proposal.arrows),
+        ),
+      );
+      return { ok: true };
     },
     removeDraftArrow: (arrowId, actor, expectedRevision) => {
       const revisionCheck = assertExpectedRevision(state.mechanismRevision, expectedRevision);
