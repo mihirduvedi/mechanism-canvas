@@ -23,6 +23,7 @@ The result is one inspectable chain:
    - **Inspect this step:** state, entity, history, comparison, replay, activity, and focus tools.
    - **Diagnose my draft:** Inspect plus deterministic checking and contract-capped hints.
    - **Coauthor this step:** Diagnose plus reviewable arrow proposals and direct add/remove only when the Collaboration Contract already permits those tools.
+   - **Compare hypotheses:** Inspect plus isolated branch set, check, compare, and recommendation tools while a Counterfactual Lab is active.
 3. Choose a four-, six-, or eight-action budget.
 4. Start the session. The grant freezes against the active problem, committed state, mechanism revision, and current contract surface.
 5. Watch the remaining budget, exact discoverable tools, and session-bound proof receipts.
@@ -32,7 +33,7 @@ The session is memory-only in the current tab and resets on refresh. It never en
 
 ## Exact capability model
 
-The normal catalog contains 21 top-level imperative Site Tools:
+The complete catalog contains 26 top-level imperative Site Tools. Without a Counterfactual Lab, the core contract surface remains:
 
 - Observe: 11;
 - Coach: 16 by default, or 15 with agent hints disabled;
@@ -47,11 +48,15 @@ Starting a session applies a second intersection. Under Collaborate with learner
 | Coauthor | 15 | learning profile, practice plans, switching, commit, undo, reset |
 | Exhausted or drifted | 3 | every work tool; only contract, session, and proof-receipt reads remain |
 
-The three evidence controls are always unmetered:
+An active Coach-mode Counterfactual Lab exposes 21 tools. Its **Compare hypotheses** session exposes 15: four evidence controls, seven inspection/presentation tools, and four branch-work tools. When that session exhausts, four controls remain because `get_hypothesis_lab` stays readable.
+
+Three core evidence controls are always unmetered:
 
 - `get_collaboration_contract`;
 - `get_delegation_session`; and
 - `get_agent_action_receipts`.
+
+`get_hypothesis_lab` is a fourth unmetered control whenever a lab exists.
 
 Every other invocation that enters page execution spends one action, including a deterministic guard or invalid input. An already-canceled callback spends nothing because the page does not begin the requested work.
 
@@ -61,8 +66,8 @@ Every other invocation that enters page execution spends one action, including a
 - A later contract restriction can shrink the active intersection.
 - A later contract expansion cannot add tools to the frozen session. The learner must end it and start a new grant.
 - A cached tool callback outside the frozen session is rejected centrally with `DELEGATION_TOOL_BLOCKED`, even if a host still holds the old JavaScript definition.
-- Spending the final action changes the session to `exhausted` and republishes the three-control evidence surface.
-- A human change to problem, committed state, or mechanism revision changes the session to `drifted` immediately and republishes the same three-control surface.
+- Spending the final action changes the session to `exhausted` and republishes the available evidence controls: three normally or four while a lab exists.
+- A human change to problem, committed state, or mechanism revision changes the session to `drifted` immediately and republishes the same evidence-only surface.
 - A permitted agent edit does not invalidate its own session. The wrapper marks the call in flight, lets the shared store execute, and advances the session's expected revision after the call finishes.
 - Commit, problem switching, reset, undo, learning-profile reads, and practice-plan staging are excluded from every preset. A bounded step job cannot silently become a cross-exercise or destructive workflow.
 
@@ -84,12 +89,12 @@ The central instrumentation wrapper runs in this order:
 
 ## Receipt and privacy contract
 
-Agent Proof Ledger schema version 2 adds one optional fixed-structure `delegation` object:
+Agent Proof Ledger schema version 4 retains the optional fixed-structure `delegation` object, isolated lab state stamps, and closed-world Lab evaluation evidence:
 
 ```ts
 interface DelegationReceiptEvidence {
   sessionId: string;
-  presetId: "inspect" | "diagnose" | "coauthor";
+  presetId: "inspect" | "diagnose" | "coauthor" | "explore";
   presetLabel: string;
   statusAtStart: "active" | "exhausted" | "drifted";
   problemId: string;
@@ -99,20 +104,20 @@ interface DelegationReceiptEvidence {
 }
 ```
 
-No freeform learner intent, prompt, rationale, raw input, raw output, validation token, or identity is added. Control reads use `actionNumber: null`; metered calls record the exact one-based action ordinal.
+No freeform learner intent, prompt, rationale, raw input, raw output, validation token, or identity is added. Control reads use `actionNumber: null`; metered calls record the exact one-based action ordinal. See [COUNTERFACTUAL_MECHANISM_LAB.md](COUNTERFACTUAL_MECHANISM_LAB.md) for lab ID, status, and revision stamps.
 
 ## Judge proof
 
-1. Open the clean demo: Coach shows 16 of 21 tools.
-2. Select Collaborate while keeping learner-only commits: 20 of 21 tools.
-3. Open the two-step ammonia exercise, select **Coauthor this step**, choose four actions, and start the session: 15 of 21 tools.
-4. Call `get_delegation_session`; confirm it is unmetered and no Site Tool can widen the grant.
-5. Use exactly four work calls: read state, add one N → C arrow, check the incomplete step, and stage the missing C–Br → Br arrow.
-6. The fourth call closes the budget and the browser surface contracts to 3 of 21 tools.
-7. Call `get_agent_action_receipts`; it remains available and returns matching session IDs and action ordinals without spending an action.
-8. End the session in the page. The 20-tool learner-only Collaborate surface returns; no agent call can perform this restoration.
+1. Open the clean demo: Coach shows 16 of 26 tools.
+2. Open a two-path Counterfactual Lab: 21 of 26 tools.
+3. Select **Compare hypotheses**, choose six actions, and start: 15 of 26 tools.
+4. Call `get_delegation_session` and `get_hypothesis_lab`; both are unmetered, and no Site Tool can widen the grant.
+5. Use exactly six work calls: set/check A, set/check B, compare, and recommend.
+6. The sixth call closes the budget and the browser surface contracts to 4 of 26 tools.
+7. Call `get_agent_action_receipts`; it remains available and returns matching session IDs, action ordinals, and lab revisions without spending an action.
+8. End the session in the page. The read-only recommendation remains until the learner reviews it or ends the lab.
 
-This sequence makes WebMCP itself visible: one learner action changes capability discovery, every permitted call carries intent evidence, and the page closes the work surface without trusting the model to stop itself.
+This sequence makes WebMCP itself visible: one learner action changes capability discovery, every permitted call carries intent evidence, and the page closes the work surface without trusting the model to stop itself. The Live Run Observatory independently records the host-accepted **16 → 21 → 15 → 4** surfaces and evaluates the six callbacks as seven page-side claims.
 
 ## Verification boundary
 
@@ -125,7 +130,8 @@ Rendered QA must separately verify the no-session, active, exhausted, and drifte
 - Session domain and invariants: `src/webmcp/delegation-session.ts`
 - Active tab-local manager: `src/webmcp/active-delegation-session.ts`
 - Registration, guards, and `get_delegation_session`: `src/webmcp/register-tools.ts`
-- Receipt schema version 2: `src/webmcp/tool-receipt-ledger.ts`
+- Receipt schema version 4: `src/webmcp/tool-receipt-ledger.ts`
+- Host surface and journey evaluation: `src/webmcp/capability-surface-recorder.ts`, `src/webmcp/webmcp-run-report.ts`, and `src/components/WebMcpObservatory.tsx`
 - Learner interface: `src/components/DelegationSession.tsx`
 - Receipt display: `src/components/AgentProofLedger.tsx`
 - Domain and integration tests: `src/webmcp/delegation-session.test.ts`, `src/webmcp/register-tools.test.ts`

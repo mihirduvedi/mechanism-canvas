@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { MechanismStore } from "../store/mechanism-store";
 import { useMechanismState } from "../store/use-mechanism";
 import type { DelegationSessionManager } from "../webmcp/delegation-session";
@@ -13,10 +13,12 @@ import {
   enabledToolNames,
   MECHANISM_TOOL_COUNT,
 } from "../webmcp/register-tools";
+import type { HypothesisLab } from "../webmcp/hypothesis-lab";
 
 interface DelegationSessionProps {
   store: MechanismStore;
   manager: DelegationSessionManager;
+  hypothesisLab: HypothesisLab | null;
 }
 
 const statusLabels = {
@@ -25,7 +27,7 @@ const statusLabels = {
   drifted: "Scope changed",
 } as const;
 
-export function DelegationSession({ store, manager }: DelegationSessionProps) {
+export function DelegationSession({ store, manager, hypothesisLab }: DelegationSessionProps) {
   const state = useMechanismState(store);
   const session = useSyncExternalStore(
     manager.subscribe,
@@ -36,8 +38,13 @@ export function DelegationSession({ store, manager }: DelegationSessionProps) {
   const [maxActions, setMaxActions] = useState<(typeof DELEGATION_ACTION_BUDGETS)[number]>(6);
   const [status, setStatus] = useState("");
   const contract = store.getCollaborationContract();
-  const contractTools = enabledToolNames(contract);
-  const activeTools = enabledToolNames(contract, session);
+  const contractTools = enabledToolNames(contract, null, hypothesisLab);
+  const activeTools = enabledToolNames(contract, session, hypothesisLab);
+  useEffect(() => {
+    if (!session && presetId === "explore" && hypothesisLab?.status !== "active") {
+      setPresetId("coauthor");
+    }
+  }, [hypothesisLab?.status, presetId, session]);
   const previewTools = useMemo(() => {
     const presetNames = new Set(delegationPresetToolNames(presetId));
     return contractTools.filter((name) => presetNames.has(name));
@@ -47,6 +54,7 @@ export function DelegationSession({ store, manager }: DelegationSessionProps) {
       name as (typeof DELEGATION_CONTROL_TOOL_NAMES)[number],
     ),
   ).length;
+  const previewControlCount = previewTools.length - previewWorkCount;
 
   const startSession = () => {
     try {
@@ -67,8 +75,13 @@ export function DelegationSession({ store, manager }: DelegationSessionProps) {
     );
   };
 
+  const evidenceControlCount = activeTools.filter((name) =>
+    DELEGATION_CONTROL_TOOL_NAMES.includes(
+      name as (typeof DELEGATION_CONTROL_TOOL_NAMES)[number],
+    )
+  ).length;
   const sessionMessage = session?.status === "exhausted"
-    ? "The work budget is closed. Three evidence controls remain discoverable until you restore the full contract surface."
+    ? `The work budget is closed. ${evidenceControlCount} evidence controls remain discoverable until you restore the full contract surface.`
     : session?.status === "drifted"
       ? session.driftReason ?? "The scoped state changed outside this delegation session."
       : "Every non-control Site Tool call spends one action. Calls may advance the scoped revision, but they cannot switch exercises, commit, reset, or widen this grant.";
@@ -102,9 +115,10 @@ export function DelegationSession({ store, manager }: DelegationSessionProps) {
               const permittedCount = contractTools.filter((name) =>
                 delegationPresetToolNames(preset.id).includes(name),
               ).length;
+              const unavailable = preset.id === "explore" && hypothesisLab?.status !== "active";
               return (
                 <label
-                  className={presetId === preset.id ? "delegation-preset is-selected" : "delegation-preset"}
+                  className={`${presetId === preset.id ? "delegation-preset is-selected" : "delegation-preset"}${unavailable ? " is-disabled" : ""}`}
                   key={preset.id}
                 >
                   <input
@@ -112,13 +126,14 @@ export function DelegationSession({ store, manager }: DelegationSessionProps) {
                     name="delegation-purpose"
                     value={preset.id}
                     checked={presetId === preset.id}
+                    disabled={unavailable}
                     onChange={() => setPresetId(preset.id)}
                   />
                   <span className="delegation-preset__number">0{index + 1}</span>
                   <span>
                     <strong>{preset.label}</strong>
                     <small>{preset.description}</small>
-                    <em>{permittedCount} tools under the current contract</em>
+                    <em>{unavailable ? "Open a Counterfactual Lab first" : `${permittedCount} tools under the current contract`}</em>
                   </span>
                 </label>
               );
@@ -141,7 +156,7 @@ export function DelegationSession({ store, manager }: DelegationSessionProps) {
             </label>
             <div className="delegation-session__preview" aria-live="polite">
               <span>Grant preview</span>
-              <strong>{previewWorkCount} work tools + {DELEGATION_CONTROL_TOOL_NAMES.length} evidence controls</strong>
+              <strong>{previewWorkCount} work tools + {previewControlCount} evidence controls</strong>
               <small>Bound to {store.getProblem().title} · {store.getProblem().states[state.currentStateId].label} · revision {state.mechanismRevision}</small>
             </div>
             <button className="button" type="button" onClick={startSession}>

@@ -6,6 +6,7 @@ import {
   captureToolState,
   changedToolState,
   createToolReceiptLedger,
+  extractToolReceiptEvidence,
   receiptEntityIds,
   serializeToolReceiptExport,
   summarizeToolIntent,
@@ -24,6 +25,9 @@ function receipt(sequence: number, overrides: Partial<ToolReceipt> = {}): Omit<T
     draftArrowCount: 0,
     collaborationMode: "coach" as const,
     contractRevision: 0,
+    hypothesisLabId: null,
+    hypothesisLabStatus: null,
+    hypothesisLabRevision: null,
   };
   return {
     toolName: "get_mechanism_state",
@@ -33,6 +37,7 @@ function receipt(sequence: number, overrides: Partial<ToolReceipt> = {}): Omit<T
     result: "Completed with shared page state unchanged.",
     code: null,
     entityIds: [],
+    evidence: null,
     delegation: null,
     startedAt: "2026-08-30T00:00:00.000Z",
     completedAt: "2026-08-30T00:00:00.001Z",
@@ -45,6 +50,7 @@ function receipt(sequence: number, overrides: Partial<ToolReceipt> = {}): Omit<T
       draft: false,
       activity: false,
       contract: false,
+      hypothesisLab: false,
     },
     ...overrides,
   };
@@ -105,6 +111,7 @@ describe("WebMCP Agent Proof Ledger", () => {
       draft: false,
       activity: true,
       contract: true,
+      hypothesisLab: false,
     });
     expect(summarizeToolResult("succeeded", null, before, after)).toBe(
       "Activity 0 → 1; chemistry revision unchanged.",
@@ -123,7 +130,7 @@ describe("WebMCP Agent Proof Ledger", () => {
 
     const record = buildToolReceiptExport(ledger, "demo", "2026-08-30T01:00:00.000Z");
     expect(record).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 4,
       application: "Mechanism Canvas",
       sessionId: "receipt_session_test",
       sessionMode: "demo",
@@ -155,5 +162,41 @@ describe("WebMCP Agent Proof Ledger", () => {
       failed: 1,
       canceled: 1,
     });
+  });
+
+  it("retains only closed-world Counterfactual Lab evidence", () => {
+    expect(extractToolReceiptEvidence(
+      "check_hypothesis_branch",
+      { branchId: "hypothesis_a", rationale: "PRIVATE" },
+      { validation: { classification: "incomplete", summary: "PRIVATE OUTPUT" } },
+    )).toEqual({
+      hypothesisBranchId: "hypothesis_a",
+      hypothesisArrowCount: null,
+      validationClassification: "incomplete",
+      comparedBranchIds: null,
+      comparisonArrowCounts: null,
+      awaitingLearnerApproval: null,
+    });
+
+    expect(extractToolReceiptEvidence(
+      "compare_hypothesis_branches",
+      { leftBranchId: "hypothesis_a", rightBranchId: "hypothesis_b" },
+      {
+        comparison: {
+          sharedArrows: [{}],
+          leftOnlyArrows: [],
+          rightOnlyArrows: [{}, {}],
+          summary: "PRIVATE OUTPUT",
+        },
+      },
+    )).toMatchObject({
+      comparedBranchIds: ["hypothesis_a", "hypothesis_b"],
+      comparisonArrowCounts: { shared: 1, leftOnly: 0, rightOnly: 2 },
+    });
+    expect(JSON.stringify(extractToolReceiptEvidence(
+      "check_hypothesis_branch",
+      { branchId: "hypothesis_a", rationale: "PRIVATE" },
+      { validation: { classification: "incomplete", summary: "PRIVATE OUTPUT" } },
+    ))).not.toContain("PRIVATE");
   });
 });

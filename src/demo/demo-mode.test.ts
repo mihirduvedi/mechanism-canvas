@@ -55,9 +55,12 @@ describe("judge demo mode", () => {
     expect(reloadedDemo.getState().mechanismRevision).toBe(0);
   });
 
-  it("copies a first-turn prompt that stops at the learner proposal gate", () => {
-    expect(JUDGE_AGENT_PROMPT).toContain("propose_draft_arrows");
+  it("copies a six-action lab prompt that stops at the learner proposal gate", () => {
+    expect(JUDGE_AGENT_PROMPT).toContain("six metered actions");
+    expect(JUDGE_AGENT_PROMPT).toContain("set Path A");
+    expect(JUDGE_AGENT_PROMPT).toContain("recommend only the validator-approved path");
+    expect(JUDGE_AGENT_PROMPT).toContain("unchanged main revision");
     expect(JUDGE_AGENT_PROMPT).toContain("stop for my decision");
-    expect(JUDGE_AGENT_PROMPT).not.toContain("commit the intermediate");
+    expect(JUDGE_AGENT_PROMPT).not.toContain("commit");
   });
 });

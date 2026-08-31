@@ -3,11 +3,13 @@ import type { CollaborationMode } from "../domain/types";
 import type { MechanismStore } from "../store/mechanism-store";
 import { enabledToolCount, MECHANISM_TOOL_COUNT } from "../webmcp/register-tools";
 import type { DelegationSession } from "../webmcp/delegation-session";
+import type { HypothesisLab } from "../webmcp/hypothesis-lab";
 
 interface CollaborationContractProps {
   store: MechanismStore;
   sessionMode: "saved" | "demo";
   delegationSession: DelegationSession | null;
+  hypothesisLab: HypothesisLab | null;
 }
 
 const modes: Array<{
@@ -48,9 +50,10 @@ export function CollaborationContract({
   store,
   sessionMode,
   delegationSession,
+  hypothesisLab,
 }: CollaborationContractProps) {
   const contract = store.getCollaborationContract();
-  const activeToolCount = enabledToolCount(contract, delegationSession);
+  const activeToolCount = enabledToolCount(contract, delegationSession, hypothesisLab);
 
   const update = (
     patch: Partial<{

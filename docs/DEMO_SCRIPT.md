@@ -3,90 +3,92 @@
 **Target runtime:** 2:50–2:59
 
 **Format:** public YouTube screen recording with live audio
+
 **Primary frame:** deployed `?demo=1` page in ChatGPT's built-in browser
 
-## 0:00–0:20 — The missing layer is intent
+## 0:00–0:20 — Agents need somewhere safe to be wrong
 
-**On screen:** Open the clean demo. Keep the Collaboration Contract and Delegation Session mastheads visible.
-
-**Narration:**
-
-> Browser agents are gaining precise tools, but permission alone does not say what I want done now, where the work may happen, or when the agent must stop. In chemistry, that gap can turn help into answer-taking—or let stale actions touch the wrong mechanism state.
-
-## 0:20–0:42 — Make maximum permission executable
-
-**On screen:** Show Coach at **16 / 21**. Select Collaborate while keeping learner-only commits; show **20 / 21** in the page and Site Tools menu.
+**On screen:** Open the clean demo. Show Coach at **16 / 26** and the closed Counterfactual Lab.
 
 **Narration:**
 
-> My Collaboration Contract sets the maximum role. Collaborate exposes revision-bound editing, but I keep final commits for myself. The browser's WebMCP surface changes live, and there is no Site Tool that can change this contract.
+> A useful agent should test alternatives, observe evidence, and correct itself—not make one hidden guess on my real work. Mechanism Canvas gives WebMCP agents an isolated hypothesis space while the learner's chemistry remains authoritative.
 
-## 0:42–1:02 — Grant one bounded job
+## 0:20–0:43 — Publish tools from visible intent
 
-**On screen:** Select **03 · SN2 + proton transfer**. Choose **Coauthor this step**, four actions, then start. Show **15 / 21**, exact scope, and zero of four spent.
-
-**Narration:**
-
-> Now I grant one job: coauthor only this step, on this exact problem, state, and revision, for four actions. The page freezes the allowed subset. Later permission changes cannot silently widen it, and the agent cannot start, renew, or end the session.
-
-## 1:02–1:28 — Act semantically, fail honestly
-
-**On screen:** Paste the prompt. Agent calls `get_delegation_session`, `get_mechanism_state`, adds `lp_n_attack_1 → c_methyl`, and calls `check_draft_step`.
+**On screen:** Select **Open isolated lab**. Show two empty branches and **21 / 26** in the page and Site Tools menu.
 
 **Narration:**
 
-> Session and proof reads are unmetered evidence controls. The first work action reads stable atoms, bonds, lone pairs, and revision directly from the page. The second adds one semantic arrow. The third asks the deterministic validator, which correctly reports that this concerted substitution is incomplete.
+> I open a two-path lab. That visible action dynamically registers five tools for reading, building, checking, comparing, and recommending branches. No Site Tool can open or close the lab, and every branch is sealed to this exact structure and main revision.
 
-## 1:28–1:51 — Prepare a handoff, then close capability
+## 0:43–1:02 — Grant one finite exploration
 
-**On screen:** Agent calls `propose_draft_arrows` for `bond_c_br → br_leaving`. Show the proposal and session change to **Action budget spent · 3 / 21 tools**.
-
-**Narration:**
-
-> The fourth action stages the missing bond-breaking arrow outside my draft. That automatically spends the budget. WebMCP discovery collapses to three evidence controls, so “stop” is enforced by the page instead of left to model obedience.
-
-## 1:51–2:13 — Prove intent against execution
-
-**On screen:** Agent calls `get_agent_action_receipts`. Show action 1/4 through 4/4 in the ledger; briefly open exact session surface if useful.
+**On screen:** Choose **Compare hypotheses**, six actions, and start. Show **15 / 26**, exact scope, and zero of six spent.
 
 **Narration:**
 
-> The same page-side receipts are visible to me and readable by the agent. They bind actual callback execution to the fixed session, action ordinal, contract, semantic IDs, and before-and-after state—without retaining prompts, rationales, raw payloads, or identity.
+> I delegate one purpose for six actions. The page publishes only the intersection of this Explore job and my Coach contract. The grant cannot widen itself, switch exercises, edit my draft, or commit chemistry.
 
-## 2:13–2:36 — Return control to the learner
+## 1:02–1:35 — Test a weak hypothesis, then correct it
 
-**On screen:** Select **End session · restore contract surface**; show **20 / 21**. Select **Add to my draft**. Ask the agent to check the complete step, then select **Commit checked step** yourself.
-
-**Narration:**
-
-> Only my visible action can restore the broader contract. I accept the structured proposal, preserving agent authorship and learner consent as different events. The agent checks the complete bundle, but my learner-only commit consumes the current validation token and advances the chemistry.
-
-## 2:36–2:55 — Inspect proof, not prose
-
-**On screen:** Call `compare_reached_step`, then `replay_reached_step`. Show the bond break, bond formation, charges, and performed arrows.
+**On screen:** Paste the prompt. Show Path A populate with one arrow and become **Incomplete path**. Show Path B populate with two arrows and become **Validator approved**.
 
 **Narration:**
 
-> The reached graph delta and electron-flow replay come from the same committed state, not the model's explanation, and neither applies chemistry again. Mechanism Canvas is chemistry today—and a reusable intent, capability, and execution contract for trustworthy visual collaboration.
+> The agent first tests bond formation alone. The real validator rejects it as incomplete because this substitution is concerted. The agent then builds a second branch with bond formation and leaving-group cleavage. That alternative passes. Both are rendered from semantic atom, bond, and lone-pair IDs—not pixel coordinates.
+
+## 1:35–1:58 — Compare evidence and stage a handoff
+
+**On screen:** Show the comparison summary, then Path B staged in Agent Proposal. Show **Action budget spent · 4 / 26 tools**.
+
+**Narration:**
+
+> The fifth call compares checked evidence. The sixth can recommend only a validator-approved branch. It lands in a visible proposal gate, outside my draft. At the same moment, WebMCP discovery collapses to four read-only evidence controls.
+
+## 1:58–2:22 — Prove the whole WebMCP journey
+
+**On screen:** Show Live Run Observatory **7 / 7**, Lab **0 → 6**, Main **0 → 0**, Actions **6 / 6**, and accepted surfaces **16 → 21 → 15 → 4**. Briefly show the matching receipt cards.
+
+**Narration:**
+
+> The page now evaluates the real run, not the agent's narration: two branches, failure then correction, structured comparison, validated handoff, sealed main work, and a closed budget. The flight recorder separately proves which tool batches the host accepted.
+
+## 2:22–2:46 — Learner adoption remains separate
+
+**On screen:** End the session, select **Add to my draft**, ask for a main-draft check, and select **Commit checked step** yourself.
+
+**Narration:**
+
+> Only I can end the job and restore broader capability. Only I can adopt the checked recommendation. The agent can validate the resulting main draft, but my final commit consumes that current validation token and advances chemistry.
+
+## 2:46–2:58 — Generalize the pattern
+
+**On screen:** Briefly show the reached-state diff or electron-flow replay.
+
+**Narration:**
+
+> Chemistry is the proving ground. The reusable pattern is WebMCP as a safe experimental layer for any visual workspace where agents should explore, prove, and hand control back.
 
 ## First agent prompt
 
-> Use this page's Site Tools and keep every change visible. Read the active delegation session, then read the current mechanism state. Confirm that the session is bound to ammonia_alkylation_01, has four metered actions, excludes commits and exercise switching, and cannot be widened through a Site Tool. Add only lp_n_attack_1 → c_methyl, check the intentionally incomplete first step, then use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. After that fourth work action closes the budget, call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the session-bound receipt evidence from your explanation, then stop for my decision.
+> Use this page's Site Tools and keep every change visible. Read the active delegation session and Counterfactual Lab. Confirm that the job has six metered actions, is bound to sn2_01 at main revision 0, and cannot change my draft. Use exactly six work calls: set Path A to only lp_o_1 → c_electrophile and check it; set Path B to lp_o_1 → c_electrophile plus bond_c_br → br_leaving and check it; compare A with B; then recommend only the validator-approved path with a short rationale. Read the proof receipts after the budget closes, distinguish lab revisions from the unchanged main revision, and stop for my decision.
 
 ## Recording checklist
 
 - Use the deployed HTTPS `?demo=1` URL, not localhost or saved practice.
-- Show the exact capability sequence in both page and Site Tools menu: **16 → 20 → 15 → 3 → 20** of 21.
-- Keep learner-only commits enabled throughout.
-- Select the ammonia capstone before starting the problem-bound session.
-- Use a four-action Coauthor session.
-- Show `get_delegation_session` does not spend an action.
-- Show one intentionally incomplete deterministic check.
-- Show proposal staging does not mutate the draft or mechanism revision.
-- Show the fourth work call closes the session surface automatically.
-- Show session-bound receipt ordinals 1/4 through 4/4 and an unmetered receipt read.
-- End the session only through the visible learner action.
+- Show the exact capability sequence in both page and Site Tools menu: **16 → 21 → 15 → 4 → 17 → 16** of 26.
+- Keep Coach mode and learner-only commits throughout.
+- Use a two-path lab and six-action Explore session.
+- Show lab and session reads do not spend actions.
+- Show Path A fail as incomplete and Path B pass as valid.
+- Show comparison and recommendation as distinct calls.
+- Show recommendation leaves main draft and revision unchanged.
+- Show automatic evidence-only capability collapse.
+- Show the Observatory reach **7 / 7 claims proved** with Lab **0 → 6**, Main **0 → 0**, and Actions **6 / 6**.
+- Show host-accepted surfaces **16 → 21 → 15 → 4**; do not present Manual mode as host evidence.
+- Show receipt ordinals 1/6 through 6/6 and lab revision proof.
+- End the session and lab only through visible learner actions.
 - Select **Add to my draft** and **Commit checked step** yourself.
-- End on reached comparison and replay.
-- Record at 1440 × 900 or a similar desktop size, browser zoom 100%, with audible narration.
+- Record at 1440 × 900 or similar, browser zoom 100%, with audible narration.
 - Confirm the public video is under three minutes before submitting.

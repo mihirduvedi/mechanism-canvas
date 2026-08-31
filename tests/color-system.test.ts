@@ -104,4 +104,32 @@ describe("Tidal Pop color system", () => {
     expect(selectorBlockContaining(".reaction-diff-state--before", "background: var(--surface-before)")).toBeTruthy();
     expect(selectorBlockContaining(".reaction-diff-state--after", "background: var(--surface-after)")).toBeTruthy();
   });
+
+  it("keeps Counterfactual Lab headers, evidence, and statuses above WCAG AA contrast", () => {
+    [
+      ["#ffffff", "#4d2c60"],
+      ["#e9c8f8", "#4d2c60"],
+      ["#735784", "#fbf9fd"],
+      ["#71597c", "#ffffff"],
+      ["#80638f", "#ffffff"],
+      ["#1d675b", "#e7f6f1"],
+      ["#785313", "#fff4d4"],
+      ["#873d32", "#fff0ec"],
+    ].forEach(([foreground, background]) => {
+      expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+    });
+  });
+
+  it("keeps the WebMCP Observatory instrument and run states above WCAG AA contrast", () => {
+    [
+      ["#ffffff", "#073b4c"],
+      ["#bdece5", "#073b4c"],
+      ["#123f45", "#e9f5f3"],
+      ["#126f50", "#d3f0e2"],
+      ["#6f4908", "#fff0c4"],
+      ["#873d32", "#fff0ec"],
+    ].forEach(([foreground, background]) => {
+      expect(contrast(foreground, background)).toBeGreaterThanOrEqual(4.5);
+    });
+  });
 });

@@ -1,6 +1,10 @@
 import type { MechanismStore } from "../store/mechanism-store";
+import {
+  HYPOTHESIS_LAB_CONTROL_TOOL_NAME,
+  HYPOTHESIS_LAB_WORK_TOOL_NAMES,
+} from "./hypothesis-lab";
 
-export type DelegationPresetId = "inspect" | "diagnose" | "coauthor";
+export type DelegationPresetId = "inspect" | "diagnose" | "coauthor" | "explore";
 export type DelegationSessionStatus = "active" | "exhausted" | "drifted";
 
 export interface DelegationPreset {
@@ -82,6 +86,7 @@ export const DELEGATION_CONTROL_TOOL_NAMES = [
   "get_collaboration_contract",
   "get_delegation_session",
   "get_agent_action_receipts",
+  HYPOTHESIS_LAB_CONTROL_TOOL_NAME,
 ] as const;
 
 const INSPECTION_TOOLS = [
@@ -124,6 +129,17 @@ export const DELEGATION_PRESETS: readonly DelegationPreset[] = [
       "propose_draft_arrows",
       "add_draft_arrow",
       "remove_draft_arrow",
+    ],
+  },
+  {
+    id: "explore",
+    label: "Compare hypotheses",
+    shortLabel: "Explore",
+    description:
+      "Build, check, compare, and recommend isolated branches without changing the learner's draft.",
+    workToolNames: [
+      ...INSPECTION_TOOLS,
+      ...HYPOTHESIS_LAB_WORK_TOOL_NAMES,
     ],
   },
 ] as const;
@@ -281,6 +297,15 @@ export function createDelegationSessionManager(
 
       const isControlTool = CONTROL_TOOL_SET.has(toolName);
       if (isControlTool) {
+        if (!session.grantedToolNames.includes(toolName)) {
+          return {
+            allowed: false,
+            code: "DELEGATION_TOOL_BLOCKED",
+            message:
+              "This evidence control was not present in the learner's frozen delegation grant.",
+            evidence: makeReceiptEvidence(session, null),
+          };
+        }
         return {
           allowed: true,
           token: {

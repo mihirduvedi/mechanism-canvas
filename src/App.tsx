@@ -3,6 +3,8 @@ import { CollaborationContract } from "./components/CollaborationContract";
 import { AgentProofLedger } from "./components/AgentProofLedger";
 import { DemoNotice } from "./components/DemoNotice";
 import { DelegationSession } from "./components/DelegationSession";
+import { HypothesisLab } from "./components/HypothesisLab";
+import { WebMcpObservatory } from "./components/WebMcpObservatory";
 import { DraftTray } from "./components/DraftTray";
 import { LearningRecord } from "./components/LearningRecord";
 import { MechanismCanvas } from "./components/MechanismCanvas";
@@ -17,6 +19,8 @@ import { enabledToolCount, MECHANISM_TOOL_COUNT } from "./webmcp/register-tools"
 import { COLLABORATION_MODE_LABELS } from "./domain/collaboration-contract";
 import { toolReceiptLedger } from "./webmcp/tool-receipt-ledger";
 import { delegationSessionManager } from "./webmcp/active-delegation-session";
+import { hypothesisLabManager } from "./webmcp/active-hypothesis-lab";
+import { capabilitySurfaceRecorder } from "./webmcp/capability-surface-recorder";
 
 type ToolStatus = "ready" | "manual" | "error";
 
@@ -30,7 +34,16 @@ export function App() {
     delegationSessionManager.getSnapshot,
     delegationSessionManager.getSnapshot,
   );
-  const activeToolCount = enabledToolCount(collaborationContract, delegationSession);
+  const hypothesisLab = useSyncExternalStore(
+    hypothesisLabManager.subscribe,
+    hypothesisLabManager.getSnapshot,
+    hypothesisLabManager.getSnapshot,
+  );
+  const activeToolCount = enabledToolCount(
+    collaborationContract,
+    delegationSession,
+    hypothesisLab,
+  );
   const [toolStatus, setToolStatus] = useState<ToolStatus>(
     typeof document !== "undefined" && document.modelContext ? "ready" : "manual",
   );
@@ -97,8 +110,27 @@ export function App() {
           store={mechanismStore}
           sessionMode={activeSessionMode}
           delegationSession={delegationSession}
+          hypothesisLab={hypothesisLab}
         />
-        <DelegationSession store={mechanismStore} manager={delegationSessionManager} />
+        <HypothesisLab
+          store={mechanismStore}
+          manager={hypothesisLabManager}
+          lab={hypothesisLab}
+          delegationSession={delegationSession}
+        />
+        <DelegationSession
+          store={mechanismStore}
+          manager={delegationSessionManager}
+          hypothesisLab={hypothesisLab}
+        />
+        <WebMcpObservatory
+          contract={collaborationContract}
+          delegationSession={delegationSession}
+          hypothesisLab={hypothesisLab}
+          hostStatus={toolStatus}
+          recorder={capabilitySurfaceRecorder}
+          receiptLedger={toolReceiptLedger}
+        />
         <AgentProofLedger
           ledger={toolReceiptLedger}
           store={mechanismStore}

@@ -29,6 +29,7 @@ import {
   captureToolReceiptScope,
   captureToolState,
   changedToolState,
+  extractToolReceiptEvidence,
   receiptEntityIds,
   summarizeToolIntent,
   summarizeToolReceipts,
@@ -39,6 +40,7 @@ import {
   type ToolReceiptOutcome,
 } from "./tool-receipt-ledger";
 import { delegationSessionManager } from "./active-delegation-session";
+import { hypothesisLabManager } from "./active-hypothesis-lab";
 import {
   createDelegationSessionManager,
   delegationSurfaceSignature,
@@ -46,18 +48,38 @@ import {
   type DelegationSession,
   type DelegationSessionManager,
 } from "./delegation-session";
+import {
+  HYPOTHESIS_LAB_CONTROL_TOOL_NAME,
+  HYPOTHESIS_LAB_WORK_TOOL_NAMES,
+  MAX_HYPOTHESIS_RATIONALE_LENGTH,
+  activeHypothesisToolNames,
+  createHypothesisLabManager,
+  hypothesisLabSurfaceSignature,
+  type HypothesisLab,
+  type HypothesisLabManager,
+  type HypothesisLabResult,
+} from "./hypothesis-lab";
+import {
+  capabilitySurfaceRecorder,
+  type CapabilitySurfaceRecorder,
+  type CapabilitySurfaceScope,
+} from "./capability-surface-recorder";
+import { MECHANISM_TOOL_COUNT } from "./tool-catalog";
+
+export { MECHANISM_TOOL_COUNT } from "./tool-catalog";
 
 interface ContextRegistration {
   controller: AbortController | null;
   count: number;
   signature: string;
+  toolNames: string[];
   unsubscribes: Array<() => void>;
   queue: Promise<void>;
 }
 
 const registeredContexts = new WeakMap<object, ContextRegistration>();
 const fallbackDelegationManagers = new WeakMap<object, DelegationSessionManager>();
-export const MECHANISM_TOOL_COUNT = 21;
+const fallbackHypothesisLabManagers = new WeakMap<object, HypothesisLabManager>();
 
 const OBSERVE_TOOL_NAMES = new Set([
   "get_mechanism_state",
@@ -96,7 +118,10 @@ function contractSignature(contract: CollaborationContract): string {
   ].join(":");
 }
 
-function contractToolNames(contract: CollaborationContract): string[] {
+function contractToolNames(
+  contract: CollaborationContract,
+  lab: HypothesisLab | null = null,
+): string[] {
   const names = new Set(OBSERVE_TOOL_NAMES);
   if (contract.mode !== "observe") {
     COACH_TOOL_NAMES.forEach((name) => names.add(name));
@@ -106,21 +131,55 @@ function contractToolNames(contract: CollaborationContract): string[] {
     COLLABORATE_TOOL_NAMES.forEach((name) => names.add(name));
     if (!contract.learnerCommitsOnly) names.add("commit_checked_step");
   }
+  const labToolNames = activeHypothesisToolNames(lab);
+  if (labToolNames.includes(HYPOTHESIS_LAB_CONTROL_TOOL_NAME)) {
+    names.add(HYPOTHESIS_LAB_CONTROL_TOOL_NAME);
+  }
+  if (contract.mode !== "observe") {
+    HYPOTHESIS_LAB_WORK_TOOL_NAMES.forEach((name) => {
+      if (labToolNames.includes(name)) names.add(name);
+    });
+  }
   return [...names];
 }
 
 export function enabledToolNames(
   contract: CollaborationContract,
   delegation: DelegationSession | null = null,
+  lab: HypothesisLab | null = null,
 ): string[] {
-  return effectiveDelegationToolNames(delegation, contractToolNames(contract));
+  return effectiveDelegationToolNames(delegation, contractToolNames(contract, lab));
 }
 
 export function enabledToolCount(
   contract: CollaborationContract,
   delegation: DelegationSession | null = null,
+  lab: HypothesisLab | null = null,
 ): number {
-  return enabledToolNames(contract, delegation).length;
+  return enabledToolNames(contract, delegation, lab).length;
+}
+
+function sameToolNames(left: readonly string[], right: readonly string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightNames = new Set(right);
+  return left.every((name) => rightNames.has(name));
+}
+
+function captureCapabilitySurfaceScope(
+  store: MechanismStore,
+  delegation: DelegationSession | null,
+  lab: HypothesisLab | null,
+): CapabilitySurfaceScope {
+  const contract = store.getCollaborationContract();
+  return {
+    collaborationMode: contract.mode,
+    contractRevision: contract.revision,
+    delegationSessionId: delegation?.id ?? null,
+    delegationPresetLabel: delegation?.presetLabel ?? null,
+    delegationStatus: delegation?.status ?? null,
+    hypothesisLabId: lab?.id ?? null,
+    hypothesisLabStatus: lab?.status ?? null,
+  };
 }
 
 interface ToolFailure {
@@ -177,6 +236,17 @@ function cloneReceiptForOutput(receipt: ReturnType<ToolReceiptLedger["append"]>)
     before: { ...receipt.before },
     after: { ...receipt.after },
     changed: { ...receipt.changed },
+    evidence: receipt.evidence
+      ? {
+          ...receipt.evidence,
+          comparedBranchIds: receipt.evidence.comparedBranchIds
+            ? [...receipt.evidence.comparedBranchIds]
+            : null,
+          comparisonArrowCounts: receipt.evidence.comparisonArrowCounts
+            ? { ...receipt.evidence.comparisonArrowCounts }
+            : null,
+        }
+      : null,
     delegation: receipt.delegation ? { ...receipt.delegation } : null,
   };
 }
@@ -186,20 +256,22 @@ function instrumentTool(
   store: MechanismStore,
   receiptLedger: ToolReceiptLedger,
   delegationManager: DelegationSessionManager,
+  labManager: HypothesisLabManager,
 ): WebMcpToolDefinition {
   const execute = tool.execute;
   return {
     ...tool,
     execute: async (input, options) => {
-      const before = captureToolState(store);
+      const before = captureToolState(store, labManager.getSnapshot());
       const receiptScope = captureToolReceiptScope(store);
       const startedAt = new Date().toISOString();
       const startedMs = typeof performance === "undefined" ? Date.now() : performance.now();
       const append = (
         outcome: ToolReceiptOutcome,
         code: string | null,
-        after = captureToolState(store),
+        after = captureToolState(store, labManager.getSnapshot()),
         delegation = delegationManager.receiptEvidence(),
+        evidence = null as ReturnType<typeof extractToolReceiptEvidence>,
       ) => {
         const completedMs = typeof performance === "undefined" ? Date.now() : performance.now();
         return receiptLedger.append({
@@ -207,9 +279,10 @@ function instrumentTool(
           kind: toolKind(tool.name),
           outcome,
           intent: summarizeToolIntent(tool.name, input, receiptScope),
-          result: summarizeToolResult(outcome, code, before, after),
+          result: summarizeToolResult(outcome, code, before, after, evidence),
           code,
           entityIds: receiptEntityIds(input, receiptScope.entityIds),
+          evidence,
           delegation,
           startedAt,
           completedAt: new Date().toISOString(),
@@ -251,8 +324,9 @@ function instrumentTool(
         append(
           rejection.rejected ? "rejected" : "succeeded",
           rejection.code,
-          captureToolState(store),
+          captureToolState(store, labManager.getSnapshot()),
           delegationToken?.evidence ?? null,
+          rejection.rejected ? null : extractToolReceiptEvidence(tool.name, input, result),
         );
         delegationManager.finishToolExecution(delegationToken);
         return result;
@@ -260,7 +334,7 @@ function instrumentTool(
         append(
           "failed",
           "UNEXPECTED_TOOL_FAILURE",
-          captureToolState(store),
+          captureToolState(store, labManager.getSnapshot()),
           delegationToken?.evidence ?? null,
         );
         delegationManager.finishToolExecution(delegationToken);
@@ -376,10 +450,11 @@ function commandOutput<T>(store: MechanismStore, result: CommandResult<T>) {
 function delegationOutput(
   store: MechanismStore,
   delegationManager: DelegationSessionManager,
+  labManager: HypothesisLabManager,
 ) {
   const session = delegationManager.getSnapshot();
   const contract = store.getCollaborationContract();
-  const enabledTools = enabledToolNames(contract, session);
+  const enabledTools = enabledToolNames(contract, session, labManager.getSnapshot());
   if (!session) {
     return {
       active: false,
@@ -414,10 +489,86 @@ function delegationOutput(
   };
 }
 
+function hypothesisLabOutput(
+  store: MechanismStore,
+  labManager: HypothesisLabManager,
+) {
+  const lab = labManager.getSnapshot();
+  if (!lab) {
+    return {
+      active: false,
+      persistence: "memory only in this browser tab; resets on refresh",
+      learnerControl: "Only the visible page can start a Counterfactual Lab.",
+    };
+  }
+  const pendingProposalId = store.getState().agentProposal?.id ?? null;
+  return {
+    active: true,
+    id: lab.id,
+    status: lab.status,
+    labRevision: lab.labRevision,
+    scope: {
+      problemId: lab.problemId,
+      stateId: lab.stateId,
+      baseMechanismRevision: lab.baseMechanismRevision,
+      baseDraftArrowCount: lab.baseDraftArrows.length,
+    },
+    mainDraftUnchanged:
+      store.getState().mechanismRevision === lab.baseMechanismRevision &&
+      store.getState().draftArrows.length === lab.baseDraftArrows.length,
+    branches: lab.branches.map((branch) => ({
+      id: branch.id,
+      label: branch.label,
+      rationale: branch.rationale,
+      arrows: branch.arrows.map((arrow) => ({
+        source: { ...arrow.source },
+        target: { ...arrow.target },
+      })),
+      validation: branch.validation
+        ? {
+            classification: branch.validation.classification,
+            summary: branch.validation.summary,
+            issues: branch.validation.issues.map((issue) => ({ ...issue })),
+          }
+        : null,
+    })),
+    comparison: lab.comparison
+      ? {
+          ...lab.comparison,
+          sharedArrows: lab.comparison.sharedArrows.map((arrow) => ({
+            source: { ...arrow.source },
+            target: { ...arrow.target },
+          })),
+          leftOnlyArrows: lab.comparison.leftOnlyArrows.map((arrow) => ({
+            source: { ...arrow.source },
+            target: { ...arrow.target },
+          })),
+          rightOnlyArrows: lab.comparison.rightOnlyArrows.map((arrow) => ({
+            source: { ...arrow.source },
+            target: { ...arrow.target },
+          })),
+        }
+      : null,
+    recommendation: lab.recommendedBranchId
+      ? {
+          branchId: lab.recommendedBranchId,
+          agentProposalId: lab.agentProposalId,
+          awaitingLearnerApproval: pendingProposalId === lab.agentProposalId,
+          learnerDecisionRecorded: pendingProposalId !== lab.agentProposalId,
+        }
+      : null,
+    driftReason: lab.driftReason,
+    persistence: "memory only in this browser tab; resets on refresh",
+    learnerControl:
+      "No Site Tool can start, end, or adopt a lab branch into the learner's draft.",
+  };
+}
+
 function stateOutput(
   store: MechanismStore,
   sessionMode: "saved" | "demo",
   delegationManager: DelegationSessionManager,
+  labManager: HypothesisLabManager,
 ) {
   const state = store.getState();
   const problem = store.getProblem();
@@ -437,11 +588,12 @@ function stateOutput(
     collaborationContract: {
       ...contract,
       modeLabel: COLLABORATION_MODE_LABELS[contract.mode],
-      enabledToolCount: enabledToolCount(contract, delegation),
+      enabledToolCount: enabledToolCount(contract, delegation, labManager.getSnapshot()),
       totalToolCount: MECHANISM_TOOL_COUNT,
       controlledBy: "learner-facing page only",
     },
-    delegationSession: delegationOutput(store, delegationManager),
+    delegationSession: delegationOutput(store, delegationManager, labManager),
+    hypothesisLab: hypothesisLabOutput(store, labManager),
     problem: {
       id: problem.id,
       title: problem.title,
@@ -534,6 +686,7 @@ function defineTools(
   sessionMode: "saved" | "demo",
   receiptLedger: ToolReceiptLedger,
   delegationManager: DelegationSessionManager,
+  labManager: HypothesisLabManager,
 ): WebMcpToolDefinition[] {
   const tools: WebMcpToolDefinition[] = [
     {
@@ -545,7 +698,7 @@ function defineTools(
       execute: async (input) => {
         const parsed = toObject(input);
         assertExactKeys(parsed, []);
-        return stateOutput(store, sessionMode, delegationManager);
+        return stateOutput(store, sessionMode, delegationManager, labManager);
       },
     },
     {
@@ -564,8 +717,16 @@ function defineTools(
             ...contract,
             modeLabel: COLLABORATION_MODE_LABELS[contract.mode],
           },
-          enabledTools: enabledToolNames(contract, delegationManager.getSnapshot()),
-          enabledToolCount: enabledToolCount(contract, delegationManager.getSnapshot()),
+          enabledTools: enabledToolNames(
+            contract,
+            delegationManager.getSnapshot(),
+            labManager.getSnapshot(),
+          ),
+          enabledToolCount: enabledToolCount(
+            contract,
+            delegationManager.getSnapshot(),
+            labManager.getSnapshot(),
+          ),
           totalToolCount: MECHANISM_TOOL_COUNT,
           learnerControl: "No Site Tool can change this contract.",
         };
@@ -582,9 +743,270 @@ function defineTools(
         assertExactKeys(parsed, []);
         return {
           ok: true,
-          session: delegationOutput(store, delegationManager),
+          session: delegationOutput(store, delegationManager, labManager),
           totalToolCount: MECHANISM_TOOL_COUNT,
         };
+      },
+    },
+    {
+      name: "get_hypothesis_lab",
+      description:
+        "Read the learner-started Counterfactual Lab, exact mechanism scope, isolated branches, deterministic checks, visible comparison, recommendation state, and current lab revision. This does not change the page. Only the visible page can start or end the lab.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      execute: async (input) => {
+        const parsed = toObject(input);
+        assertExactKeys(parsed, []);
+        const contract = store.getCollaborationContract();
+        return {
+          ok: true,
+          lab: hypothesisLabOutput(store, labManager),
+          enabledTools: enabledToolNames(
+            contract,
+            delegationManager.getSnapshot(),
+            labManager.getSnapshot(),
+          ),
+          totalToolCount: MECHANISM_TOOL_COUNT,
+        };
+      },
+    },
+    {
+      name: "set_hypothesis_branch",
+      description:
+        "Atomically set 1–4 electron-flow arrows and a short rationale on one isolated Counterfactual Lab branch. This changes only the tab-local lab revision; it never changes the learner's draft, chemistry, activity trail, or mechanism revision. Read get_hypothesis_lab first and use its current lab revision.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          branchId: { type: "string", enum: ["hypothesis_a", "hypothesis_b", "hypothesis_c"] },
+          arrows: {
+            type: "array",
+            minItems: 1,
+            maxItems: MAX_PROPOSAL_ARROWS,
+            items: {
+              type: "object",
+              properties: {
+                sourceType: { type: "string", enum: ["lone_pair", "bond"] },
+                sourceEntityId: { type: "string" },
+                targetAtomId: { type: "string" },
+              },
+              required: ["sourceType", "sourceEntityId", "targetAtomId"],
+              additionalProperties: false,
+            },
+          },
+          rationale: {
+            type: "string",
+            minLength: 1,
+            maxLength: MAX_HYPOTHESIS_RATIONALE_LENGTH,
+          },
+          expectedLabRevision: { type: "integer", minimum: 0 },
+        },
+        required: ["branchId", "arrows", "rationale", "expectedLabRevision"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["branchId", "arrows", "rationale", "expectedLabRevision"]);
+          const result = labManager.setBranch({
+            branchId: requiredString(parsed, "branchId"),
+            arrows: requiredProposedArrows(parsed, "arrows"),
+            rationale: requiredString(parsed, "rationale"),
+            expectedLabRevision: requiredInteger(parsed, "expectedLabRevision"),
+          });
+          if (!result.ok) {
+            return toolError(
+              result.error.code,
+              result.error.message,
+              store.getState().mechanismRevision,
+            );
+          }
+          return {
+            ok: true,
+            mechanismRevision: store.getState().mechanismRevision,
+            lab: hypothesisLabOutput(store, labManager),
+          };
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
+        }
+      },
+    },
+    {
+      name: "check_hypothesis_branch",
+      description:
+        "Run the deterministic chemistry validator on one isolated Counterfactual Lab branch. This records branch evidence and advances only the lab revision; the learner's main draft and mechanism revision remain unchanged.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          branchId: { type: "string", enum: ["hypothesis_a", "hypothesis_b", "hypothesis_c"] },
+          expectedLabRevision: { type: "integer", minimum: 0 },
+        },
+        required: ["branchId", "expectedLabRevision"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["branchId", "expectedLabRevision"]);
+          const result = labManager.checkBranch({
+            branchId: requiredString(parsed, "branchId"),
+            expectedLabRevision: requiredInteger(parsed, "expectedLabRevision"),
+          });
+          if (!result.ok) {
+            return toolError(
+              result.error.code,
+              result.error.message,
+              store.getState().mechanismRevision,
+            );
+          }
+          return {
+            ok: true,
+            mechanismRevision: store.getState().mechanismRevision,
+            validation: result.value?.validation,
+            lab: hypothesisLabOutput(store, labManager),
+          };
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
+        }
+      },
+    },
+    {
+      name: "compare_hypothesis_branches",
+      description:
+        "Compare two deterministically checked Counterfactual Lab branches, expose shared and unique electron-flow arrows, and present the comparison in the visible page. This changes only lab presentation state.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          leftBranchId: { type: "string", enum: ["hypothesis_a", "hypothesis_b", "hypothesis_c"] },
+          rightBranchId: { type: "string", enum: ["hypothesis_a", "hypothesis_b", "hypothesis_c"] },
+          expectedLabRevision: { type: "integer", minimum: 0 },
+        },
+        required: ["leftBranchId", "rightBranchId", "expectedLabRevision"],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, ["leftBranchId", "rightBranchId", "expectedLabRevision"]);
+          const result = labManager.compareBranches({
+            leftBranchId: requiredString(parsed, "leftBranchId"),
+            rightBranchId: requiredString(parsed, "rightBranchId"),
+            expectedLabRevision: requiredInteger(parsed, "expectedLabRevision"),
+          });
+          if (!result.ok) {
+            return toolError(
+              result.error.code,
+              result.error.message,
+              store.getState().mechanismRevision,
+            );
+          }
+          return {
+            ok: true,
+            mechanismRevision: store.getState().mechanismRevision,
+            comparison: result.value,
+            lab: hypothesisLabOutput(store, labManager),
+          };
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
+        }
+      },
+    },
+    {
+      name: "recommend_hypothesis_branch",
+      description:
+        "Recommend one deterministically valid Counterfactual Lab branch by staging it in the visible Agent proposal gate. This closes branch editing but does not add arrows to the learner's draft, check the main draft, or commit chemistry. Only the learner can approve the staged proposal.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          branchId: { type: "string", enum: ["hypothesis_a", "hypothesis_b", "hypothesis_c"] },
+          rationale: {
+            type: "string",
+            minLength: 1,
+            maxLength: MAX_PROPOSAL_RATIONALE_LENGTH,
+          },
+          expectedLabRevision: { type: "integer", minimum: 0 },
+          expectedMechanismRevision: { type: "integer", minimum: 0 },
+        },
+        required: [
+          "branchId",
+          "rationale",
+          "expectedLabRevision",
+          "expectedMechanismRevision",
+        ],
+        additionalProperties: false,
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+      execute: async (input) => {
+        try {
+          const parsed = toObject(input);
+          assertExactKeys(parsed, [
+            "branchId",
+            "rationale",
+            "expectedLabRevision",
+            "expectedMechanismRevision",
+          ]);
+          const result = labManager.recommendBranch({
+            branchId: requiredString(parsed, "branchId"),
+            rationale: requiredString(parsed, "rationale"),
+            expectedLabRevision: requiredInteger(parsed, "expectedLabRevision"),
+            expectedMechanismRevision: requiredInteger(parsed, "expectedMechanismRevision"),
+          });
+          if (!result.ok) {
+            return toolError(
+              result.error.code,
+              result.error.message,
+              store.getState().mechanismRevision,
+            );
+          }
+          return {
+            ok: true,
+            mechanismRevision: store.getState().mechanismRevision,
+            draftArrowCount: store.getState().draftArrows.length,
+            awaitingLearnerApproval: true,
+            proposal: result.value,
+            lab: hypothesisLabOutput(store, labManager),
+          };
+        } catch (error) {
+          return toolError(
+            "INVALID_INPUT",
+            (error as Error).message,
+            store.getState().mechanismRevision,
+          );
+        }
       },
     },
     {
@@ -1319,7 +1741,7 @@ function defineTools(
     },
   ];
   return tools.map((tool) =>
-    instrumentTool(tool, store, receiptLedger, delegationManager));
+    instrumentTool(tool, store, receiptLedger, delegationManager, labManager));
 }
 
 function delegationManagerForStore(store: MechanismStore): DelegationSessionManager {
@@ -1331,6 +1753,15 @@ function delegationManagerForStore(store: MechanismStore): DelegationSessionMana
   return created;
 }
 
+function hypothesisLabManagerForStore(store: MechanismStore): HypothesisLabManager {
+  if (store === mechanismStore) return hypothesisLabManager;
+  const existing = fallbackHypothesisLabManagers.get(store);
+  if (existing) return existing;
+  const created = createHypothesisLabManager(store);
+  fallbackHypothesisLabManagers.set(store, created);
+  return created;
+}
+
 export async function registerMechanismCanvasTools(
   store: MechanismStore = mechanismStore,
   context: WebMcpModelContext | undefined =
@@ -1338,8 +1769,17 @@ export async function registerMechanismCanvasTools(
   sessionMode: "saved" | "demo" = activeSessionMode,
   receiptLedger: ToolReceiptLedger = toolReceiptLedger,
   delegationManager: DelegationSessionManager = delegationManagerForStore(store),
+  labManager: HypothesisLabManager = hypothesisLabManagerForStore(store),
+  surfaceRecorder: CapabilitySurfaceRecorder = capabilitySurfaceRecorder,
 ): Promise<number> {
   if (!context || typeof context.registerTool !== "function") {
+    surfaceRecorder.markManual(
+      enabledToolNames(
+        store.getCollaborationContract(),
+        delegationManager.getSnapshot(),
+        labManager.getSnapshot(),
+      ),
+    );
     dispatchStatus("manual");
     return 0;
   }
@@ -1353,30 +1793,45 @@ export async function registerMechanismCanvasTools(
     controller: null,
     count: 0,
     signature: "",
+    toolNames: [],
     unsubscribes: [],
     queue: Promise.resolve(),
   };
   registeredContexts.set(context, registration);
 
+  const currentSurfaceSignature = () => `${contractSignature(
+    store.getCollaborationContract(),
+  )}|${delegationSurfaceSignature(
+    delegationManager.getSnapshot(),
+  )}|${hypothesisLabSurfaceSignature(labManager.getSnapshot())}`;
+
   const refresh = async () => {
     const contract = store.getCollaborationContract();
-    const nextSignature = `${contractSignature(contract)}|${delegationSurfaceSignature(
-      delegationManager.getSnapshot(),
-    )}`;
+    const nextSignature = currentSurfaceSignature();
     if (nextSignature === registration.signature) return;
+
+    const nextToolNames = enabledToolNames(
+      contract,
+      delegationManager.getSnapshot(),
+      labManager.getSnapshot(),
+    );
+    if (registration.controller && sameToolNames(registration.toolNames, nextToolNames)) {
+      registration.signature = nextSignature;
+      dispatchStatus("ready");
+      return;
+    }
 
     registration.controller?.abort();
     await Promise.resolve();
 
     const controller = new AbortController();
-    const enabledNames = new Set(
-      enabledToolNames(contract, delegationManager.getSnapshot()),
-    );
+    const enabledNames = new Set(nextToolNames);
     const tools = defineTools(
       store,
       sessionMode,
       receiptLedger,
       delegationManager,
+      labManager,
     ).filter((tool) => enabledNames.has(tool.name));
     for (const tool of tools) {
       await context.registerTool(tool, { signal: controller.signal });
@@ -1384,19 +1839,43 @@ export async function registerMechanismCanvasTools(
     registration.controller = controller;
     registration.count = tools.length;
     registration.signature = nextSignature;
+    registration.toolNames = tools.map((tool) => tool.name);
+    surfaceRecorder.recordRegistered(
+      tools.map((tool) => tool.name),
+      captureCapabilitySurfaceScope(
+        store,
+        delegationManager.getSnapshot(),
+        labManager.getSnapshot(),
+      ),
+    );
     dispatchStatus("ready");
   };
 
   try {
     await refresh();
+    let refreshScheduled = false;
     const scheduleRefresh = () => {
-      const nextSignature = `${contractSignature(
-        store.getCollaborationContract(),
-      )}|${delegationSurfaceSignature(delegationManager.getSnapshot())}`;
+      const nextSignature = currentSurfaceSignature();
       if (nextSignature === registration.signature) return;
+      if (refreshScheduled) return;
+      refreshScheduled = true;
       registration.queue = registration.queue
+        .then(() => new Promise<void>((resolve) => setTimeout(resolve, 0)))
         .then(refresh)
+        .then(() => {
+          refreshScheduled = false;
+          if (currentSurfaceSignature() !== registration.signature) scheduleRefresh();
+        })
         .catch((error) => {
+          refreshScheduled = false;
+          surfaceRecorder.recordError(
+            enabledToolNames(
+              store.getCollaborationContract(),
+              delegationManager.getSnapshot(),
+              labManager.getSnapshot(),
+            ),
+            error,
+          );
           console.error("Mechanism Canvas could not update its WebMCP tool surface.", error);
           dispatchStatus("error");
         });
@@ -1404,12 +1883,21 @@ export async function registerMechanismCanvasTools(
     registration.unsubscribes = [
       store.subscribe(scheduleRefresh),
       delegationManager.subscribe(scheduleRefresh),
+      labManager.subscribe(scheduleRefresh),
     ];
     return registration.count;
   } catch (error) {
     registration.controller?.abort();
     registration.unsubscribes.forEach((unsubscribe) => unsubscribe());
     registeredContexts.delete(context);
+    surfaceRecorder.recordError(
+      enabledToolNames(
+        store.getCollaborationContract(),
+        delegationManager.getSnapshot(),
+        labManager.getSnapshot(),
+      ),
+      error,
+    );
     console.error("Mechanism Canvas could not register WebMCP tools.", error);
     dispatchStatus("error");
     return 0;

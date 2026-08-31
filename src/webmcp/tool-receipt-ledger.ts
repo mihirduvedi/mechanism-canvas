@@ -1,12 +1,26 @@
-import type { CollaborationMode } from "../domain/types";
+import type { CollaborationMode, ValidationClass } from "../domain/types";
 import type { MechanismStore } from "../store/mechanism-store";
 import type { DelegationReceiptEvidence } from "./delegation-session";
+import type { HypothesisLab } from "./hypothesis-lab";
 
 export const MAX_TOOL_RECEIPTS = 60;
-export const TOOL_RECEIPT_SCHEMA_VERSION = 2;
+export const TOOL_RECEIPT_SCHEMA_VERSION = 4;
 
 export type ToolReceiptOutcome = "succeeded" | "rejected" | "failed" | "canceled";
 export type ToolReceiptKind = "read" | "present" | "propose" | "write";
+
+export interface ToolReceiptEvidence {
+  hypothesisBranchId: string | null;
+  hypothesisArrowCount: number | null;
+  validationClassification: ValidationClass | null;
+  comparedBranchIds: [string, string] | null;
+  comparisonArrowCounts: {
+    shared: number;
+    leftOnly: number;
+    rightOnly: number;
+  } | null;
+  awaitingLearnerApproval: boolean | null;
+}
 
 export interface ToolStateStamp {
   problemId: string;
@@ -16,6 +30,9 @@ export interface ToolStateStamp {
   draftArrowCount: number;
   collaborationMode: CollaborationMode;
   contractRevision: number;
+  hypothesisLabId: string | null;
+  hypothesisLabStatus: HypothesisLab["status"] | null;
+  hypothesisLabRevision: number | null;
 }
 
 export interface ToolReceipt {
@@ -28,6 +45,7 @@ export interface ToolReceipt {
   result: string;
   code: string | null;
   entityIds: string[];
+  evidence: ToolReceiptEvidence | null;
   delegation: DelegationReceiptEvidence | null;
   startedAt: string;
   completedAt: string;
@@ -40,6 +58,7 @@ export interface ToolReceipt {
     draft: boolean;
     activity: boolean;
     contract: boolean;
+    hypothesisLab: boolean;
   };
 }
 
@@ -56,7 +75,7 @@ export interface ToolReceiptSummary {
 }
 
 export interface ToolReceiptExport {
-  schemaVersion: 2;
+  schemaVersion: 4;
   application: "Mechanism Canvas";
   sessionId: string;
   sessionMode: "saved" | "demo";
@@ -86,6 +105,7 @@ const TOOL_KINDS: Record<string, ToolReceiptKind> = {
   get_mechanism_state: "read",
   get_collaboration_contract: "read",
   get_delegation_session: "read",
+  get_hypothesis_lab: "read",
   get_agent_action_receipts: "read",
   get_learning_profile: "read",
   inspect_mechanism_entities: "read",
@@ -96,6 +116,10 @@ const TOOL_KINDS: Record<string, ToolReceiptKind> = {
   focus_mechanism_entities: "present",
   propose_practice_plan: "propose",
   propose_draft_arrows: "propose",
+  set_hypothesis_branch: "propose",
+  check_hypothesis_branch: "write",
+  compare_hypothesis_branches: "present",
+  recommend_hypothesis_branch: "propose",
   check_draft_step: "write",
   request_scaffold: "write",
   switch_problem: "write",
@@ -130,6 +154,78 @@ function inputObject(input: unknown): Record<string, unknown> {
   return input && typeof input === "object" && !Array.isArray(input)
     ? input as Record<string, unknown>
     : {};
+}
+
+function knownHypothesisBranchId(value: unknown): string | null {
+  return value === "hypothesis_a" || value === "hypothesis_b" || value === "hypothesis_c"
+    ? value
+    : null;
+}
+
+function knownValidationClassification(value: unknown): ValidationClass | null {
+  return value === "valid" ||
+    value === "incomplete" ||
+    value === "invalid_invariant" ||
+    value === "not_accepted_path" ||
+    value === "invalid_input"
+    ? value
+    : null;
+}
+
+function boundedArrayLength(value: unknown): number {
+  return Array.isArray(value) ? Math.min(value.length, 99) : 0;
+}
+
+export function extractToolReceiptEvidence(
+  toolName: string,
+  input: unknown,
+  result: unknown,
+): ToolReceiptEvidence | null {
+  if (![
+    "set_hypothesis_branch",
+    "check_hypothesis_branch",
+    "compare_hypothesis_branches",
+    "recommend_hypothesis_branch",
+  ].includes(toolName)) {
+    return null;
+  }
+
+  const parsedInput = inputObject(input);
+  const parsedResult = inputObject(result);
+  const validation = inputObject(parsedResult.validation);
+  const comparison = inputObject(parsedResult.comparison);
+  const branchId = knownHypothesisBranchId(parsedInput.branchId);
+  const leftBranchId = knownHypothesisBranchId(parsedInput.leftBranchId);
+  const rightBranchId = knownHypothesisBranchId(parsedInput.rightBranchId);
+  const comparedBranchIds = leftBranchId && rightBranchId
+    ? [leftBranchId, rightBranchId] as [string, string]
+    : null;
+
+  return {
+    hypothesisBranchId: branchId,
+    hypothesisArrowCount:
+      toolName === "set_hypothesis_branch" && Array.isArray(parsedInput.arrows)
+        ? Math.min(parsedInput.arrows.length, 99)
+        : null,
+    validationClassification:
+      toolName === "check_hypothesis_branch"
+        ? knownValidationClassification(validation.classification)
+        : null,
+    comparedBranchIds,
+    comparisonArrowCounts:
+      toolName === "compare_hypothesis_branches" && comparedBranchIds
+        ? {
+            shared: boundedArrayLength(comparison.sharedArrows),
+            leftOnly: boundedArrayLength(comparison.leftOnlyArrows),
+            rightOnly: boundedArrayLength(comparison.rightOnlyArrows),
+          }
+        : null,
+    awaitingLearnerApproval:
+      toolName === "recommend_hypothesis_branch" &&
+      typeof parsedResult.awaitingLearnerApproval === "boolean"
+        ? parsedResult.awaitingLearnerApproval
+        : null,
+  };
 }
 
 function compactIds(values: unknown[], allowlist?: ReadonlySet<string>): string[] {
@@ -191,12 +287,21 @@ export function summarizeToolIntent(
   const stateId = allowlistedString(parsed.stateId, scope?.stateIds);
   const afterSequence = boundedInteger(parsed.afterSequence);
   const limit = boundedInteger(parsed.limit);
+  const branchId = knownHypothesisBranchId(parsed.branchId);
+  const leftBranchId = knownHypothesisBranchId(parsed.leftBranchId);
+  const rightBranchId = knownHypothesisBranchId(parsed.rightBranchId);
+  const expectedLabRevision = boundedInteger(parsed.expectedLabRevision);
+  const labRevisionSuffix = expectedLabRevision === null
+    ? ""
+    : ` at lab revision ${expectedLabRevision}`;
 
   switch (toolName) {
     case "get_mechanism_state": return "Read the shared mechanism state and semantic graph.";
     case "get_collaboration_contract": return "Read the learner-owned agent permission contract.";
     case "get_delegation_session":
       return "Read the learner-granted delegation purpose, scope, surface, and remaining action budget.";
+    case "get_hypothesis_lab":
+      return "Read the learner-started Counterfactual Lab, isolated branches, checks, and recommendation state.";
     case "get_agent_action_receipts":
       return `Read proof receipts${afterSequence === null ? "" : ` after #${afterSequence}`}${limit === null ? "" : `, up to ${limit}`}.`;
     case "get_learning_profile": return "Read the privacy-local Practice Compass evidence.";
@@ -228,6 +333,18 @@ export function summarizeToolIntent(
       const arrowCount = Array.isArray(parsed.arrows) ? Math.min(parsed.arrows.length, 99) : null;
       return `Stage ${arrowCount ?? "a"} reviewable draft ${arrowCount === 1 ? "arrow" : "arrows"}${revisionSuffix}.`;
     }
+    case "set_hypothesis_branch": {
+      const arrowCount = Array.isArray(parsed.arrows) ? Math.min(parsed.arrows.length, 99) : null;
+      return `Set ${branchId ?? "a hypothesis branch"} to ${arrowCount ?? "a"} ${arrowCount === 1 ? "arrow" : "arrows"}${labRevisionSuffix}.`;
+    }
+    case "check_hypothesis_branch":
+      return `Check ${branchId ?? "a hypothesis branch"} with the deterministic validator${labRevisionSuffix}.`;
+    case "compare_hypothesis_branches":
+      return leftBranchId && rightBranchId
+        ? `Compare ${leftBranchId} with ${rightBranchId}${labRevisionSuffix}.`
+        : `Compare two checked hypothesis branches${labRevisionSuffix}.`;
+    case "recommend_hypothesis_branch":
+      return `Stage ${branchId ?? "a checked hypothesis branch"} for learner review${labRevisionSuffix}.`;
     case "check_draft_step": return `Run the deterministic validator${revisionSuffix}.`;
     case "request_scaffold": return `Open agent hint level ${level ?? "unknown"}.`;
     case "switch_problem": return problemId ? `Switch to exercise ${problemId}${revisionSuffix}.` : `Switch exercises${revisionSuffix}.`;
@@ -259,7 +376,10 @@ export function captureToolReceiptScope(store: MechanismStore): ToolReceiptScope
   };
 }
 
-export function captureToolState(store: MechanismStore): ToolStateStamp {
+export function captureToolState(
+  store: MechanismStore,
+  hypothesisLab: HypothesisLab | null = null,
+): ToolStateStamp {
   const state = store.getState();
   const contract = store.getCollaborationContract();
   return {
@@ -270,6 +390,9 @@ export function captureToolState(store: MechanismStore): ToolStateStamp {
     draftArrowCount: state.draftArrows.length,
     collaborationMode: contract.mode,
     contractRevision: contract.revision,
+    hypothesisLabId: hypothesisLab?.id ?? null,
+    hypothesisLabStatus: hypothesisLab?.status ?? null,
+    hypothesisLabRevision: hypothesisLab?.labRevision ?? null,
   };
 }
 
@@ -284,6 +407,10 @@ export function changedToolState(before: ToolStateStamp, after: ToolStateStamp):
     contract:
       before.contractRevision !== after.contractRevision ||
       before.collaborationMode !== after.collaborationMode,
+    hypothesisLab:
+      before.hypothesisLabId !== after.hypothesisLabId ||
+      before.hypothesisLabStatus !== after.hypothesisLabStatus ||
+      before.hypothesisLabRevision !== after.hypothesisLabRevision,
   };
 }
 
@@ -292,13 +419,26 @@ export function summarizeToolResult(
   code: string | null,
   before: ToolStateStamp,
   after: ToolStateStamp,
+  evidence: ToolReceiptEvidence | null = null,
 ): string {
   if (outcome === "canceled") return "Canceled before the page executed the tool.";
   if (outcome === "failed") return "The tool failed before returning a structured result.";
   if (outcome === "rejected") return `Rejected by ${code ?? "a page guard"}; page state stayed authoritative.`;
+  if (evidence?.validationClassification && evidence.hypothesisBranchId) {
+    return `${evidence.hypothesisBranchId} checked ${evidence.validationClassification}; Counterfactual Lab ${before.hypothesisLabRevision ?? "closed"} → ${after.hypothesisLabRevision ?? "closed"}; main mechanism unchanged.`;
+  }
   if (before.problemId !== after.problemId) return `Exercise changed from ${before.problemId} to ${after.problemId}.`;
   if (before.mechanismRevision !== after.mechanismRevision) {
     return `Mechanism revision ${before.mechanismRevision} → ${after.mechanismRevision}.`;
+  }
+  if (
+    before.hypothesisLabId !== after.hypothesisLabId ||
+    before.hypothesisLabStatus !== after.hypothesisLabStatus ||
+    before.hypothesisLabRevision !== after.hypothesisLabRevision
+  ) {
+    const beforeRevision = before.hypothesisLabRevision ?? "closed";
+    const afterRevision = after.hypothesisLabRevision ?? "closed";
+    return `Counterfactual Lab ${beforeRevision} → ${afterRevision}; main mechanism unchanged.`;
   }
   if (before.activitySequence !== after.activitySequence) {
     return `Activity ${before.activitySequence} → ${after.activitySequence}; chemistry revision unchanged.`;
@@ -372,6 +512,17 @@ export function buildToolReceiptExport(
     before: { ...receipt.before },
     after: { ...receipt.after },
     changed: { ...receipt.changed },
+    evidence: receipt.evidence
+      ? {
+          ...receipt.evidence,
+          comparedBranchIds: receipt.evidence.comparedBranchIds
+            ? [...receipt.evidence.comparedBranchIds] as [string, string]
+            : null,
+          comparisonArrowCounts: receipt.evidence.comparisonArrowCounts
+            ? { ...receipt.evidence.comparisonArrowCounts }
+            : null,
+        }
+      : null,
     delegation: receipt.delegation ? { ...receipt.delegation } : null,
   }));
   return {
@@ -380,7 +531,7 @@ export function buildToolReceiptExport(
     sessionId: ledger.getSessionId(),
     sessionMode,
     generatedAt,
-    privacy: "Contains allowlisted tool names, bounded semantic IDs, state stamps, outcomes, timings, and fixed delegation-session evidence. Raw tool inputs, outputs, rationales, prompts, freeform intent, and learner identity are omitted.",
+    privacy: "Contains allowlisted tool names, bounded semantic IDs, mechanism and Counterfactual Lab state stamps, outcomes, timings, closed-world validation/comparison evidence, and fixed delegation-session evidence. Raw tool inputs, outputs, branch rationales, prompts, freeform intent, and learner identity are omitted.",
     retention: `Session-only in this browser tab; capped at the latest ${MAX_TOOL_RECEIPTS} calls.`,
     summary: summarizeToolReceipts(receipts),
     receipts,

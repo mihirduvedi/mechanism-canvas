@@ -30,6 +30,15 @@ const FULL_TOOL_SURFACE = [
   "reset_active_exercise",
 ];
 
+const HYPOTHESIS_LAB_SURFACE = [
+  ...FULL_TOOL_SURFACE,
+  "get_hypothesis_lab",
+  "set_hypothesis_branch",
+  "check_hypothesis_branch",
+  "compare_hypothesis_branches",
+  "recommend_hypothesis_branch",
+];
+
 describe("intent-bound WebMCP delegation sessions", () => {
   it("freezes the purpose-specific grant and never widens with a later contract surface", () => {
     const store = createMechanismStore(undefined, null);
@@ -122,6 +131,10 @@ describe("intent-bound WebMCP delegation sessions", () => {
     expect(control).toMatchObject({ allowed: true, token: { metered: false } });
     manager.finishToolExecution(control.allowed ? control.token : null);
     expect(manager.getSnapshot()?.usedActions).toBe(0);
+    expect(manager.beginToolExecution("get_hypothesis_lab")).toMatchObject({
+      allowed: false,
+      code: "DELEGATION_TOOL_BLOCKED",
+    });
 
     for (let action = 1; action <= 4; action += 1) {
       const decision = manager.beginToolExecution("get_mechanism_state");
@@ -156,6 +169,37 @@ describe("intent-bound WebMCP delegation sessions", () => {
     expect(manager.end()?.id).toBe(started.id);
     expect(manager.getSnapshot()).toBeNull();
     expect(effectiveDelegationToolNames(null, FULL_TOOL_SURFACE)).toEqual(FULL_TOOL_SURFACE);
+    manager.destroy();
+  });
+
+  it("grants the isolated Explore workflow and retains its fourth evidence control", () => {
+    const store = createMechanismStore(undefined, null);
+    const manager = createDelegationSessionManager(store);
+    const started = manager.start({
+      presetId: "explore",
+      maxActions: 4,
+      contractToolNames: HYPOTHESIS_LAB_SURFACE,
+    });
+
+    expect(effectiveDelegationToolNames(started, HYPOTHESIS_LAB_SURFACE)).toHaveLength(15);
+    expect(started.grantedToolNames).toEqual(expect.arrayContaining([
+      "get_hypothesis_lab",
+      "set_hypothesis_branch",
+      "check_hypothesis_branch",
+      "compare_hypothesis_branches",
+      "recommend_hypothesis_branch",
+    ]));
+    for (let action = 0; action < 4; action += 1) {
+      const decision = manager.beginToolExecution("set_hypothesis_branch");
+      if (!decision.allowed) throw new Error("Explore work should remain inside the grant.");
+      manager.finishToolExecution(decision.token);
+    }
+    expect(effectiveDelegationToolNames(manager.getSnapshot(), HYPOTHESIS_LAB_SURFACE)).toEqual([
+      "get_collaboration_contract",
+      "get_delegation_session",
+      "get_agent_action_receipts",
+      "get_hypothesis_lab",
+    ]);
     manager.destroy();
   });
 

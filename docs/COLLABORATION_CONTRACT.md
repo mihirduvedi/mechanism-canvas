@@ -86,9 +86,9 @@ Mechanism Canvas does not claim these additional editors are implemented. It dem
 
 ## Judge proof
 
-1. Open the clean demo. Coach mode reports 16 of 21 tools.
+1. Open the clean demo. Coach mode reports 16 of the 26-tool complete catalog.
 2. Read `get_collaboration_contract`; its response names the current surface and states that no Site Tool can change it.
-3. Select Collaborate while leaving learner-only commits enabled. The page reports 20 of 21 tools and the browser's Site Tools menu updates.
+3. Select Collaborate while leaving learner-only commits enabled. The page reports 20 of 26 tools and the browser's Site Tools menu updates.
 4. Start a four-action Coauthor delegation session. The surface contracts to 15 tools and cannot regain omitted tools until the learner ends it.
 4. Let the agent add and check an intentionally incomplete arrow, then stage the missing arrow through `propose_draft_arrows`.
 5. Accept the proposal in the page, ask the agent to check again, and observe that `commit_checked_step` remains unavailable.

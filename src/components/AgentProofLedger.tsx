@@ -68,6 +68,11 @@ function receiptStateProof(receipt: ToolReceipt): string {
   if (receipt.changed.problem) {
     return `${receipt.before.problemId} → ${receipt.after.problemId}`;
   }
+  if (receipt.changed.hypothesisLab) {
+    const before = receipt.before.hypothesisLabRevision ?? "closed";
+    const after = receipt.after.hypothesisLabRevision ?? "closed";
+    return `lab ${before} → ${after} · main unchanged`;
+  }
   if (receipt.changed.chemistry) {
     return `rev ${receipt.before.mechanismRevision} → ${receipt.after.mechanismRevision}`;
   }
@@ -75,6 +80,24 @@ function receiptStateProof(receipt: ToolReceipt): string {
     return `activity ${receipt.before.activitySequence} → ${receipt.after.activitySequence}`;
   }
   return `rev ${receipt.after.mechanismRevision} unchanged`;
+}
+
+function receiptDomainEvidence(receipt: ToolReceipt): string | null {
+  const evidence = receipt.evidence;
+  if (!evidence) return null;
+  if (evidence.validationClassification && evidence.hypothesisBranchId) {
+    return `${evidence.hypothesisBranchId} · ${evidence.validationClassification.replaceAll("_", " ")}`;
+  }
+  if (evidence.comparedBranchIds && evidence.comparisonArrowCounts) {
+    return `${evidence.comparedBranchIds[0]} ↔ ${evidence.comparedBranchIds[1]} · ${evidence.comparisonArrowCounts.shared} shared`;
+  }
+  if (evidence.awaitingLearnerApproval && evidence.hypothesisBranchId) {
+    return `${evidence.hypothesisBranchId} · awaiting learner approval`;
+  }
+  if (evidence.hypothesisBranchId && evidence.hypothesisArrowCount !== null) {
+    return `${evidence.hypothesisBranchId} · ${evidence.hypothesisArrowCount} ${evidence.hypothesisArrowCount === 1 ? "arrow" : "arrows"}`;
+  }
+  return null;
 }
 
 export function AgentProofLedger({ ledger, store, sessionMode }: AgentProofLedgerProps) {
@@ -192,6 +215,7 @@ export function AgentProofLedger({ ledger, store, sessionMode }: AgentProofLedge
                 receipt.entityIds.length > 0 &&
                 receipt.after.problemId === store.getProblem().id &&
                 receipt.after.currentStateId === store.getState().currentStateId;
+              const domainEvidence = receiptDomainEvidence(receipt);
               return (
                 <li className={`proof-receipt proof-receipt--${receipt.outcome}`} key={receipt.id}>
                   <span className="proof-receipt__sequence">#{String(receipt.sequence).padStart(3, "0")}</span>
@@ -209,6 +233,14 @@ export function AgentProofLedger({ ledger, store, sessionMode }: AgentProofLedge
                     </span>
                     <strong>{receiptStateProof(receipt)}</strong>
                     <span>{receipt.before.collaborationMode} · contract {receipt.before.contractRevision}</span>
+                    {receipt.after.hypothesisLabId && (
+                      <span className="proof-receipt__lab">
+                        Counterfactual Lab · {receipt.after.hypothesisLabStatus} · revision {receipt.after.hypothesisLabRevision}
+                      </span>
+                    )}
+                    {domainEvidence && (
+                      <span className="proof-receipt__domain-evidence">{domainEvidence}</span>
+                    )}
                     {receipt.delegation && (
                       <span className="proof-receipt__delegation">
                         {receipt.delegation.presetLabel} session
@@ -236,8 +268,9 @@ export function AgentProofLedger({ ledger, store, sessionMode }: AgentProofLedge
       <div className="agent-proof-ledger__boundary">
         <span>Privacy boundary</span>
         <p>
-          Session-only, capped at 60 calls, and never written to saved practice. This ledger
-          proves page effects; ChatGPT still performs its own safety review before invocation.
+          Session-only, capped at 60 calls, and never written to saved practice. Branch
+          rationales and raw tool inputs are omitted. This ledger proves page effects; ChatGPT
+          still performs its own safety review before invocation.
         </p>
       </div>
       <p className="agent-proof-ledger__status" role="status" aria-live="polite">{status}</p>

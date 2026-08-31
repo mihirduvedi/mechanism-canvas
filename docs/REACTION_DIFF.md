@@ -55,7 +55,7 @@ It never serializes authored accepted bundles, negative cases, unreached graphs,
 
 ## Site Tool
 
-`compare_reached_step({ beforeStateId, afterStateId })` is one of twenty-one top-level Site Tools and is available in every Collaboration Contract mode unless an active delegation session narrows the purpose-specific surface. It is read-only, idempotent, and closed-world. `replay_reached_step` uses the same reachability gate. See [ELECTRON_FLOW_REPLAY.md](ELECTRON_FLOW_REPLAY.md) for replay's transient presentation contract.
+`compare_reached_step({ beforeStateId, afterStateId })` is one of twenty-six tools in the complete catalog and is available in every Collaboration Contract mode unless an active delegation session narrows the purpose-specific surface. It is read-only, idempotent, and closed-world. `replay_reached_step` uses the same reachability gate. See [ELECTRON_FLOW_REPLAY.md](ELECTRON_FLOW_REPLAY.md) for replay's transient presentation contract.
 
 The exact state pair must appear in `get_mechanism_state().mechanism.availableStepComparisons`. Success returns:
 

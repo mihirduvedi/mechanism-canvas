@@ -36,8 +36,10 @@ Each receipt contains:
 - a structured error code only when the page returned one;
 - optional fixed-structure delegation evidence: session ID, preset, problem/state scope, action ordinal, and action budget;
 - start time, completion time, and measured duration;
-- before and after stamps for problem, reached state, mechanism revision, activity sequence, draft count, collaboration mode, and contract revision; and
-- derived booleans for problem, chemistry, draft, activity, and contract changes.
+- before and after stamps for problem, reached state, mechanism revision, activity sequence, draft count, collaboration mode, contract revision, and optional Counterfactual Lab ID/status/revision; and
+- derived booleans for problem, chemistry, draft, activity, contract, and isolated-lab changes.
+
+Schema version 4 may also include a closed-world Lab `evidence` object: fixed branch IDs, arrow count, validator classification, compared-branch IDs and shared/unique counts, and whether a recommendation awaits learner approval. It never copies validator prose or agent rationale. The Live Run Observatory uses this bounded evidence to evaluate the Explore journey without reading the chat transcript.
 
 The outcome language is deliberately evidence-specific:
 
@@ -57,6 +59,7 @@ Receipt creation deliberately omits:
 - chat prompts and assistant messages;
 - raw tool inputs and outputs;
 - proposal rationales and learner reflections;
+- Counterfactual Lab branch rationales;
 - accepted-answer definitions, unreached graphs, and validation tokens;
 - learner identity; and
 - freeform learner intent or delegation text; and
@@ -87,6 +90,7 @@ The Agent Proof Ledger is a full-width evidence surface immediately after the Co
 - verified and guarded totals;
 - read/present and propose/write totals;
 - the eight newest receipts with intent, result, outcome, contract, timing, and state proof;
+- closed-world branch/check/comparison evidence when the call belongs to the Counterfactual Lab;
 - **Focus touched items** when a receipt's semantic IDs still belong to the visible state;
 - explicit JSON download and copy actions; and
 - a confirmation-protected clear action that cannot change chemistry, progress, or the shared activity trail.
@@ -105,7 +109,7 @@ The visible surface and agent-readable tool intentionally describe the same reta
 
 ## Verification boundary
 
-Automated tests cover privacy omission, bounded semantic summaries, before/after state evidence, outcome aggregation, the 60-receipt cap, schema-version-2 delegation binding, clear and export behavior, successful and rejected real tools, incremental receipt reads, and pre-canceled execution. The full registration suite locks the adaptive 3–21-tool surface, including frozen grants and exhaustion.
+Automated tests cover privacy omission, bounded semantic summaries, before/after main and lab state evidence, closed-world schema-version-4 Lab evidence, outcome aggregation, the 60-receipt cap, delegation/lab binding, clear and export behavior, successful and rejected real tools, incremental receipt reads, and pre-canceled execution. The full registration suite locks the adaptive 3–26-tool surface, including frozen grants and exhaustion, then feeds the real six-call receipts into the seven-claim journey evaluator.
 
 Rendered browser QA separately covers the empty and populated ledgers, verified and guarded visual states, live receipt growth, JSON actions, confirmation-protected clearing, semantic focus, responsive stacking, keyboard operation, and horizontal overflow. These checks prove current implementation behavior; they do not claim host-level auditing outside the page callback.
 
@@ -117,6 +121,7 @@ Rendered browser QA separately covers the empty and populated ledgers, verified 
 - Responsive, forced-color, and interaction styling: `src/index.css`
 - Ledger unit contracts: `src/webmcp/tool-receipt-ledger.test.ts`
 - End-to-end tool-wrapper contracts: `src/webmcp/register-tools.test.ts`
+- Journey evaluator: `src/webmcp/webmcp-run-report.ts`, `src/webmcp/webmcp-run-report.test.ts`, and `docs/WEBMCP_LIVE_RUN_OBSERVATORY.md`
 
 ## References
 

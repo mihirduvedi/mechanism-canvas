@@ -4,6 +4,9 @@ import { createMechanismStore } from "../store/mechanism-store";
 import { enabledToolNames, registerMechanismCanvasTools } from "./register-tools";
 import { createDelegationSessionManager } from "./delegation-session";
 import { createToolReceiptLedger } from "./tool-receipt-ledger";
+import { createHypothesisLabManager } from "./hypothesis-lab";
+import { createCapabilitySurfaceRecorder } from "./capability-surface-recorder";
+import { buildLatestExploreRunReport } from "./webmcp-run-report";
 
 function contextHarness() {
   const tools: WebMcpToolDefinition[] = [];
@@ -61,7 +64,7 @@ describe("WebMCP site tool registration", () => {
       ok: true,
       contract: { mode: "coach", maxAgentScaffoldLevel: 2 },
       enabledToolCount: 16,
-      totalToolCount: 21,
+      totalToolCount: 26,
       learnerControl: "No Site Tool can change this contract.",
     });
 
@@ -146,7 +149,7 @@ describe("WebMCP site tool registration", () => {
         actionsUsed: 0,
         enabledToolCount: 15,
       },
-      totalToolCount: 21,
+      totalToolCount: 26,
     });
     expect(delegationManager.getSnapshot()?.usedActions).toBe(0);
 
@@ -275,15 +278,29 @@ describe("WebMCP site tool registration", () => {
     expect(store.getState().mechanismRevision).toBe(0);
   });
 
-  it("registers the full twenty-one-tool catalog with delegation, proof receipts, guarded plans, proposals, history, comparison, and replay", async () => {
+  it("registers the full twenty-six-tool catalog when a collaborative Counterfactual Lab is active", async () => {
     const store = createCollaborativeStore();
+    const labManager = createHypothesisLabManager(store);
+    labManager.start(2);
     const { tools, context } = contextHarness();
-    const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(21);
+    const count = await registerMechanismCanvasTools(
+      store,
+      context,
+      "saved",
+      createToolReceiptLedger("receipt_full_catalog"),
+      createDelegationSessionManager(store),
+      labManager,
+    );
+    expect(count).toBe(26);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "get_collaboration_contract",
       "get_delegation_session",
+      "get_hypothesis_lab",
+      "set_hypothesis_branch",
+      "check_hypothesis_branch",
+      "compare_hypothesis_branches",
+      "recommend_hypothesis_branch",
       "get_agent_action_receipts",
       "get_learning_profile",
       "propose_practice_plan",
@@ -347,6 +364,168 @@ describe("WebMCP site tool registration", () => {
         { id: "proton_transfer_02", reviewStatus: "verified" },
       ],
     });
+    labManager.destroy();
+  });
+
+  it("runs a six-action Explore delegation from isolated branches to a learner-review proposal", async () => {
+    const store = createMechanismStore(undefined, null);
+    const labManager = createHypothesisLabManager(store);
+    const delegationManager = createDelegationSessionManager(store);
+    const receiptLedger = createToolReceiptLedger("receipt_hypothesis_journey");
+    const surfaceRecorder = createCapabilitySurfaceRecorder();
+    const { tools, context } = adaptiveContextHarness();
+
+    await registerMechanismCanvasTools(
+      store,
+      context,
+      "demo",
+      receiptLedger,
+      delegationManager,
+      labManager,
+      surfaceRecorder,
+    );
+    expect(tools.size).toBe(16);
+
+    labManager.start(2);
+    await vi.waitFor(() => expect(tools.size).toBe(21));
+    expect([...tools.keys()]).toEqual(expect.arrayContaining([
+      "get_hypothesis_lab",
+      "set_hypothesis_branch",
+      "check_hypothesis_branch",
+      "compare_hypothesis_branches",
+      "recommend_hypothesis_branch",
+    ]));
+
+    delegationManager.start({
+      presetId: "explore",
+      maxActions: 6,
+      contractToolNames: enabledToolNames(store.getCollaborationContract(), null, labManager.getSnapshot()),
+    });
+    await vi.waitFor(() => expect(tools.size).toBe(15));
+    const call = (name: string, input: unknown) => tools.get(name)?.execute(input);
+
+    const read = await call("get_hypothesis_lab", {});
+    expect(read).toMatchObject({
+      ok: true,
+      lab: { active: true, status: "active", labRevision: 0 },
+    });
+    expect(delegationManager.getSnapshot()?.usedActions).toBe(0);
+
+    await call("set_hypothesis_branch", {
+      branchId: "hypothesis_a",
+      arrows: [{ sourceType: "lone_pair", sourceEntityId: "lp_o_1", targetAtomId: "c_electrophile" }],
+      rationale: "Test bond formation without the leaving-group motion.",
+      expectedLabRevision: 0,
+    });
+    const incomplete = await call("check_hypothesis_branch", {
+      branchId: "hypothesis_a",
+      expectedLabRevision: 1,
+    });
+    expect(incomplete).toMatchObject({
+      ok: true,
+      mechanismRevision: 0,
+      validation: { classification: "incomplete" },
+    });
+
+    await call("set_hypothesis_branch", {
+      branchId: "hypothesis_b",
+      arrows: [
+        { sourceType: "lone_pair", sourceEntityId: "lp_o_1", targetAtomId: "c_electrophile" },
+        { sourceType: "bond", sourceEntityId: "bond_c_br", targetAtomId: "br_leaving" },
+      ],
+      rationale: "Test the concerted substitution bundle.",
+      expectedLabRevision: 2,
+    });
+    const valid = await call("check_hypothesis_branch", {
+      branchId: "hypothesis_b",
+      expectedLabRevision: 3,
+    });
+    expect(valid).toMatchObject({ validation: { classification: "valid" } });
+
+    const compared = await call("compare_hypothesis_branches", {
+      leftBranchId: "hypothesis_a",
+      rightBranchId: "hypothesis_b",
+      expectedLabRevision: 4,
+    });
+    expect(compared).toMatchObject({
+      ok: true,
+      comparison: { sharedArrows: [{ source: { entityId: "lp_o_1" } }] },
+    });
+
+    const recommended = await call("recommend_hypothesis_branch", {
+      branchId: "hypothesis_b",
+      rationale: "Path B is the validator-approved concerted step; stage it for your review.",
+      expectedLabRevision: 5,
+      expectedMechanismRevision: 0,
+    });
+    expect(recommended).toMatchObject({
+      ok: true,
+      mechanismRevision: 0,
+      draftArrowCount: 0,
+      awaitingLearnerApproval: true,
+      lab: { status: "recommended", labRevision: 6 },
+    });
+    expect(store.getState()).toMatchObject({
+      mechanismRevision: 0,
+      draftArrows: [],
+      agentProposal: { arrows: expect.any(Array) },
+    });
+    expect(delegationManager.getSnapshot()).toMatchObject({ status: "exhausted", usedActions: 6 });
+    await vi.waitFor(() => expect(tools.size).toBe(4));
+    expect([...tools.keys()]).toEqual([
+      "get_collaboration_contract",
+      "get_delegation_session",
+      "get_hypothesis_lab",
+      "get_agent_action_receipts",
+    ]);
+    expect(
+      receiptLedger.getSnapshot()
+        .filter((receipt) => receipt.delegation?.actionNumber !== null)
+        .map((receipt) => receipt.delegation?.actionNumber),
+    ).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(receiptLedger.getSnapshot().slice(-6).every((receipt) =>
+      receipt.changed.chemistry === false && receipt.after.mechanismRevision === 0
+    )).toBe(true);
+    expect(
+      receiptLedger.getSnapshot()
+        .filter((receipt) => receipt.toolName === "check_hypothesis_branch")
+        .map((receipt) => receipt.evidence?.validationClassification),
+    ).toEqual(["incomplete", "valid"]);
+    expect(buildLatestExploreRunReport(receiptLedger.getSnapshot())).toMatchObject({
+      verdict: "proof_complete",
+      passedCheckCount: 7,
+      labRevisionStart: 0,
+      labRevisionEnd: 6,
+      mainRevisionStart: 0,
+      mainRevisionEnd: 0,
+    });
+
+    delegationManager.end();
+    await vi.waitFor(() => expect(tools.size).toBe(17));
+    const proposalId = store.getState().agentProposal?.id ?? "";
+    expect(store.acceptAgentProposal(proposalId).ok).toBe(true);
+    const reviewedLab = await tools.get("get_hypothesis_lab")?.execute({});
+    expect(reviewedLab).toMatchObject({
+      lab: {
+        mainDraftUnchanged: false,
+        recommendation: {
+          awaitingLearnerApproval: false,
+          learnerDecisionRecorded: true,
+        },
+      },
+    });
+    labManager.end();
+    await vi.waitFor(() => expect(tools.size).toBe(16));
+    expect(surfaceRecorder.getSnapshot().events.map((event) => event.toolNames.length)).toEqual([
+      16,
+      21,
+      15,
+      4,
+      17,
+      16,
+    ]);
+    delegationManager.destroy();
+    labManager.destroy();
   });
 
   it("lets an agent read evidence and stage a plan without starting it", async () => {
