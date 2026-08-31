@@ -1,97 +1,92 @@
 # Demo script: under three minutes
 
 **Target runtime:** 2:50–2:59
+
 **Format:** public YouTube screen recording with live audio
 **Primary frame:** deployed `?demo=1` page in ChatGPT's built-in browser
 
-## 0:00–0:20 — The real problem
+## 0:00–0:20 — The missing layer is intent
 
-**On screen:** Open the clean demo. Keep the Collaboration Contract and the first molecular canvas in view.
-
-**Narration:**
-
-> AI tutors can explain a picture or finish a problem, but they struggle to share control of exact visual work. In chemistry, every dot, bond, arrow, charge, and coupled move has semantic meaning. Coordinates are not enough—and asking a model not to give away the answer is not an enforceable boundary.
-
-## 0:20–0:45 — Make learner agency executable
-
-**On screen:** Show Coach mode at **15 / 20 tools**, the empty Agent Proof Ledger, and briefly open the Site Tools menu. Ask the agent to call `get_collaboration_contract`. Select **Collaborate** while leaving **Only I can commit checked steps** enabled; show the contract and menu update to **19 / 20**.
+**On screen:** Open the clean demo. Keep the Collaboration Contract and Delegation Session mastheads visible.
 
 **Narration:**
 
-> This learner-owned contract changes what the browser agent can discover. Coach exposes bounded checks and proposals. Collaborate adds direct revision-bound editing, but I am keeping final commits for myself. The Site Tool surface updates live, and there is no tool that can expand its own permissions.
+> Browser agents are gaining precise tools, but permission alone does not say what I want done now, where the work may happen, or when the agent must stop. In chemistry, that gap can turn help into answer-taking—or let stale actions touch the wrong mechanism state.
 
-## 0:45–1:04 — Discover semantic chemistry
+## 0:20–0:42 — Make maximum permission executable
 
-**On screen:** Paste the first judge prompt. Let the agent read state and switch to `ammonia_alkylation_01`. Show the two-step capstone and locked future states.
-
-**Narration:**
-
-> The agent reads stable atoms, bonds, lone pairs, revisions, and six reviewed exercises from the same page state I see. It selects a two-step capstone without guessing from pixels. Future states remain locked until the chemistry reaches them.
-
-## 1:04–1:30 — Fail honestly, then stage a handoff
-
-**On screen:** Agent adds only `lp_n_attack_1 → c_methyl`, calls `check_draft_step`, then stages `bond_c_br → br_leaving` through `propose_draft_arrows`. It calls `get_agent_action_receipts`; keep the incomplete feedback, proposal, and matching receipt cards visible.
+**On screen:** Show Coach at **16 / 21**. Select Collaborate while keeping learner-only commits; show **20 / 21** in the page and Site Tools menu.
 
 **Narration:**
 
-> One bond-forming arrow is incomplete because the carbon–bromine pair is unaccounted for. The deterministic validator catches that without revealing a hidden answer. The proposal stays outside my draft while I decide, and the page—not the agent's narration—records exactly which calls ran and which revisions changed.
+> My Collaboration Contract sets the maximum role. Collaborate exposes revision-bound editing, but I keep final commits for myself. The browser's WebMCP surface changes live, and there is no Site Tool that can change this contract.
 
-## 1:30–1:50 — Separate agent work, learner consent, and correctness
+## 0:42–1:02 — Grant one bounded job
 
-**On screen:** Select **Add to my draft**. Ask the agent to check the complete step. Show that `commit_checked_step` is unavailable, then select **Commit checked step** yourself.
-
-**Narration:**
-
-> I accept the structured proposal, preserving agent authorship and learner consent as separate events. The agent can check the result, but my contract removed its commit tool. My visible commit consumes the current validation token and advances to the real charged intermediate.
-
-## 1:50–2:10 — Inspect chemistry proof, not prose
-
-**On screen:** Call `compare_reached_step`, open **Step evidence**, then call `replay_reached_step`. Show the C–Br break, C–N formation, charge changes, and performed arrows.
+**On screen:** Select **03 · SN2 + proton transfer**. Choose **Coauthor this step**, four actions, then start. Show **15 / 21**, exact scope, and zero of four spent.
 
 **Narration:**
 
-> The page and agent read the same graph delta and replay only the arrows that were actually committed. This is reached evidence, not a model explanation and not a physical transition-state claim. Comparison and replay do not apply the chemistry again.
+> Now I grant one job: coauthor only this step, on this exact problem, state, and revision, for four actions. The page freezes the allowed subset. Later permission changes cannot silently widen it, and the agent cannot start, renew, or end the session.
 
-## 2:10–2:32 — Complete a second guarded step
+## 1:02–1:28 — Act semantically, fail honestly
 
-**On screen:** Return to the intermediate. Agent adds `lp_n_base_1 → h_transfer` and `bond_n_attack_h_transfer → n_attacker`, checks, then stops. Select **Commit checked step** yourself.
-
-**Narration:**
-
-> A second separately checked move transfers the mapped proton to excess ammonia. Again, the agent can operate semantically and the validator can authorize the step, but the learner owns the final transition.
-
-## 2:32–2:44 — Provenance and reversibility
-
-**On screen:** Agent reads the activity trail, then calls `undo_last_commit`. Show the exact intermediate return while step one remains reached.
+**On screen:** Paste the prompt. Agent calls `get_delegation_session`, `get_mechanism_state`, adds `lp_n_attack_1 → c_methyl`, and calls `check_draft_step`.
 
 **Narration:**
 
-> The shared trail records contract changes, human choices, agent actions, checks, and commits. Undo reverses only the last step while preserving the earlier evidence.
+> Session and proof reads are unmetered evidence controls. The first work action reads stable atoms, bonds, lone pairs, and revision directly from the page. The second adds one semantic arrow. The third asks the deterministic validator, which correctly reports that this concerted substitution is incomplete.
 
-## 2:44–2:59 — Carry evidence forward
+## 1:28–1:51 — Prepare a handoff, then close capability
 
-**On screen:** Agent calls `get_learning_profile` and stages a plan with `propose_practice_plan`. End on Practice Compass and the learner-only **Start this plan** action.
+**On screen:** Agent calls `propose_draft_arrows` for `bond_c_br → br_leaving`. Show the proposal and session change to **Action budget spent · 3 / 21 tools**.
 
 **Narration:**
 
-> Finally, exact local evidence becomes a next-practice plan without claiming mastery or uploading identity. The agent can prepare the plan; only the learner can start it. Mechanism Canvas is chemistry today, and a reusable contract for trustworthy visual STEM collaboration next.
+> The fourth action stages the missing bond-breaking arrow outside my draft. That automatically spends the budget. WebMCP discovery collapses to three evidence controls, so “stop” is enforced by the page instead of left to model obedience.
+
+## 1:51–2:13 — Prove intent against execution
+
+**On screen:** Agent calls `get_agent_action_receipts`. Show action 1/4 through 4/4 in the ledger; briefly open exact session surface if useful.
+
+**Narration:**
+
+> The same page-side receipts are visible to me and readable by the agent. They bind actual callback execution to the fixed session, action ordinal, contract, semantic IDs, and before-and-after state—without retaining prompts, rationales, raw payloads, or identity.
+
+## 2:13–2:36 — Return control to the learner
+
+**On screen:** Select **End session · restore contract surface**; show **20 / 21**. Select **Add to my draft**. Ask the agent to check the complete step, then select **Commit checked step** yourself.
+
+**Narration:**
+
+> Only my visible action can restore the broader contract. I accept the structured proposal, preserving agent authorship and learner consent as different events. The agent checks the complete bundle, but my learner-only commit consumes the current validation token and advances the chemistry.
+
+## 2:36–2:55 — Inspect proof, not prose
+
+**On screen:** Call `compare_reached_step`, then `replay_reached_step`. Show the bond break, bond formation, charges, and performed arrows.
+
+**Narration:**
+
+> The reached graph delta and electron-flow replay come from the same committed state, not the model's explanation, and neither applies chemistry again. Mechanism Canvas is chemistry today—and a reusable intent, capability, and execution contract for trustworthy visual collaboration.
 
 ## First agent prompt
 
-> Use this page's Site Tools and keep every change visible. Read the collaboration contract and clean demo state, confirm that direct editing is enabled but commits are learner-only, then switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. Confirm that staging did not change the draft or mechanism revision, then call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the receipt evidence from your explanation, then stop for my decision.
+> Use this page's Site Tools and keep every change visible. Read the active delegation session, then read the current mechanism state. Confirm that the session is bound to ammonia_alkylation_01, has four metered actions, excludes commits and exercise switching, and cannot be widened through a Site Tool. Add only lp_n_attack_1 → c_methyl, check the intentionally incomplete first step, then use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. After that fourth work action closes the budget, call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the session-bound receipt evidence from your explanation, then stop for my decision.
 
 ## Recording checklist
 
 - Use the deployed HTTPS `?demo=1` URL, not localhost or saved practice.
-- Show **15 / 20**, switch modes, then show **19 / 20** in both the page and Site Tools menu.
-- Call `get_collaboration_contract` and state that no Site Tool can change it.
-- Keep **Only I can commit checked steps** enabled for the entire recording.
+- Show the exact capability sequence in both page and Site Tools menu: **16 → 20 → 15 → 3 → 20** of 21.
+- Keep learner-only commits enabled throughout.
+- Select the ammonia capstone before starting the problem-bound session.
+- Use a four-action Coauthor session.
+- Show `get_delegation_session` does not spend an action.
 - Show one intentionally incomplete deterministic check.
-- Show that proposal staging leaves the draft and chemistry revision unchanged.
-- Show the visible receipt cards and call `get_agent_action_receipts`; distinguish page evidence from agent prose.
-- Download the privacy-minimized proof JSON if the timing allows.
-- Select **Add to my draft** and both **Commit checked step** actions yourself.
-- Show **Chemistry reviewed**, reached-state evidence, one replay, and one undo.
-- End on the Practice Compass learner-only plan gate.
-- Record at 1440 × 900 or a similar desktop size with browser zoom at 100%.
-- Confirm the public video has audible narration and runs under three minutes before submitting.
+- Show proposal staging does not mutate the draft or mechanism revision.
+- Show the fourth work call closes the session surface automatically.
+- Show session-bound receipt ordinals 1/4 through 4/4 and an unmetered receipt read.
+- End the session only through the visible learner action.
+- Select **Add to my draft** and **Commit checked step** yourself.
+- End on reached comparison and replay.
+- Record at 1440 × 900 or a similar desktop size, browser zoom 100%, with audible narration.
+- Confirm the public video is under three minutes before submitting.

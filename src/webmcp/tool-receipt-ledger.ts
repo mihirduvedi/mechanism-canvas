@@ -1,8 +1,9 @@
 import type { CollaborationMode } from "../domain/types";
 import type { MechanismStore } from "../store/mechanism-store";
+import type { DelegationReceiptEvidence } from "./delegation-session";
 
 export const MAX_TOOL_RECEIPTS = 60;
-export const TOOL_RECEIPT_SCHEMA_VERSION = 1;
+export const TOOL_RECEIPT_SCHEMA_VERSION = 2;
 
 export type ToolReceiptOutcome = "succeeded" | "rejected" | "failed" | "canceled";
 export type ToolReceiptKind = "read" | "present" | "propose" | "write";
@@ -27,6 +28,7 @@ export interface ToolReceipt {
   result: string;
   code: string | null;
   entityIds: string[];
+  delegation: DelegationReceiptEvidence | null;
   startedAt: string;
   completedAt: string;
   durationMs: number;
@@ -54,7 +56,7 @@ export interface ToolReceiptSummary {
 }
 
 export interface ToolReceiptExport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   application: "Mechanism Canvas";
   sessionId: string;
   sessionMode: "saved" | "demo";
@@ -83,6 +85,7 @@ export interface ToolReceiptScope {
 const TOOL_KINDS: Record<string, ToolReceiptKind> = {
   get_mechanism_state: "read",
   get_collaboration_contract: "read",
+  get_delegation_session: "read",
   get_agent_action_receipts: "read",
   get_learning_profile: "read",
   inspect_mechanism_entities: "read",
@@ -192,6 +195,8 @@ export function summarizeToolIntent(
   switch (toolName) {
     case "get_mechanism_state": return "Read the shared mechanism state and semantic graph.";
     case "get_collaboration_contract": return "Read the learner-owned agent permission contract.";
+    case "get_delegation_session":
+      return "Read the learner-granted delegation purpose, scope, surface, and remaining action budget.";
     case "get_agent_action_receipts":
       return `Read proof receipts${afterSequence === null ? "" : ` after #${afterSequence}`}${limit === null ? "" : `, up to ${limit}`}.`;
     case "get_learning_profile": return "Read the privacy-local Practice Compass evidence.";
@@ -367,6 +372,7 @@ export function buildToolReceiptExport(
     before: { ...receipt.before },
     after: { ...receipt.after },
     changed: { ...receipt.changed },
+    delegation: receipt.delegation ? { ...receipt.delegation } : null,
   }));
   return {
     schemaVersion: TOOL_RECEIPT_SCHEMA_VERSION,
@@ -374,7 +380,7 @@ export function buildToolReceiptExport(
     sessionId: ledger.getSessionId(),
     sessionMode,
     generatedAt,
-    privacy: "Contains allowlisted tool names, bounded semantic IDs, state stamps, outcomes, and timings. Raw tool inputs, outputs, rationales, prompts, and learner identity are omitted.",
+    privacy: "Contains allowlisted tool names, bounded semantic IDs, state stamps, outcomes, timings, and fixed delegation-session evidence. Raw tool inputs, outputs, rationales, prompts, freeform intent, and learner identity are omitted.",
     retention: `Session-only in this browser tab; capped at the latest ${MAX_TOOL_RECEIPTS} calls.`,
     summary: summarizeToolReceipts(receipts),
     receipts,

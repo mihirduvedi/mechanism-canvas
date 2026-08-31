@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { REPLAY_REACHED_STEP_EVENT } from "../domain/reaction-replay";
 import { createMechanismStore } from "../store/mechanism-store";
-import { registerMechanismCanvasTools } from "./register-tools";
+import { enabledToolNames, registerMechanismCanvasTools } from "./register-tools";
+import { createDelegationSessionManager } from "./delegation-session";
 import { createToolReceiptLedger } from "./tool-receipt-ledger";
 
 function contextHarness() {
@@ -47,8 +48,9 @@ describe("WebMCP site tool registration", () => {
     const { tools, context } = adaptiveContextHarness();
     const initialCount = await registerMechanismCanvasTools(store, context, "demo");
 
-    expect(initialCount).toBe(15);
+    expect(initialCount).toBe(16);
     expect([...tools.keys()]).toContain("get_collaboration_contract");
+    expect([...tools.keys()]).toContain("get_delegation_session");
     expect([...tools.keys()]).toContain("get_agent_action_receipts");
     expect([...tools.keys()]).toContain("propose_draft_arrows");
     expect([...tools.keys()]).not.toContain("add_draft_arrow");
@@ -58,8 +60,8 @@ describe("WebMCP site tool registration", () => {
     expect(contractRead).toMatchObject({
       ok: true,
       contract: { mode: "coach", maxAgentScaffoldLevel: 2 },
-      enabledToolCount: 15,
-      totalToolCount: 20,
+      enabledToolCount: 16,
+      totalToolCount: 21,
       learnerControl: "No Site Tool can change this contract.",
     });
 
@@ -68,7 +70,7 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 2,
       learnerCommitsOnly: true,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(10));
+    await vi.waitFor(() => expect(tools.size).toBe(11));
     expect([...tools.keys()]).not.toContain("propose_draft_arrows");
     expect([...tools.keys()]).not.toContain("request_scaffold");
 
@@ -77,7 +79,7 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 0,
       learnerCommitsOnly: true,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(14));
+    await vi.waitFor(() => expect(tools.size).toBe(15));
     expect([...tools.keys()]).not.toContain("request_scaffold");
 
     store.setCollaborationContract({
@@ -85,7 +87,7 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 4,
       learnerCommitsOnly: true,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(19));
+    await vi.waitFor(() => expect(tools.size).toBe(20));
     expect([...tools.keys()]).toContain("add_draft_arrow");
     expect([...tools.keys()]).not.toContain("commit_checked_step");
 
@@ -94,8 +96,104 @@ describe("WebMCP site tool registration", () => {
       maxAgentScaffoldLevel: 4,
       learnerCommitsOnly: false,
     });
-    await vi.waitFor(() => expect(tools.size).toBe(20));
+    await vi.waitFor(() => expect(tools.size).toBe(21));
     expect([...tools.keys()]).toContain("commit_checked_step");
+  });
+
+  it("publishes a frozen delegation surface, meters real work, guards cached tools, and restores only on learner end", async () => {
+    const store = createCollaborativeStore();
+    const delegationManager = createDelegationSessionManager(store);
+    const receiptLedger = createToolReceiptLedger("receipt_session_delegation");
+    const { tools, context } = adaptiveContextHarness();
+    await registerMechanismCanvasTools(
+      store,
+      context,
+      "demo",
+      receiptLedger,
+      delegationManager,
+    );
+    expect(tools.size).toBe(21);
+    const cachedSwitch = tools.get("switch_problem");
+
+    delegationManager.start({
+      presetId: "coauthor",
+      maxActions: 4,
+      contractToolNames: enabledToolNames(store.getCollaborationContract()),
+    });
+    await vi.waitFor(() => expect(tools.size).toBe(15));
+    expect([...tools.keys()]).toContain("add_draft_arrow");
+    expect([...tools.keys()]).not.toContain("switch_problem");
+    expect([...tools.keys()]).not.toContain("commit_checked_step");
+
+    const blockedCachedCall = await cachedSwitch?.execute({
+      problemId: "proton_transfer_01",
+      expectedRevision: 0,
+    });
+    expect(blockedCachedCall).toMatchObject({
+      ok: false,
+      error: { code: "DELEGATION_TOOL_BLOCKED" },
+    });
+    expect(delegationManager.getSnapshot()?.usedActions).toBe(0);
+
+    const sessionRead = await tools.get("get_delegation_session")?.execute({});
+    expect(sessionRead).toMatchObject({
+      ok: true,
+      session: {
+        active: true,
+        presetId: "coauthor",
+        status: "active",
+        actionBudget: 4,
+        actionsUsed: 0,
+        enabledToolCount: 15,
+      },
+      totalToolCount: 21,
+    });
+    expect(delegationManager.getSnapshot()?.usedActions).toBe(0);
+
+    const scopedStateRead = tools.get("get_mechanism_state");
+    const canceledController = new AbortController();
+    canceledController.abort();
+    await scopedStateRead?.execute({}, { signal: canceledController.signal });
+    expect(delegationManager.getSnapshot()?.usedActions).toBe(0);
+
+    for (let action = 1; action <= 4; action += 1) {
+      const result = await scopedStateRead?.execute({});
+      expect(result).toMatchObject({ ok: true });
+    }
+    await vi.waitFor(() => expect(tools.size).toBe(3));
+    expect([...tools.keys()]).toEqual([
+      "get_collaboration_contract",
+      "get_delegation_session",
+      "get_agent_action_receipts",
+    ]);
+    expect(delegationManager.getSnapshot()).toMatchObject({
+      status: "exhausted",
+      usedActions: 4,
+    });
+
+    const blockedAfterBudget = await scopedStateRead?.execute({});
+    expect(blockedAfterBudget).toMatchObject({
+      ok: false,
+      error: { code: "DELEGATION_SESSION_EXHAUSTED" },
+    });
+    expect(delegationManager.getSnapshot()?.usedActions).toBe(4);
+    expect(receiptLedger.getSnapshot().filter((receipt) => receipt.toolName === "get_mechanism_state"))
+      .toMatchObject([
+        { outcome: "canceled", delegation: { actionNumber: null, actionBudget: 4 } },
+        { outcome: "succeeded", delegation: { actionNumber: 1, actionBudget: 4 } },
+        { outcome: "succeeded", delegation: { actionNumber: 2, actionBudget: 4 } },
+        { outcome: "succeeded", delegation: { actionNumber: 3, actionBudget: 4 } },
+        { outcome: "succeeded", delegation: { actionNumber: 4, actionBudget: 4 } },
+        {
+          outcome: "rejected",
+          code: "DELEGATION_SESSION_EXHAUSTED",
+          delegation: { actionNumber: null, actionBudget: 4 },
+        },
+      ]);
+
+    delegationManager.end();
+    await vi.waitFor(() => expect(tools.size).toBe(21));
+    delegationManager.destroy();
   });
 
   it("records privacy-minimized proof receipts for successful, rejected, receipt-read, and canceled calls", async () => {
@@ -177,14 +275,15 @@ describe("WebMCP site tool registration", () => {
     expect(store.getState().mechanismRevision).toBe(0);
   });
 
-  it("registers the full twenty-tool catalog with proof receipts, guarded plans, proposals, history, comparison, and replay", async () => {
+  it("registers the full twenty-one-tool catalog with delegation, proof receipts, guarded plans, proposals, history, comparison, and replay", async () => {
     const store = createCollaborativeStore();
     const { tools, context } = contextHarness();
     const count = await registerMechanismCanvasTools(store, context);
-    expect(count).toBe(20);
+    expect(count).toBe(21);
     expect(tools.map((tool) => tool.name)).toEqual([
       "get_mechanism_state",
       "get_collaboration_contract",
+      "get_delegation_session",
       "get_agent_action_receipts",
       "get_learning_profile",
       "propose_practice_plan",

@@ -2,10 +2,12 @@ import { COLLABORATION_MODE_LABELS } from "../domain/collaboration-contract";
 import type { CollaborationMode } from "../domain/types";
 import type { MechanismStore } from "../store/mechanism-store";
 import { enabledToolCount, MECHANISM_TOOL_COUNT } from "../webmcp/register-tools";
+import type { DelegationSession } from "../webmcp/delegation-session";
 
 interface CollaborationContractProps {
   store: MechanismStore;
   sessionMode: "saved" | "demo";
+  delegationSession: DelegationSession | null;
 }
 
 const modes: Array<{
@@ -45,9 +47,10 @@ const scaffoldLabels = [
 export function CollaborationContract({
   store,
   sessionMode,
+  delegationSession,
 }: CollaborationContractProps) {
   const contract = store.getCollaborationContract();
-  const activeToolCount = enabledToolCount(contract);
+  const activeToolCount = enabledToolCount(contract, delegationSession);
 
   const update = (
     patch: Partial<{

@@ -34,9 +34,9 @@ The learner changes the contract through native page controls. There is delibera
 
 | Mode | Default count | Agent role | Enabled additions |
 |---|---:|---|---|
-| Observe | 10 | Read and present evidence without changing the exercise or learning record | State, contract, agent-action receipts, profile, entity inspection, activity, reached-history view, comparison, replay, focus |
-| Coach | 15 | Check learner work and prepare bounded handoffs | Practice plan, arrow proposal, deterministic check, hint request, problem switch |
-| Collaborate | 19–20 | Make revision-bound draft edits and reversible state changes | Add/remove arrow, undo, reset; commit only with separate learner opt-in |
+| Observe | 11 | Read and present evidence without changing the exercise or learning record | State, contract, delegation session, agent-action receipts, profile, entity inspection, activity, reached-history view, comparison, replay, focus |
+| Coach | 16 | Check learner work and prepare bounded handoffs | Practice plan, arrow proposal, deterministic check, hint request, problem switch |
+| Collaborate | 20–21 | Make revision-bound draft edits and reversible state changes | Add/remove arrow, undo, reset; commit only with separate learner opt-in |
 
 Coach is the default. It permits an agent to check a learner's draft and stage a structured suggestion, but the agent cannot place arrows directly or commit chemistry.
 
@@ -50,6 +50,8 @@ The hint ceiling changes Coach and Collaborate behavior:
 The learner-only commit switch applies in Collaborate mode. When enabled, `commit_checked_step` is absent and the store refuses agent commits. The agent may still run the deterministic check; the visible learner action consumes the resulting current validation token.
 
 `get_agent_action_receipts` is available in every mode. It cannot widen the contract or change domain state; it reads the memory-only Agent Proof Ledger so the agent and learner can verify which registered callbacks actually ran. See [AGENT_PROOF_LEDGER.md](AGENT_PROOF_LEDGER.md).
+
+`get_delegation_session` is also available in every mode. The learner may use the visible page to turn the current contract into a smaller, temporary, purpose-specific grant. A running session freezes its tool set, active problem/state, and action budget; it can shrink but cannot inherit later permission expansion. See [INTENT_BOUND_DELEGATION.md](INTENT_BOUND_DELEGATION.md).
 
 ## State and persistence
 
@@ -84,9 +86,10 @@ Mechanism Canvas does not claim these additional editors are implemented. It dem
 
 ## Judge proof
 
-1. Open the clean demo. Coach mode reports 15 of 20 tools.
+1. Open the clean demo. Coach mode reports 16 of 21 tools.
 2. Read `get_collaboration_contract`; its response names the current surface and states that no Site Tool can change it.
-3. Select Collaborate while leaving learner-only commits enabled. The page reports 19 of 20 tools and the browser's Site Tools menu updates.
+3. Select Collaborate while leaving learner-only commits enabled. The page reports 20 of 21 tools and the browser's Site Tools menu updates.
+4. Start a four-action Coauthor delegation session. The surface contracts to 15 tools and cannot regain omitted tools until the learner ends it.
 4. Let the agent add and check an intentionally incomplete arrow, then stage the missing arrow through `propose_draft_arrows`.
 5. Accept the proposal in the page, ask the agent to check again, and observe that `commit_checked_step` remains unavailable.
 6. Call `get_agent_action_receipts` and compare its structured evidence with the visible ledger, then select **Commit checked step** as the learner. The deterministic validator—not the contract or model—authorizes the chemistry transition.

@@ -34,6 +34,7 @@ Each receipt contains:
 - one of four outcomes: `succeeded`, `rejected`, `failed`, or `canceled`;
 - a bounded semantic intent summary and stable entity IDs when applicable;
 - a structured error code only when the page returned one;
+- optional fixed-structure delegation evidence: session ID, preset, problem/state scope, action ordinal, and action budget;
 - start time, completion time, and measured duration;
 - before and after stamps for problem, reached state, mechanism revision, activity sequence, draft count, collaboration mode, and contract revision; and
 - derived booleans for problem, chemistry, draft, activity, and contract changes.
@@ -58,6 +59,7 @@ Receipt creation deliberately omits:
 - proposal rationales and learner reflections;
 - accepted-answer definitions, unreached graphs, and validation tokens;
 - learner identity; and
+- freeform learner intent or delegation text; and
 - state from other tabs or devices.
 
 Intent summaries are generated from a closed-world tool map. Strings and ID lists are normalized, length-bounded, deduplicated, and capped. The export repeats this boundary in its metadata. A learner must explicitly choose **Download proof JSON** or **Copy proof JSON**; the page never uploads the record.
@@ -68,10 +70,11 @@ Intent summaries are generated from a closed-world tool map. Strings and ID list
 
 1. captures a state stamp and start time;
 2. checks a supplied abort signal before execution;
-3. invokes the original tool callback unchanged;
-4. classifies structured `ok: false` results as guarded and thrown errors as failed;
-5. captures the final state and appends exactly one bounded receipt; and
-6. preserves the original successful result, structured rejection, or thrown error for the host.
+3. enforces the active Intent-Bound Delegation Session before domain execution;
+4. invokes the original tool callback unchanged;
+5. classifies structured `ok: false` results as guarded and thrown errors as failed;
+6. captures the final state and appends exactly one bounded receipt with optional delegation evidence; and
+7. preserves the original successful result, structured rejection, or thrown error for the host.
 
 The current WebMCP host can also cancel work without entering the page callback. The ledger cannot claim a receipt for code the page never received. It proves pre-execution cancellation only when the callback is invoked with an already-aborted signal.
 
@@ -102,7 +105,7 @@ The visible surface and agent-readable tool intentionally describe the same reta
 
 ## Verification boundary
 
-Automated tests cover privacy omission, bounded semantic summaries, before/after state evidence, outcome aggregation, the 60-receipt cap, clear and export behavior, successful and rejected real tools, incremental receipt reads, and pre-canceled execution. The full registration suite locks the adaptive 10–20-tool catalog.
+Automated tests cover privacy omission, bounded semantic summaries, before/after state evidence, outcome aggregation, the 60-receipt cap, schema-version-2 delegation binding, clear and export behavior, successful and rejected real tools, incremental receipt reads, and pre-canceled execution. The full registration suite locks the adaptive 3–21-tool surface, including frozen grants and exhaustion.
 
 Rendered browser QA separately covers the empty and populated ledgers, verified and guarded visual states, live receipt growth, JSON actions, confirmation-protected clearing, semantic focus, responsive stacking, keyboard operation, and horizontal overflow. These checks prove current implementation behavior; they do not claim host-level auditing outside the page callback.
 

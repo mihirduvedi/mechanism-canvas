@@ -209,6 +209,14 @@ export function AgentProofLedger({ ledger, store, sessionMode }: AgentProofLedge
                     </span>
                     <strong>{receiptStateProof(receipt)}</strong>
                     <span>{receipt.before.collaborationMode} · contract {receipt.before.contractRevision}</span>
+                    {receipt.delegation && (
+                      <span className="proof-receipt__delegation">
+                        {receipt.delegation.presetLabel} session
+                        {receipt.delegation.actionNumber === null
+                          ? " · evidence control"
+                          : ` · action ${receipt.delegation.actionNumber}/${receipt.delegation.actionBudget}`}
+                      </span>
+                    )}
                     <time dateTime={receipt.completedAt}>
                       {formatTime(receipt.completedAt)} · {formatDuration(receipt.durationMs)}
                     </time>

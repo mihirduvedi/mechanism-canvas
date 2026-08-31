@@ -1,93 +1,68 @@
 # Judge guide
 
-Mechanism Canvas is a proof-carrying visual tutor. The learner controls what an agent can discover and do; WebMCP publishes that exact capability surface; the deterministic app retains authority over chemistry.
+Mechanism Canvas is a proof-carrying visual tutor. The learner defines the maximum agent role, grants one temporary job, and sees page-side proof of every Site Tool execution. WebMCP publishes the exact current capability surface; deterministic application logic retains authority over chemistry.
 
 ## Fastest live path
 
-1. Open <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> in ChatGPT's built-in browser. The demo uses memory only, so it starts clean without erasing saved practice.
-2. The page starts in **Coach** mode. Confirm the contract shows **15 / 20 tools**, the Agent Proof Ledger is empty, open the Site Tools menu, and ask the agent to call `get_collaboration_contract`.
-3. Select **Collaborate** but leave **Only I can commit checked steps** enabled. Confirm the page and Site Tools menu update to **19 / 20 tools**. This proves live capability discovery; no Site Tool can widen the contract.
-4. Paste the first prompt below.
-5. When the proposal appears, select **Add to my draft**. Ask the agent to check the complete draft, then select **Commit checked step** yourself because the commit tool remains absent.
-6. Keep the contract receipt, Agent Proof Ledger, molecular canvas, proposal gate, and activity trail visible during the flow.
+1. Open <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> in ChatGPT's built-in browser. The clean demo is memory-only and does not touch saved practice.
+2. Confirm Coach starts at **16 / 21 tools**. Select **Collaborate** but leave **Only I can commit checked steps** enabled; confirm **20 / 21 tools** in the page and Site Tools menu.
+3. In the exercise selector, choose **03 · SN2 + proton transfer** (`ammonia_alkylation_01`). This human action establishes the problem before granting an exact scope.
+4. In **Delegate one bounded job**, choose **Coauthor this step**, select **4 metered actions**, and start the session. Confirm the surface contracts to **15 / 21 tools**.
+5. Paste the prompt below. Keep the Delegation Session, Agent Proof Ledger, proposal, and chemistry feedback visible while it runs.
+6. The four metered work calls are: state read, direct arrow add, deterministic check, and proposal staging. Contract/session/receipt reads are unmetered evidence controls.
+7. After the proposal call, confirm the session says **Action budget spent** and the browser surface contracts to **3 / 21 tools**. The agent can still read the contract, delegation session, and receipts, but cannot continue the chemistry job.
+8. Compare `get_agent_action_receipts` with the visible ledger. The four work receipts must carry **Coauthor session · action 1/4** through **action 4/4**; the session and receipt reads must say **evidence control**.
+9. Select **End session · restore contract surface**. Confirm **20 / 21 tools** return. No Site Tool can perform that restoration.
+10. Select **Add to my draft**, ask the agent to check the complete draft, and select **Commit checked step** yourself. Optionally call `compare_reached_step` and `replay_reached_step` for the reached transition.
 
-> Use this page's Site Tools and keep every change visible. Read the collaboration contract and clean demo state, confirm that direct editing is enabled but commits are learner-only, then switch to ammonia_alkylation_01. Add only lp_n_attack_1 → c_methyl and check the incomplete first step; explain the validator's result briefly. Use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. Confirm that staging did not change the draft or mechanism revision, then call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the receipt evidence from your explanation, then stop for my decision.
+## First agent prompt
 
-After selecting **Add to my draft**, ask:
+> Use this page's Site Tools and keep every change visible. Read the active delegation session, then read the current mechanism state. Confirm that the session is bound to ammonia_alkylation_01, has four metered actions, excludes commits and exercise switching, and cannot be widened through a Site Tool. Add only lp_n_attack_1 → c_methyl, check the intentionally incomplete first step, then use propose_draft_arrows to stage only bond_c_br → br_leaving with a short rationale. After that fourth work action closes the budget, call get_agent_action_receipts with afterSequence 0 and limit 12. Distinguish the session-bound receipt evidence from your explanation, then stop for my decision.
+
+After the learner ends the session and selects **Add to my draft**, ask:
 
 > Read the current state again and check the complete draft. Confirm that it is valid, that you cannot call commit_checked_step under my contract, and stop for me to commit it.
 
-Select **Commit checked step**, then continue:
+Select **Commit checked step**, then optionally finish with:
 
-> Call compare_reached_step for amine_reactants → methylammonium_intermediate, summarize the exact bond and charge changes, then call replay_reached_step for the same pair. Return to the current intermediate if needed. Add lp_n_base_1 → h_transfer and bond_n_attack_h_transfer → n_attacker, check the complete proton-transfer step, and stop for my commit.
-
-Select **Commit checked step** again. Then ask the agent to read the shared activity trail and undo only the last commit.
-
-Finish with the new cross-exercise loop:
-
-> Call get_learning_profile and summarize only the evidence it returns, without calling it mastery. Then call propose_practice_plan with the current profile revision and up to three recommended exercise IDs. Explain that the plan did not switch exercises or change chemistry, then stop for my decision.
-
-The learner—not the agent—can now select **Start this plan** in the visible Practice Compass.
-
-Current ChatGPT documentation says Site tools work in the desktop app's built-in browser with supported models and may depend on account rollout. The full interface remains usable when `document.modelContext` is unavailable.
+> Call compare_reached_step for amine_reactants → methylammonium_intermediate, summarize only the exact graph delta, then call replay_reached_step for the same pair. Explain why neither evidence action applies chemistry again.
 
 ## What the sequence proves
 
 | Moment | Evidence on screen | WebMCP point |
 |---|---|---|
-| Coach contract | The page and Site Tools menu show 15 of 20 tools; direct editing and commits are absent. | The learner's page controls capability discovery instead of relying on a prompt instruction. |
-| Collaborate contract | Selecting one native radio changes the live surface to 19 of 20 tools while commit remains absent. | Abortable registrations publish a new WebMCP surface; the store repeats the same authorization checks. |
-| Contract read | `get_collaboration_contract` returns the mode, hint ceiling, commit boundary, revision, and exact enabled names. | The agent can reason about its permissions, but no Site Tool can expand them. |
-| State read | The agent discovers six exercises, including a two-step capstone, and the current revision. | The page exposes domain state rather than forcing screenshot inference. |
-| Problem switch | The visible exercise changes to **Build methylamine in two steps**. | A tool reuses the same store and persistence path as the native selector. |
-| Partial first step | One N → C arrow appears and the validator reports an incomplete concerted substitution. | The agent can test a partial hypothesis without receiving a hidden solution. |
-| Reviewable proposal | The agent stages the missing C–Br → Br arrow in a separate panel; the draft and revision do not change until the learner accepts it. | `propose_draft_arrows` creates a real human-agent handoff. There is intentionally no site tool that can approve the proposal. |
-| Execution proof | The visible ledger and `get_agent_action_receipts` show verified reads, writes, checking, and proposal staging with the same before/after stamps. | Actual page execution—not tool prose or the chat transcript—produces privacy-minimized, inspectable evidence. |
-| Learner approval | The learner selects **Add to my draft** and the proposed arrow appears with agent provenance. | Human consent, agent authorship, and deterministic validation remain distinct events in the same store. |
-| First commit | The learner selects **Commit checked step** and the canvas advances to charged methylammonium bromide plus ammonia. | The agent can check, but the contract omits commit; deterministic app logic consumes the valid token after a visible learner action. |
-| Reaction Diff | The learner opens a side-by-side structure comparison while the agent reads the same bond, charge, and lone-pair deltas. | `compare_reached_step` reuses one pure comparison engine and rejects any pair not listed as active reached evidence. |
-| Electron Flow Replay | The same performed curved arrows replay over the reached before-state without applying chemistry again. | `replay_reached_step` presents only the exact active commit requested and leaves revision, activity, and persistence unchanged. |
-| History comparison | The agent shows reactants, returns to the current intermediate, and never unlocks products early. | `view_mechanism_history_state` changes only the visible review state, not chemistry or revision. |
-| Second commit | Two proton-transfer arrows advance the same mapped atoms to methylamine plus ammonium bromide after a second learner commit. | Each elementary step has separate agent assistance, deterministic validation, and learner authority. |
-| Activity read | Human, agent, validator, history-view, and commit events match the visible trail. | The collaboration record is structured and inspectable. |
-| Undo | Only the second commit reverses; the exact charged intermediate returns. | Multi-step agent writes remain controlled and recoverable in LIFO order. |
-| Practice Compass read | Exact checks, hints, and completed steps become a local evidence map and ranked next-practice list. | `get_learning_profile` turns prior interaction into useful cross-exercise context without identities, cloud data, or authored answers. |
-| Practice-plan handoff | An ordered plan appears without switching the exercise or changing chemistry. | `propose_practice_plan` is bound to an evidence revision; there is intentionally no Site Tool that can start it. |
-| Learner starts plan | The first planned exercise opens only after the visible **Start this plan** action. | Agent recommendation and learner authority remain separate, inspectable events. |
+| Coach contract | 16 of 21 tools; direct editing and commit are absent. | The page publishes a learner-owned maximum capability boundary. |
+| Collaborate contract | 20 of 21 tools; direct editing appears, commit remains absent. | Abortable registration changes live discovery while the store repeats authorization. |
+| Coauthor grant | 15 of 21 tools bound to one problem, state, revision, and four actions. | Broad permission becomes a learner-authored job; switch, commit, reset, undo, and cross-exercise tools are removed. |
+| Session read | Exact purpose, frozen grant, scope, status, and budget are agent-readable. | The agent can reason about intent but cannot create or widen it. |
+| Semantic state read | Stable atoms, bonds, lone pairs, draft, and revision replace screenshot inference. | The page exposes domain state directly through one unmetered-control-aware execution path. |
+| Partial arrow + check | One N → C arrow appears; the deterministic validator reports an incomplete concerted step. | A metered semantic write and deterministic guard remain distinct. |
+| Reviewable proposal | The missing C–Br → Br arrow appears outside the draft. | Agent work, learner consent, and chemistry validation stay separate. |
+| Automatic expiry | The fourth action closes the budget and only 3 evidence tools remain. | Capability discovery enforces “stop” instead of relying on model obedience. |
+| Session-bound receipts | Visible cards and agent readback agree on session ID and action 1/4 through 4/4. | Actual page callbacks carry intent-to-effect proof without storing prompts or rationales. |
+| Learner restoration | Only the page action restores the 20-tool contract surface. | No Site Tool can widen, renew, or end its own delegation. |
+| Learner commit | The agent checks; the learner consumes the current valid token. | Final authority remains human even after direct semantic coauthoring. |
+| Comparison + replay | Exact graph changes and performed arrows appear without a revision change. | Reached evidence is shared structured state, not model prose or a second chemistry application. |
 
-## Manual fallback
+## Core invariants worth inspecting
 
-In an ordinary browser, open the clean demo and select **03 · SN2 + proton transfer**. For step 1, click N1's lone pair then C1, and the C–Br bond then Br1. Check and commit to reach methylammonium bromide. Open **Step evidence**, confirm the C–Br break, C–N formation, and N1/Br1 charge and lone-pair changes, then select **Replay electron flow**. Close it, use the timeline to view **Reactants**, return to the current intermediate, then complete step 2 with N2's lone pair → H1 and the N1–H1 bond → N1. Check and commit. Compare step 2, then **Undo commit**; products must relock and only step 1 may remain comparable. Refreshing the demo starts it clean again; the normal saved workspace is separate.
+- The normal Collaboration Contract exposes 11–21 tools; a delegation session intersects that surface down to 3–15 for the demonstrated presets.
+- A session's grant is frozen at start. Later contract restriction may shrink it; later expansion cannot widen it.
+- Every non-control call that begins page execution spends one action, including a structured guard. Pre-canceled work spends nothing.
+- Human changes to the scoped problem, state, or revision immediately drift the session to its three-control evidence surface.
+- Permitted agent edits advance the session's expected revision without self-invalidating.
+- Cached definitions outside the frozen grant are rejected with `DELEGATION_TOOL_BLOCKED` before domain execution.
+- `commit_checked_step`, exercise switching, reset, undo, learning-profile reads, and practice-plan staging are excluded from every session preset.
+- Every mutating chemistry tool still uses `mechanismRevision`; draft changes invalidate prior validation; commit still requires a current validation token.
+- Receipt schema version 2 adds only fixed session ID, preset, scope, action ordinal, and budget. It omits prompts, rationales, freeform intent, raw inputs/outputs, validation tokens, and identity.
+- `?demo=1` keeps chemistry, contract, delegation, and receipts in memory and never touches saved practice.
 
-This fallback proves the human experience and shared command layer. It does not count as live WebMCP verification.
+## Manual fallback and honest boundary
+
+In an ordinary browser, the same Collaboration Contract, Delegation Session, chemistry workspace, proposal gate, validator, and proof-ledger empty state remain usable. A person can reproduce the chemistry actions through visible controls, but that does **not** prove WebMCP discovery or invocation.
+
+Current [official OpenAI Site Tools documentation](https://learn.chatgpt.com/docs/webmcp) says ChatGPT's built-in browser supports top-level imperative registration but does not discover declarative tools or tools inside iframes. Host/account availability may still vary. If `document.modelContext` is absent, record **Manual mode** honestly; do not substitute local simulated registration for live-host proof.
 
 ## Architecture in one sentence
 
-Reviewed fixtures, the React interface, a learner-owned 10–20-tool WebMCP surface, a page-side proof ledger, v6 local persistence, deterministic validation, cross-exercise evidence, provenance, comparison and replay, history navigation, and the 3D inspector converge on one `MechanismStore`.
-
-The most important guardrails are visible in code and behavior:
-
-- Every mutating tool uses the current `mechanismRevision`.
-- The Collaboration Contract is editable only in the learner-facing page; changing it republishes the permitted tool surface and does not change chemistry revision.
-- Store commands independently reject forbidden agent calls with `LEARNER_CONTROLLED`, including calls retained from an older surface.
-- Agent hint requests cannot exceed the learner's ceiling, and human hint controls remain available.
-- `commit_checked_step` is absent unless Collaborate mode and explicit shared-commit permission are both active.
-- A staged proposal is bound to the current problem, state, and revision; it cannot change the draft or be approved through WebMCP.
-- A staged practice plan is bound to the current evidence revision; it cannot switch exercises, change chemistry, count progress, or be approved through WebMCP.
-- Learner acceptance adds the proposal as agent-authored draft arrows, increments the revision once, and still grants no validation or commit authority.
-- Editing a draft invalidates its previous check.
-- A commit requires a valid check token bound to the exact revision and arrow signature.
-- Reset is destructive and requires both explicit confirmation and a current revision.
-- Tool actions appear in the same activity trail as learner actions.
-- Every registered Site Tool callback is centrally instrumented; its memory-only receipt shows the active contract, outcome, bounded semantic IDs, and before/after page stamps without retaining prompts, rationales, or raw inputs and outputs.
-- History navigation permits only reached states, leaves chemistry and revision unchanged, and makes the canvas read-only until the current step is restored.
-- Reached-step comparison and `compare_reached_step` accept only active committed transitions, return the same deterministic graph delta, and never add activity or change revision.
-- Electron Flow Replay and `replay_reached_step` present only the performed arrows from an active commit. Replay is transient UI state, not a chemistry transition, and reduced-motion users receive the complete static bundle.
-- Refresh restores work but never restores validation authority.
-- `?demo=1` uses an in-memory store, advertises that session mode through `get_mechanism_state`, and never touches the saved workspace.
-
-## Honest boundary
-
-All six fixtures are chemistry reviewed and enter the production catalog. They also pass automated structural checks, charge-conservation checks, authored-transition checks, negative-case checks, store tests, and tool-journey tests. Review status and automated verification remain separate metadata and evidence layers.
-
-The 3D view is explanatory. It does not claim quantum chemistry, molecular dynamics, conformer prediction, kinetics, or reaction energetics.
+Reviewed chemistry fixtures, a shared `MechanismStore`, the learner-owned Collaboration Contract, a tab-local delegation manager, a dynamically republished 3–21-tool WebMCP surface, deterministic validation, session-bound proof receipts, and the same visible React workspace form one source of truth.

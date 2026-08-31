@@ -38,21 +38,31 @@ import {
   type ToolReceiptLedger,
   type ToolReceiptOutcome,
 } from "./tool-receipt-ledger";
+import { delegationSessionManager } from "./active-delegation-session";
+import {
+  createDelegationSessionManager,
+  delegationSurfaceSignature,
+  effectiveDelegationToolNames,
+  type DelegationSession,
+  type DelegationSessionManager,
+} from "./delegation-session";
 
 interface ContextRegistration {
   controller: AbortController | null;
   count: number;
   signature: string;
-  unsubscribe: (() => void) | null;
+  unsubscribes: Array<() => void>;
   queue: Promise<void>;
 }
 
 const registeredContexts = new WeakMap<object, ContextRegistration>();
-export const MECHANISM_TOOL_COUNT = 20;
+const fallbackDelegationManagers = new WeakMap<object, DelegationSessionManager>();
+export const MECHANISM_TOOL_COUNT = 21;
 
 const OBSERVE_TOOL_NAMES = new Set([
   "get_mechanism_state",
   "get_collaboration_contract",
+  "get_delegation_session",
   "get_agent_action_receipts",
   "get_learning_profile",
   "inspect_mechanism_entities",
@@ -86,7 +96,7 @@ function contractSignature(contract: CollaborationContract): string {
   ].join(":");
 }
 
-export function enabledToolNames(contract: CollaborationContract): string[] {
+function contractToolNames(contract: CollaborationContract): string[] {
   const names = new Set(OBSERVE_TOOL_NAMES);
   if (contract.mode !== "observe") {
     COACH_TOOL_NAMES.forEach((name) => names.add(name));
@@ -99,8 +109,18 @@ export function enabledToolNames(contract: CollaborationContract): string[] {
   return [...names];
 }
 
-export function enabledToolCount(contract: CollaborationContract): number {
-  return enabledToolNames(contract).length;
+export function enabledToolNames(
+  contract: CollaborationContract,
+  delegation: DelegationSession | null = null,
+): string[] {
+  return effectiveDelegationToolNames(delegation, contractToolNames(contract));
+}
+
+export function enabledToolCount(
+  contract: CollaborationContract,
+  delegation: DelegationSession | null = null,
+): number {
+  return enabledToolNames(contract, delegation).length;
 }
 
 interface ToolFailure {
@@ -157,6 +177,7 @@ function cloneReceiptForOutput(receipt: ReturnType<ToolReceiptLedger["append"]>)
     before: { ...receipt.before },
     after: { ...receipt.after },
     changed: { ...receipt.changed },
+    delegation: receipt.delegation ? { ...receipt.delegation } : null,
   };
 }
 
@@ -164,6 +185,7 @@ function instrumentTool(
   tool: WebMcpToolDefinition,
   store: MechanismStore,
   receiptLedger: ToolReceiptLedger,
+  delegationManager: DelegationSessionManager,
 ): WebMcpToolDefinition {
   const execute = tool.execute;
   return {
@@ -177,6 +199,7 @@ function instrumentTool(
         outcome: ToolReceiptOutcome,
         code: string | null,
         after = captureToolState(store),
+        delegation = delegationManager.receiptEvidence(),
       ) => {
         const completedMs = typeof performance === "undefined" ? Date.now() : performance.now();
         return receiptLedger.append({
@@ -187,6 +210,7 @@ function instrumentTool(
           result: summarizeToolResult(outcome, code, before, after),
           code,
           entityIds: receiptEntityIds(input, receiptScope.entityIds),
+          delegation,
           startedAt,
           completedAt: new Date().toISOString(),
           durationMs: Math.max(0, Math.round((completedMs - startedMs) * 10) / 10),
@@ -205,13 +229,41 @@ function instrumentTool(
         );
       }
 
+      const delegationDecision = delegationManager.beginToolExecution(tool.name);
+      if (!delegationDecision.allowed) {
+        append(
+          "rejected",
+          delegationDecision.code,
+          before,
+          delegationDecision.evidence,
+        );
+        return toolError(
+          delegationDecision.code,
+          delegationDecision.message,
+          before.mechanismRevision,
+        );
+      }
+      const delegationToken = delegationDecision.token;
+
       try {
         const result = await execute(input, options);
         const rejection = executionRejection(result);
-        append(rejection.rejected ? "rejected" : "succeeded", rejection.code);
+        append(
+          rejection.rejected ? "rejected" : "succeeded",
+          rejection.code,
+          captureToolState(store),
+          delegationToken?.evidence ?? null,
+        );
+        delegationManager.finishToolExecution(delegationToken);
         return result;
       } catch (error) {
-        append("failed", "UNEXPECTED_TOOL_FAILURE");
+        append(
+          "failed",
+          "UNEXPECTED_TOOL_FAILURE",
+          captureToolState(store),
+          delegationToken?.evidence ?? null,
+        );
+        delegationManager.finishToolExecution(delegationToken);
         throw error;
       }
     },
@@ -321,7 +373,52 @@ function commandOutput<T>(store: MechanismStore, result: CommandResult<T>) {
   };
 }
 
-function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
+function delegationOutput(
+  store: MechanismStore,
+  delegationManager: DelegationSessionManager,
+) {
+  const session = delegationManager.getSnapshot();
+  const contract = store.getCollaborationContract();
+  const enabledTools = enabledToolNames(contract, session);
+  if (!session) {
+    return {
+      active: false,
+      persistence: "memory only in this browser tab; resets on refresh",
+      learnerControl: "Only the visible page can start a delegation session.",
+      enabledTools,
+      enabledToolCount: enabledTools.length,
+    };
+  }
+  return {
+    active: true,
+    id: session.id,
+    presetId: session.presetId,
+    presetLabel: session.presetLabel,
+    status: session.status,
+    scope: {
+      problemId: session.problemId,
+      stateId: session.stateId,
+      expectedMechanismRevision: session.expectedMechanismRevision,
+    },
+    actionBudget: session.maxActions,
+    actionsUsed: session.usedActions,
+    actionsRemaining: Math.max(0, session.maxActions - session.usedActions),
+    contractRevisionAtStart: session.contractRevisionAtStart,
+    grantedTools: [...session.grantedToolNames],
+    enabledTools,
+    enabledToolCount: enabledTools.length,
+    driftReason: session.driftReason,
+    persistence: "memory only in this browser tab; resets on refresh",
+    learnerControl:
+      "No Site Tool can start, expand, renew, or end this delegation session.",
+  };
+}
+
+function stateOutput(
+  store: MechanismStore,
+  sessionMode: "saved" | "demo",
+  delegationManager: DelegationSessionManager,
+) {
   const state = store.getState();
   const problem = store.getProblem();
   const currentMolecule = problem.states[state.currentStateId];
@@ -330,6 +427,7 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
   const historyStateIds = reachableHistoryStateIds(problem, state.history);
   const stepComparisons = availableStepComparisons(problem, state);
   const contract = store.getCollaborationContract();
+  const delegation = delegationManager.getSnapshot();
   return {
     ok: true,
     session: {
@@ -339,10 +437,11 @@ function stateOutput(store: MechanismStore, sessionMode: "saved" | "demo") {
     collaborationContract: {
       ...contract,
       modeLabel: COLLABORATION_MODE_LABELS[contract.mode],
-      enabledToolCount: enabledToolCount(contract),
+      enabledToolCount: enabledToolCount(contract, delegation),
       totalToolCount: MECHANISM_TOOL_COUNT,
       controlledBy: "learner-facing page only",
     },
+    delegationSession: delegationOutput(store, delegationManager),
     problem: {
       id: problem.id,
       title: problem.title,
@@ -434,6 +533,7 @@ function defineTools(
   store: MechanismStore,
   sessionMode: "saved" | "demo",
   receiptLedger: ToolReceiptLedger,
+  delegationManager: DelegationSessionManager,
 ): WebMcpToolDefinition[] {
   const tools: WebMcpToolDefinition[] = [
     {
@@ -445,7 +545,7 @@ function defineTools(
       execute: async (input) => {
         const parsed = toObject(input);
         assertExactKeys(parsed, []);
-        return stateOutput(store, sessionMode);
+        return stateOutput(store, sessionMode, delegationManager);
       },
     },
     {
@@ -464,10 +564,26 @@ function defineTools(
             ...contract,
             modeLabel: COLLABORATION_MODE_LABELS[contract.mode],
           },
-          enabledTools: enabledToolNames(contract),
-          enabledToolCount: enabledToolCount(contract),
+          enabledTools: enabledToolNames(contract, delegationManager.getSnapshot()),
+          enabledToolCount: enabledToolCount(contract, delegationManager.getSnapshot()),
           totalToolCount: MECHANISM_TOOL_COUNT,
           learnerControl: "No Site Tool can change this contract.",
+        };
+      },
+    },
+    {
+      name: "get_delegation_session",
+      description:
+        "Read the learner-granted, tab-local delegation purpose, exact problem and state scope, frozen tool grant, current effective Site Tool surface, status, and finite action budget. This does not change the page, and no Site Tool can create or expand the session.",
+      inputSchema: { type: "object", properties: {}, additionalProperties: false },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+      execute: async (input) => {
+        const parsed = toObject(input);
+        assertExactKeys(parsed, []);
+        return {
+          ok: true,
+          session: delegationOutput(store, delegationManager),
+          totalToolCount: MECHANISM_TOOL_COUNT,
         };
       },
     },
@@ -1202,7 +1318,17 @@ function defineTools(
       },
     },
   ];
-  return tools.map((tool) => instrumentTool(tool, store, receiptLedger));
+  return tools.map((tool) =>
+    instrumentTool(tool, store, receiptLedger, delegationManager));
+}
+
+function delegationManagerForStore(store: MechanismStore): DelegationSessionManager {
+  if (store === mechanismStore) return delegationSessionManager;
+  const existing = fallbackDelegationManagers.get(store);
+  if (existing) return existing;
+  const created = createDelegationSessionManager(store);
+  fallbackDelegationManagers.set(store, created);
+  return created;
 }
 
 export async function registerMechanismCanvasTools(
@@ -1211,6 +1337,7 @@ export async function registerMechanismCanvasTools(
     typeof document === "undefined" ? undefined : document.modelContext,
   sessionMode: "saved" | "demo" = activeSessionMode,
   receiptLedger: ToolReceiptLedger = toolReceiptLedger,
+  delegationManager: DelegationSessionManager = delegationManagerForStore(store),
 ): Promise<number> {
   if (!context || typeof context.registerTool !== "function") {
     dispatchStatus("manual");
@@ -1226,22 +1353,31 @@ export async function registerMechanismCanvasTools(
     controller: null,
     count: 0,
     signature: "",
-    unsubscribe: null,
+    unsubscribes: [],
     queue: Promise.resolve(),
   };
   registeredContexts.set(context, registration);
 
   const refresh = async () => {
     const contract = store.getCollaborationContract();
-    const nextSignature = contractSignature(contract);
+    const nextSignature = `${contractSignature(contract)}|${delegationSurfaceSignature(
+      delegationManager.getSnapshot(),
+    )}`;
     if (nextSignature === registration.signature) return;
 
     registration.controller?.abort();
     await Promise.resolve();
 
     const controller = new AbortController();
-    const enabledNames = new Set(enabledToolNames(contract));
-    const tools = defineTools(store, sessionMode, receiptLedger).filter((tool) => enabledNames.has(tool.name));
+    const enabledNames = new Set(
+      enabledToolNames(contract, delegationManager.getSnapshot()),
+    );
+    const tools = defineTools(
+      store,
+      sessionMode,
+      receiptLedger,
+      delegationManager,
+    ).filter((tool) => enabledNames.has(tool.name));
     for (const tool of tools) {
       await context.registerTool(tool, { signal: controller.signal });
     }
@@ -1253,8 +1389,10 @@ export async function registerMechanismCanvasTools(
 
   try {
     await refresh();
-    registration.unsubscribe = store.subscribe(() => {
-      const nextSignature = contractSignature(store.getCollaborationContract());
+    const scheduleRefresh = () => {
+      const nextSignature = `${contractSignature(
+        store.getCollaborationContract(),
+      )}|${delegationSurfaceSignature(delegationManager.getSnapshot())}`;
       if (nextSignature === registration.signature) return;
       registration.queue = registration.queue
         .then(refresh)
@@ -1262,11 +1400,15 @@ export async function registerMechanismCanvasTools(
           console.error("Mechanism Canvas could not update its WebMCP tool surface.", error);
           dispatchStatus("error");
         });
-    });
+    };
+    registration.unsubscribes = [
+      store.subscribe(scheduleRefresh),
+      delegationManager.subscribe(scheduleRefresh),
+    ];
     return registration.count;
   } catch (error) {
     registration.controller?.abort();
-    registration.unsubscribe?.();
+    registration.unsubscribes.forEach((unsubscribe) => unsubscribe());
     registeredContexts.delete(context);
     console.error("Mechanism Canvas could not register WebMCP tools.", error);
     dispatchStatus("error");

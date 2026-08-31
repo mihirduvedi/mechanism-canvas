@@ -33,6 +33,7 @@ function receipt(sequence: number, overrides: Partial<ToolReceipt> = {}): Omit<T
     result: "Completed with shared page state unchanged.",
     code: null,
     entityIds: [],
+    delegation: null,
     startedAt: "2026-08-30T00:00:00.000Z",
     completedAt: "2026-08-30T00:00:00.001Z",
     durationMs: 1,
@@ -122,7 +123,7 @@ describe("WebMCP Agent Proof Ledger", () => {
 
     const record = buildToolReceiptExport(ledger, "demo", "2026-08-30T01:00:00.000Z");
     expect(record).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       application: "Mechanism Canvas",
       sessionId: "receipt_session_test",
       sessionMode: "demo",

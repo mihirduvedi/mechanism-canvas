@@ -17,6 +17,7 @@
 - Surface rule: a region receives color only when the color explains its role. Aqua marks active interaction, amber means draft/incomplete/broken bond, sea green means accepted/committed/formed bond, coral means performed electron movement, deep blue means reflection or reached evidence, and red means failure.
 - Counter-rule: molecular geometry, paragraphs, evidence rows, and nested controls remain calm. No ornamental edge stripe, text highlight patch, gradient blob, or one-off tint is allowed to simulate hierarchy.
 - Signature: stable atoms, bonds, and electron pairs remain directly selectable while the adjacent feedback names the same entities in plain language.
+- Delegation signature: one sunlight intent surface turns a broad contract into a fixed purpose, exact mechanism scope, and finite action meter. Active work shifts to aqua; exhaustion or drift returns to amber. The three-step Intent → Capability → Execution chain is always textual and never relies on color alone.
 - Multi-step signature: a thin reaction path sits on the edge of the canvas. Reached states become navigable evidence; unreached states remain locked so history cannot reveal a future product.
 - Reaction-diff signature: one focused evidence sheet pairs two equal molecular stages whose full sunlight-before and seafoam-after surfaces make direction legible without carrying the chemical change alone. A comparison-only layout places every disconnected species on one canonical heavy-atom reaction line, derives plus signs from measured inter-species bounds, and never reuses the exercise fixture's freeform separator positions. The exact ledger uses rows instead of mini-cards.
 - Replay signature: **Replay electron flow** draws the learner's performed arrows over the reached before-state, then rests. It is available only for active committed transitions, changes no chemistry or revision, and becomes a static arrow reveal when reduced motion is requested.
@@ -45,6 +46,7 @@
 - State grammar: every status uses text and shape in addition to color.
 - Copy: short chemistry verbs such as select, draw, inspect, check, commit, undo, and reset. Avoid AI praise and promotional language.
 - Trust: fixtures and grading are deterministic. Agent actions appear in the same visible trail. Review and storage limits remain visible.
+- Delegation: only the visible learner interface can start or end a tab-local session. Its frozen tool grant can shrink but never widen, and every metered call carries the session action ordinal into the proof ledger.
 - Reflection: learner notes attach to exact commits and survive reversal. Saving a note does not change chemistry revision, restore commit authority, or become agent-authored chemistry.
 - Review and export: instructor review is local and read-oriented. JSON export is active-exercise-only, uses an explicit allowlist, and adds no accepted bundles, unreached graphs, validation IDs, or dedicated identity fields. Freeform reflections need a review-before-sharing reminder.
 

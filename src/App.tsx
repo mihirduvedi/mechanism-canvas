@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { CollaborationContract } from "./components/CollaborationContract";
 import { AgentProofLedger } from "./components/AgentProofLedger";
 import { DemoNotice } from "./components/DemoNotice";
+import { DelegationSession } from "./components/DelegationSession";
 import { DraftTray } from "./components/DraftTray";
 import { LearningRecord } from "./components/LearningRecord";
 import { MechanismCanvas } from "./components/MechanismCanvas";
@@ -15,6 +16,7 @@ import { useMechanismState } from "./store/use-mechanism";
 import { enabledToolCount, MECHANISM_TOOL_COUNT } from "./webmcp/register-tools";
 import { COLLABORATION_MODE_LABELS } from "./domain/collaboration-contract";
 import { toolReceiptLedger } from "./webmcp/tool-receipt-ledger";
+import { delegationSessionManager } from "./webmcp/active-delegation-session";
 
 type ToolStatus = "ready" | "manual" | "error";
 
@@ -23,7 +25,12 @@ export function App() {
   const problem = mechanismStore.getProblem();
   const problems = mechanismStore.getProblems();
   const collaborationContract = mechanismStore.getCollaborationContract();
-  const activeToolCount = enabledToolCount(collaborationContract);
+  const delegationSession = useSyncExternalStore(
+    delegationSessionManager.subscribe,
+    delegationSessionManager.getSnapshot,
+    delegationSessionManager.getSnapshot,
+  );
+  const activeToolCount = enabledToolCount(collaborationContract, delegationSession);
   const [toolStatus, setToolStatus] = useState<ToolStatus>(
     typeof document !== "undefined" && document.modelContext ? "ready" : "manual",
   );
@@ -89,7 +96,9 @@ export function App() {
         <CollaborationContract
           store={mechanismStore}
           sessionMode={activeSessionMode}
+          delegationSession={delegationSession}
         />
+        <DelegationSession store={mechanismStore} manager={delegationSessionManager} />
         <AgentProofLedger
           ledger={toolReceiptLedger}
           store={mechanismStore}
