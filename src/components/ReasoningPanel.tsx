@@ -154,141 +154,153 @@ export function ReasoningPanel({ problem, state, store }: ReasoningPanelProps) {
         aria-labelledby="agent-proposal-heading"
         aria-live="polite"
       >
-        <div className="section-heading-row">
-          <div>
-            <p className="section-kicker">Human-in-the-loop handoff</p>
-            <h2 id="agent-proposal-heading">Agent proposal</h2>
-          </div>
-          <span className={proposalStale ? "proposal-status is-stale" : "proposal-status"}>
-            {proposal ? (proposalStale ? "Outdated" : "Your decision") : "Waiting"}
-          </span>
-        </div>
-        {proposal ? (
-          <div className={proposalStale ? "agent-proposal is-stale" : "agent-proposal"}>
-            <div className="agent-proposal__note">
-              <span>Agent note · not validation</span>
-              <p>{proposal.rationale}</p>
-            </div>
-            <ol className="agent-proposal__arrows">
-              {proposal.arrows.map((arrow, index) => (
-                <li key={`${arrow.source.kind}:${arrow.source.entityId}:${arrow.target.entityId}`}>
-                  <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-                  <strong>
-                    {describeArrow(proposalMolecule, {
-                      id: `${proposal.id}_arrow_${index + 1}`,
-                      source: arrow.source,
-                      target: arrow.target,
-                      actor: "agent",
-                    })}
-                  </strong>
-                </li>
-              ))}
-            </ol>
-            {proposalBlockedReason && (
-              <p className="agent-proposal__warning">{proposalBlockedReason}</p>
+        <details className="reasoning-disclosure">
+          <summary>
+            <span>
+              <small>Optional handoff</small>
+              <strong id="agent-proposal-heading">Agent proposal</strong>
+            </span>
+            <span className={proposalStale ? "proposal-status is-stale" : "proposal-status"}>
+              {proposal ? (proposalStale ? "Outdated" : "Your decision") : "Waiting"}
+            </span>
+            <span className="reasoning-disclosure__toggle" aria-hidden="true" />
+          </summary>
+          <div className="reasoning-disclosure__content">
+            {proposal ? (
+              <div className={proposalStale ? "agent-proposal is-stale" : "agent-proposal"}>
+                <div className="agent-proposal__note">
+                  <span>Agent note · not validation</span>
+                  <p>{proposal.rationale}</p>
+                </div>
+                <ol className="agent-proposal__arrows">
+                  {proposal.arrows.map((arrow, index) => (
+                    <li key={`${arrow.source.kind}:${arrow.source.entityId}:${arrow.target.entityId}`}>
+                      <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                      <strong>
+                        {describeArrow(proposalMolecule, {
+                          id: `${proposal.id}_arrow_${index + 1}`,
+                          source: arrow.source,
+                          target: arrow.target,
+                          actor: "agent",
+                        })}
+                      </strong>
+                    </li>
+                  ))}
+                </ol>
+                {proposalBlockedReason && (
+                  <p className="agent-proposal__warning">{proposalBlockedReason}</p>
+                )}
+                <div className="agent-proposal__actions">
+                  <button
+                    className="button button--primary"
+                    type="button"
+                    disabled={proposalAcceptBlocked}
+                    onClick={() => store.acceptAgentProposal(proposal.id)}
+                  >
+                    Add to my draft
+                  </button>
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={() => store.declineAgentProposal(proposal.id)}
+                  >
+                    {proposalStale ? "Dismiss outdated proposal" : "Decline proposal"}
+                  </button>
+                </div>
+                <p className="agent-proposal__boundary">
+                  Bound to revision {proposal.baseRevision}. Accepting adds visible draft arrows;
+                  it never checks or commits chemistry.
+                </p>
+              </div>
+            ) : (
+              <div className="agent-proposal-empty">
+                <span aria-hidden="true">A→Y</span>
+                <p>An agent proposal will wait here until you approve or decline it.</p>
+              </div>
             )}
-            <div className="agent-proposal__actions">
-              <button
-                className="button button--primary"
-                type="button"
-                disabled={proposalAcceptBlocked}
-                onClick={() => store.acceptAgentProposal(proposal.id)}
-              >
-                Add to my draft
-              </button>
-              <button
-                className="text-button"
-                type="button"
-                onClick={() => store.declineAgentProposal(proposal.id)}
-              >
-                {proposalStale ? "Dismiss outdated proposal" : "Decline proposal"}
-              </button>
-            </div>
-            <p className="agent-proposal__boundary">
-              Bound to revision {proposal.baseRevision}. Accepting adds visible draft arrows;
-              it never checks or commits chemistry.
-            </p>
           </div>
-        ) : (
-          <div className="agent-proposal-empty">
-            <span aria-hidden="true">A→Y</span>
-            <p>
-              A site-tools agent can stage an electron-flow idea here. Nothing enters your
-              draft until you approve it.
-            </p>
-          </div>
-        )}
+        </details>
       </section>
 
       <section className="scaffold-section" aria-labelledby="scaffold-heading">
-        <div className="section-heading-row">
-          <div>
-            <p className="section-kicker">Optional help</p>
-            <h2 id="scaffold-heading">Hints</h2>
-          </div>
-          <span>{state.highestScaffoldLevel}/4</span>
-        </div>
-        <div className="scaffold-buttons" aria-label="Choose a scaffold level">
-          {(activeStep?.scaffold ?? []).map((entry) => (
-            <button
-              type="button"
-              className={[
-                state.highestScaffoldLevel >= entry.level ? "is-opened" : "",
-                state.visibleScaffoldLevel === entry.level ? "is-active" : "",
-              ].filter(Boolean).join(" ")}
-              aria-label={`Open scaffold ${entry.level}: ${entry.title}`}
-              aria-pressed={state.visibleScaffoldLevel === entry.level}
-              disabled={complete || state.historyViewStateId !== null}
-              onClick={() => store.requestScaffold(entry.level, "human")}
-              key={entry.level}
-            >
-              {entry.level}
-            </button>
-          ))}
-        </div>
-        {activeScaffold ? (
-          <div className="scaffold-copy">
-            <div className="scaffold-copy__heading">
-              <span>Hint {activeScaffold.level}</span>
-              <button type="button" onClick={store.dismissScaffold}>Hide hint</button>
+        <details className="reasoning-disclosure">
+          <summary>
+            <span>
+              <small>Optional help</small>
+              <strong id="scaffold-heading">Hints</strong>
+            </span>
+            <span>{state.highestScaffoldLevel}/4 opened</span>
+            <span className="reasoning-disclosure__toggle" aria-hidden="true" />
+          </summary>
+          <div className="reasoning-disclosure__content">
+            <div className="scaffold-buttons" aria-label="Choose a scaffold level">
+              {(activeStep?.scaffold ?? []).map((entry) => (
+                <button
+                  type="button"
+                  className={[
+                    state.highestScaffoldLevel >= entry.level ? "is-opened" : "",
+                    state.visibleScaffoldLevel === entry.level ? "is-active" : "",
+                  ].filter(Boolean).join(" ")}
+                  aria-label={`Open scaffold ${entry.level}: ${entry.title}`}
+                  aria-pressed={state.visibleScaffoldLevel === entry.level}
+                  disabled={complete || state.historyViewStateId !== null}
+                  onClick={() => store.requestScaffold(entry.level, "human")}
+                  key={entry.level}
+                >
+                  {entry.level}
+                </button>
+              ))}
             </div>
-            <strong>{activeScaffold.title}</strong>
-            <p>{activeScaffold.message}</p>
+            {activeScaffold ? (
+              <div className="scaffold-copy">
+                <div className="scaffold-copy__heading">
+                  <span>Hint {activeScaffold.level}</span>
+                  <button type="button" onClick={store.dismissScaffold}>Hide hint</button>
+                </div>
+                <strong>{activeScaffold.title}</strong>
+                <p>{activeScaffold.message}</p>
+              </div>
+            ) : (
+              <p className="scaffold-empty">Start with hint 1. Each level reveals a little more.</p>
+            )}
           </div>
-        ) : (
-          <p className="scaffold-empty">Open hint 1 for a small nudge. Later hints reveal more.</p>
-        )}
+        </details>
       </section>
 
       <section className="activity-section" aria-labelledby="activity-heading">
-        <div className="section-heading-row">
-          <div>
-            <p className="section-kicker">Human and agent actions</p>
-            <h2 id="activity-heading">Activity trail</h2>
+        <details className="reasoning-disclosure">
+          <summary>
+            <span>
+              <small>Human and agent actions</small>
+              <strong id="activity-heading">Activity trail</strong>
+            </span>
+            <span>{state.activity.length} events</span>
+            <span className="reasoning-disclosure__toggle" aria-hidden="true" />
+          </summary>
+          <div className="reasoning-disclosure__content">
+            {state.activity.length === 0 ? (
+              <div className="activity-empty">
+                <p>No actions yet. Human and agent changes will appear in the same record.</p>
+              </div>
+            ) : (
+              <ol className="activity-list">
+                {[...state.activity].reverse().slice(0, 12).map((event) => (
+                  <li className={`activity-item activity-item--${activityTone(event)}`} key={event.id}>
+                    <span className={`activity-avatar activity-avatar--${event.actor}`} aria-hidden="true">
+                      {activitySymbol(event)}
+                    </span>
+                    <div>
+                      <p>{event.summary}</p>
+                      <span className="activity-meta">
+                        {actorLabel(event.actor)} · {formatEventTime(event.timestamp)}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
           </div>
-          <span>{state.activity.length}</span>
-        </div>
-        {state.activity.length === 0 ? (
-          <div className="activity-empty">
-            <p>No actions yet. Human and agent changes will appear in the same record.</p>
-          </div>
-        ) : (
-          <ol className="activity-list">
-            {[...state.activity].reverse().slice(0, 12).map((event) => (
-              <li className={`activity-item activity-item--${activityTone(event)}`} key={event.id}>
-                <span className={`activity-avatar activity-avatar--${event.actor}`} aria-hidden="true">
-                  {activitySymbol(event)}
-                </span>
-                <div>
-                  <p>{event.summary}</p>
-                  <span className="activity-meta">
-                    {actorLabel(event.actor)} · {formatEventTime(event.timestamp)}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
+        </details>
       </section>
     </aside>
   );

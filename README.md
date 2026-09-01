@@ -3,17 +3,17 @@
 [![Verify and deploy Pages](https://github.com/mihirduvedi/mechanism-canvas/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/mihirduvedi/mechanism-canvas/actions/workflows/deploy-pages.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-2f6f73.svg)](LICENSE)
 
-Mechanism Canvas is a **proof-carrying visual tutor**: a learner decides how much help an agent may provide, WebMCP exposes only those permitted actions, and a deterministic domain engine—not the model—decides whether the work is correct.
+Mechanism Canvas lets a chemistry student and an agent work on the same curved-arrow mechanism without giving the agent unchecked control. The learner sets the boundary, WebMCP exposes only the allowed actions, and a deterministic chemistry engine—not the model—decides whether the work is correct.
 
-Its **Counterfactual Mechanism Lab** turns WebMCP into a visible scientific collaborator: an agent can build competing electron-flow paths in isolated branches, run the real deterministic validator on each, compare their evidence, and stage only a valid recommendation for learner review. **Intent-Bound Delegation Sessions** constrain that exploration to one temporary job and finite action budget. The **Live Run Observatory** attests host-accepted capability changes and evaluates the complete journey from actual callbacks, while the **Agent Proof Ledger** preserves a privacy-minimized receipt for every invocation.
+The standout workflow is a **Counterfactual Mechanism Lab**. The agent tries competing electron-flow paths away from the learner's draft, checks each one with the real validator, and can return only a reviewed proposal. A bounded session fixes the job and action budget; the Observatory and Proof Ledger show what the page exposed and what actually ran.
 
-Organic chemistry is the first proving ground. The broader contribution is a human-agent contract for any visual STEM workspace where meaning lives behind pixels: circuit editors, geometry canvases, data-flow diagrams, CAD tools, and simulations.
+Organic chemistry is the first use case. The same human-agent contract can support other visual STEM tools where pixels alone do not reveal the underlying objects and rules.
 
 [Open the clean judge demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) · [Run the judge path](docs/JUDGE_GUIDE.md) · [Read the hackathon brief](HACKATHON.md) · [Check submission readiness](docs/SUBMISSION_CHECKLIST.md) · [Browse the docs](docs/README.md)
 
 ![Mechanism Canvas: a proof-carrying WebMCP tutor](public/mechanism-canvas-social-card.png)
 
-## Judge in 60 seconds
+## See the proof in 60 seconds
 
 | What to inspect | Where the proof lives |
 |---|---|

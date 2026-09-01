@@ -89,12 +89,11 @@ export function HypothesisLab({
     <section className="hypothesis-lab" aria-labelledby="hypothesis-lab-heading">
       <div className="hypothesis-lab__masthead">
         <div>
-          <p className="section-kicker">Counterfactual Mechanism Lab</p>
-          <h2 id="hypothesis-lab-heading">Let the agent test competing paths—off your draft.</h2>
+          <p className="section-kicker">Isolated path test</p>
+          <h2 id="hypothesis-lab-heading">Test paths without touching your draft.</h2>
           <p>
-            Open a temporary branch space, then delegate the Explore job. WebMCP lets the
-            agent build, check, compare, and recommend alternatives while the learner’s
-            mechanism stays sealed behind a visible review gate.
+            Open two or three branches. The agent can build and check each one; you decide
+            whether anything comes back.
           </p>
         </div>
         <div className={`hypothesis-lab__seal${lab ? ` hypothesis-lab__seal--${lab.status}` : ""}`}>
@@ -107,12 +106,12 @@ export function HypothesisLab({
       {!lab ? (
         <div className="hypothesis-lab__setup">
           <div>
-            <span>Human-only boundary</span>
-            <strong>Choose the size of the sandbox.</strong>
-            <p>No Site Tool can open, close, or adopt a lab. Branch data lives only in this tab.</p>
+            <span>You control the boundary</span>
+            <strong>How many paths should it try?</strong>
+            <p>The paths stay in this tab. The agent cannot open, close, or adopt them.</p>
           </div>
           <fieldset>
-            <legend>Number of competing paths</legend>
+            <legend>Choose a comparison</legend>
             {[2, 3].map((count) => (
               <label key={count}>
                 <input
@@ -123,7 +122,7 @@ export function HypothesisLab({
                   disabled={activeSession}
                   onChange={() => setBranchCount(count as 2 | 3)}
                 />
-                <span><strong>{count} paths</strong><small>{count === 2 ? "Focused comparison" : "Broader search"}</small></span>
+                <span><strong>{count} paths</strong><small>{count === 2 ? "A clear side-by-side" : "One more alternative"}</small></span>
               </label>
             ))}
           </fieldset>

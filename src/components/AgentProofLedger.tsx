@@ -143,11 +143,11 @@ export function AgentProofLedger({ ledger, store, sessionMode }: AgentProofLedge
     <section className="agent-proof-ledger" aria-labelledby="agent-proof-heading">
       <div className="agent-proof-ledger__masthead">
         <div>
-          <p className="section-kicker">Verified WebMCP execution</p>
+          <p className="section-kicker">Page-side evidence</p>
           <h2 id="agent-proof-heading">Every Site Tool call leaves a proof receipt.</h2>
           <p>
-            The page records what the agent asked, which guard decided, and what actually
-            changed—without retaining prompts, rationales, raw inputs, or raw outputs.
+            Each receipt records the request, the guard, and the page change. Prompts and raw
+            inputs stay out.
           </p>
         </div>
         <div className="agent-proof-ledger__seal" aria-label="Proof receipt count">

@@ -1,47 +1,56 @@
 # Mechanism Canvas design contract
 
-## Current direction — Soft Orbit
+## Current direction — Reaction Garden
 
 This section supersedes the earlier visual-direction rules wherever they conflict.
 The interaction, chemistry, evidence, and accessibility contracts below remain
 authoritative.
 
-- **Thesis:** Mechanism Canvas is a warm molecular play-space. The learner should feel
-  invited to try, compare, and recover—not as if they have entered an administrative
-  dashboard.
+- **Thesis:** Mechanism Canvas is a warm reaction garden: a place to try a path, inspect
+  what happened, and recover from a wrong turn. It should feel like a study tool with a
+  point of view, not an administrative dashboard or a stack of generated cards.
 - **Opening story:** the first screen shows the agent's isolated test ideas, the page's
   deterministic check, and the learner-only decision gate. When no lab exists, the
   product labels the clean SN2 fixture as example output. When a lab exists, the same
   surface renders its real branches and revision.
-- **Shape language:** top-level work zones use large, intentionally asymmetric curves.
-  Electron-cloud forms and soft orbit shapes may support the hero and page composition;
-  they must stay sparse, purposeful, and behind content. Nested evidence rows remain
-  quieter so the page does not become a pile of decorative cards.
+- **Information rhythm:** the opening proof, chemistry workspace, agent lab, and learning
+  record appear in that order. The agent lab uses one native disclosure level: four calm
+  stages remain closed until the learner asks for them. Inside an open stage, proximity,
+  rows, and rules carry hierarchy; nested mini-cards do not.
+- **Shape language:** irregular curves belong to large spatial fields, where they suggest
+  an electron cloud or reaction boundary. The hero, agent field, problem leaf, and brand
+  shell may be asymmetric. Controls, evidence, chemistry, and data alignment stay exact.
 - **Warmth:** the existing ocean, coral, sunlight, seafoam, plum, and periwinkle roles
   remain, but they sit on a warm paper canvas instead of cool gray software chrome.
-- **Type:** `Avenir Next` and the system sans stack carry reading and controls. A rounded
-  display stack (`ui-rounded`, `Arial Rounded MT Bold`, then `Avenir Next`) gives the
-  opening and section titles a friendly, authored voice. Monospace remains limited to
-  reason codes and machine-readable identifiers.
+- **Type:** Charter, Iowan Old Style, and Georgia give learner-facing titles the voice of a
+  familiar study book. Avenir Next and the system sans stack carry controls and body copy.
+  Monospace remains limited to reason codes and machine-readable identifiers.
 - **Controlled counter-rule:** chemistry does not become blobby. Atoms, bonds, curved
   arrows, validator results, and receipt evidence stay exact. Arrow shafts and heads are
   explicit SVG geometry with shared color, weight, centerline, and round joins; font
   chevrons are never used as diagram connectors.
-- **Brand mark:** the `e−` sits in one organic warm-paper shape with optical centering and
-  no decorative electron dot. The electron-pair dots inside chemistry diagrams retain
-  their scientific meaning.
-- **Geometry:** primary regions use roughly 38–64 px irregular radii, inset groups use
-  18–32 px radii, and controls use 14–22 px radii with at least 44 px targets. Pills are
-  reserved for compact statuses.
+- **Brand mark:** the `e−` sits in one organic warm-paper shell with optical centering and
+  no decorative dot. Paired dots appear only as a deliberate electron-pair motif.
+- **Geometry:** top-level fields may use 28–74 px asymmetric radii. Work surfaces use
+  18–30 px corners. Open agent instruments use a restrained 11–17 px frame and straight
+  internal rules. Controls use 12–16 px corners and at least 44 px targets. Pills are
+  reserved for compact status.
 - **Motion:** only short, soft press/elevation feedback and user-triggered electron-flow
   replay. Reduced motion removes both animation and smooth scrolling without removing
   information.
 - **Responsive contract:** the complete two-idea result is visible beside the story at
-  desktop. At narrow widths the story, trust flow, and result stack in that order, with
-  no horizontal overflow at 360 px.
+  desktop. At narrow widths the story, trust flow, result, workspace, and disclosures
+  stack in that order with no horizontal overflow at 360 px. Sticky workspace content
+  becomes static before it can obscure zoomed or keyboard-focused content.
 - **Reference boundary:** the direction borrows only the broad principle of friendly,
   rounded geometry from modern consumer-product identities. It does not reproduce a
   protected logo, palette, typeface, or component system.
+- **Research basis:** expressive color and shape guide attention only when they reinforce
+  function ([Google Design](https://design.google/library/expressive-material-design-google-research));
+  advanced controls begin secondary and use a clearly labeled disclosure
+  ([Nielsen Norman Group](https://www.nngroup.com/articles/progressive-disclosure/)); and
+  the layout reflows without two-dimensional scrolling at a 320 CSS px equivalent
+  ([W3C WCAG 2.2 Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html)).
 
 ## Product
 

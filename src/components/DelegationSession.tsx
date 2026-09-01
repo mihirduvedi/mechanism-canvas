@@ -90,11 +90,11 @@ export function DelegationSession({ store, manager, hypothesisLab }: DelegationS
     <section className="delegation-session" aria-labelledby="delegation-session-heading">
       <div className="delegation-session__masthead">
         <div>
-          <p className="section-kicker">Intent-bound WebMCP</p>
-          <h2 id="delegation-session-heading">Delegate one bounded job.</h2>
+          <p className="section-kicker">One bounded job</p>
+          <h2 id="delegation-session-heading">Give the agent a clear finish line.</h2>
           <p>
-            Turn broad permissions into a temporary purpose, exact mechanism scope, and finite
-            action budget. The frozen grant can shrink or expire; it can never widen itself.
+            Fix the purpose, reaction, and action budget before it starts. The grant can expire,
+            but it cannot expand itself.
           </p>
         </div>
         <div

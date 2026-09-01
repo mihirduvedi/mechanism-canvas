@@ -16,13 +16,13 @@ This checklist separates facts proved by the repository from actions that requir
 | Requirement | Status on August 31 | Evidence or exact remaining action |
 |---|---|---|
 | WebMCP-powered web app about people and agents collaborating on the open web | Ready | The app exposes an adaptive catalog of 26 Site Tools over the learner's semantic canvas and explicit authority contract. See [HACKATHON.md](../HACKATHON.md). |
-| Live URL judges can access without restriction | Released; refresh pending | The current release is public at <https://mihirduvedi.github.io/mechanism-canvas/?demo=1>. Push and deploy this submission-package revision after approval. |
+| Live URL judges can access without restriction | Ready | The judge build is public at <https://mihirduvedi.github.io/mechanism-canvas/?demo=1>. The release gate verifies the deployed page and asset hashes against `origin/main`. |
 | Runs in ChatGPT's in-app browser or WebMCP-enabled Chrome | App support implemented; host attestation pending | Chrome and the available Codex in-app browser rendered the app correctly but did not expose `document.modelContext`. Run the [judge guide](JUDGE_GUIDE.md) in a compatible host and capture **Host attested**, **16 → 21 → 15 → 4**, and **7 / 7**. |
 | English text explains why the use case fits WebMCP | Ready | [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md), “Why WebMCP fits.” |
 | English text explains the UX improvement | Ready | [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md), “How the experience is better.” |
 | English text explains what people and agents can now do together | Ready | [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md), “What people and agents can do together.” |
 | English text briefly explains the WebMCP implementation | Ready | [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md), “How WebMCP is implemented.” |
-| Public repository contains source, assets, and functional instructions | Ready locally; push pending | Source, locked dependencies, judge instructions, submission copy, artwork, and verification are present. Approve an exact-path commit and push. |
+| Public repository contains source, assets, and functional instructions | Ready | Source, locked dependencies, judge instructions, submission copy, artwork, and verification are public at <https://github.com/mihirduvedi/mechanism-canvas>. |
 | Detectable open-source license is visible | Ready | Root [MIT license](../LICENSE), `package.json` license metadata, and [third-party notices](../THIRD_PARTY_NOTICES.md). |
 | Repository demonstrates `document.modelContext.registerTool` | Ready | [`src/webmcp/register-tools.ts`](../src/webmcp/register-tools.ts) registers adaptive closed-schema tools. |
 | Project is new or prior work is disclosed | Ready | New repository created August 28, 2026; all twelve released commits were authored during the submission period. See [HACKATHON.md](../HACKATHON.md#build-period-provenance). |
@@ -81,7 +81,7 @@ Mihir should supply or select these answers and personally accept the legal term
 ## Verification boundaries
 
 - Automated: 132 tests across 23 files, TypeScript, production build, metadata/package checks, repository hygiene, thumbnail dimensions, tagline length, plus a post-deploy tracked-state/SHA/live-asset gate.
-- Rendered: local production build checked at 1440 × 900, 1024 × 768, 390 × 844, and 360 × 800 with no horizontal overflow; the two-arrow check/commit/replay path and viewport-bounded evidence dialog were exercised.
-- Public release: the previously released commit is online and healthy; this submission package is not live until a new approved deployment.
+- Rendered: the final interface was inspected at 1440 × 900, 768 × 1024, 390 × 844, and 360 × 800 with no horizontal overflow. The complete two-arrow check/commit/undo path, all four agent disclosures, the 3D model, keyboard focus, and console output were exercised. The strict UI checker reported no warnings or errors.
+- Public release: GitHub Pages serves the current `origin/main`; `npm run verify:release` checks exact SHA parity and byte-identical live JavaScript, CSS, and social artwork after deployment.
 - Live WebMCP: still pending because the available hosts did not expose `document.modelContext` on August 31.
 - Devpost: account is signed in but not registered for this challenge; no draft or submission has been created.

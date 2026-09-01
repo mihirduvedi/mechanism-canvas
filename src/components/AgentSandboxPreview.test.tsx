@@ -15,10 +15,12 @@ describe("AgentSandboxPreview", () => {
       />,
     );
 
-    expect(html).toContain("Example output · clean SN2 demo");
+    expect(html).toContain("Two-path test · SN2 example");
     expect(html).toContain("Incomplete · evidence kept");
     expect(html).toContain("Approved · ready for your review");
     expect(html).toContain("agent-sandbox-preview__flow");
+    expect(html).toContain("agent-sandbox-preview__field-line");
+    expect(html).not.toContain("agent-sandbox-preview__handoff-arrow");
   });
 
   it("does not draw invented arrows while a live lab is still waiting for agent ideas", () => {

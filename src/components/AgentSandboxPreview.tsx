@@ -78,14 +78,14 @@ function ElectronFlowSketch({ arrowCount }: { arrowCount: number }) {
       <circle className="agent-sandbox-preview__electron" cx="51" cy="32" r="3" />
       {arrowCount > 0 && (
         <>
-          <path className="agent-sandbox-preview__flow" d="M 51 31 C 80 7 111 11 124 30" />
-          <path className="agent-sandbox-preview__flow-head" d="M 115 25 L 124 30 L 119 20" />
+          <path className="agent-sandbox-preview__flow" d="M 51 31 C 77 9 104 10 115 27" />
+          <polygon className="agent-sandbox-preview__flow-head" points="124,32 112,27 116,40" />
         </>
       )}
       {arrowCount > 1 && (
         <>
-          <path className="agent-sandbox-preview__flow agent-sandbox-preview__flow--second" d="M 174 50 C 184 76 207 76 218 63" />
-          <path className="agent-sandbox-preview__flow-head agent-sandbox-preview__flow-head--second" d="M 207 65 L 218 63 L 214 73" />
+          <path className="agent-sandbox-preview__flow agent-sandbox-preview__flow--second" d="M 174 50 C 182 71 198 75 210 66" />
+          <polygon className="agent-sandbox-preview__flow-head agent-sandbox-preview__flow-head--second" points="219,60 209,62 215,72" />
         </>
       )}
       <text x="24" y="53">O</text>
@@ -111,37 +111,46 @@ export function AgentSandboxPreview({
 
   return (
     <section className="agent-sandbox-preview" aria-labelledby="agent-sandbox-preview-heading">
+      <svg
+        aria-hidden="true"
+        className="agent-sandbox-preview__field-line"
+        preserveAspectRatio="none"
+        viewBox="0 0 1200 460"
+      >
+        <path d="M -40 390 C 245 455 340 24 615 128 S 950 516 1240 214" />
+        <circle cx="296" cy="118" r="5" />
+        <circle cx="312" cy="111" r="5" />
+      </svg>
       <div className="agent-sandbox-preview__copy">
-        <p className="agent-sandbox-preview__eyebrow">A gentler way to test a mechanism</p>
-        <h1 id="agent-sandbox-preview-heading">Try two ideas. Keep your draft yours.</h1>
+        <p className="agent-sandbox-preview__eyebrow">A safe place for wrong turns</p>
+        <h1 id="agent-sandbox-preview-heading">Let the agent try the wrong turns.</h1>
         <p className="agent-sandbox-preview__lede">
-          Give an agent a soft place to explore wrong turns. The page checks the chemistry,
-          preserves the evidence, and leaves the winning move behind your review gate.
+          Two isolated paths go in. The page checks both; only you can bring one back.
         </p>
         <div className="agent-sandbox-preview__actions">
-          <a className="button button--primary" href="#hypothesis-lab-heading">Open the idea sandbox</a>
-          <a className="agent-sandbox-preview__canvas-link" href="#canvas-title">Work on the mechanism</a>
+          <a className="button button--primary" href="#agent-studio">Open the agent lab</a>
+          <a className="agent-sandbox-preview__canvas-link" href="#canvas-title">Start drawing</a>
         </div>
         <ol className="agent-sandbox-preview__trust-flow" aria-label="Human-agent collaboration flow">
-          <li><span aria-hidden="true">1</span><strong>Agent explores</strong></li>
-          <li><span aria-hidden="true">2</span><strong>Page checks</strong></li>
-          <li><span aria-hidden="true">3</span><strong>You decide</strong></li>
+          <li><span aria-hidden="true">1</span><strong>Draft sealed</strong></li>
+          <li><span aria-hidden="true">2</span><strong>Chemistry checked</strong></li>
+          <li><span aria-hidden="true">3</span><strong>You choose</strong></li>
         </ol>
       </div>
 
       <div className={`agent-sandbox-preview__result${live ? " is-live" : ""}`}>
         <div className="agent-sandbox-preview__result-heading">
           <div>
-            <span>{live ? "Live lab output" : "Example output · clean SN2 demo"}</span>
+            <span>{live ? "Live lab output" : "Two-path test · SN2 example"}</span>
             <strong>{problemTitle}</strong>
           </div>
-          <span>{live ? `Lab revision ${lab?.labRevision}` : "Preview"}</span>
+          <span>{live ? `Lab revision ${lab?.labRevision}` : "Example"}</span>
         </div>
 
         <div className="agent-sandbox-preview__draft-seal">
           <span aria-hidden="true" className="agent-sandbox-preview__seal-mark" />
           <div>
-            <strong>Main draft sealed</strong>
+            <strong>Your draft stays sealed</strong>
             <small>{draftArrowCount} learner arrow{draftArrowCount === 1 ? "" : "s"} protected · {activeActions}</small>
           </div>
         </div>
@@ -160,11 +169,9 @@ export function AgentSandboxPreview({
         </div>
 
         <div className="agent-sandbox-preview__handoff">
-          <span aria-hidden="true" className="agent-sandbox-preview__handoff-arrow">
-            <i />
-          </span>
+          <span aria-hidden="true" className="agent-sandbox-preview__handoff-dot" />
           <div>
-            <span>Learner handoff</span>
+            <span>Your decision</span>
             <strong>{lab?.recommendedBranchId ? "A checked path is waiting for you" : "Only you can move a checked path onto the canvas"}</strong>
           </div>
         </div>

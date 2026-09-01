@@ -50,7 +50,7 @@ If the page says **Manual mode**, the host did not expose `document.modelContext
 
 ## Build-period provenance
 
-This is a new project created during the official submission period. The repository was created on August 28, 2026. All twelve commits through the released Observatory build were authored from August 28 through August 31, 2026.
+This is a new project created during the official submission period. The repository was created on August 28, 2026. All fourteen commits through the current Reaction Garden release were authored from August 28 through August 31, 2026. The table highlights the product milestones; documentation-only history remains visible in Git.
 
 | Date (PDT) | Commit | Milestone |
 |---|---|---|
@@ -66,6 +66,8 @@ This is a new project created during the official submission period. The reposit
 | Aug 30 | `1691ead` | Agent Proof Ledger |
 | Aug 30 | `ef69a61` | Intent-Bound Delegation Sessions |
 | Aug 31 | `2a20d3f` | Counterfactual Lab and Live Run Observatory |
+| Aug 31 | `d42a3d0` | First judge-facing opening and submission experience |
+| Aug 31 | Git tip | Reaction Garden redesign, progressive disclosure, and final submission polish |
 
 The Git history is the timestamped source of truth. No pre-hackathon codebase is included.
 

@@ -109,60 +109,166 @@ export function App() {
           lab={hypothesisLab}
           delegationSession={delegationSession}
         />
-        {activeSessionMode === "demo" && (
-          <DemoNotice />
-        )}
-        <CollaborationContract
-          store={mechanismStore}
-          sessionMode={activeSessionMode}
-          delegationSession={delegationSession}
-          hypothesisLab={hypothesisLab}
-        />
-        <HypothesisLab
-          store={mechanismStore}
-          manager={hypothesisLabManager}
-          lab={hypothesisLab}
-          delegationSession={delegationSession}
-        />
-        <DelegationSession
-          store={mechanismStore}
-          manager={delegationSessionManager}
-          hypothesisLab={hypothesisLab}
-        />
-        <WebMcpObservatory
-          contract={collaborationContract}
-          delegationSession={delegationSession}
-          hypothesisLab={hypothesisLab}
-          hostStatus={toolStatus}
-          recorder={capabilitySurfaceRecorder}
-          receiptLedger={toolReceiptLedger}
-        />
-        <AgentProofLedger
-          ledger={toolReceiptLedger}
-          store={mechanismStore}
-          sessionMode={activeSessionMode}
-        />
-        <ProblemBrief
-          problem={problem}
-          problems={problems}
-          state={state}
-          demoMode={activeSessionMode === "demo"}
-          onProblemChange={(problemId) => mechanismStore.switchProblem(problemId, "human")}
-          onReset={reset}
-        />
-        <div className="workbench-column">
-          <MechanismCanvas problem={problem} state={state} store={mechanismStore} />
-          <DraftTray problem={problem} state={state} store={mechanismStore} />
-          <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
-          <PracticeCompass state={state} store={mechanismStore} sessionMode={activeSessionMode} />
-          <ReactionDiff problem={problem} state={state} />
-          <LearningRecord
-            problem={problem}
-            state={state}
-            store={mechanismStore}
-            sessionMode={activeSessionMode}
-          />
-        </div>
+
+        <section className="reaction-studio" aria-labelledby="reaction-studio-heading">
+          <header className="reaction-studio__intro">
+            <p className="section-kicker">Your mechanism</p>
+            <h2 id="reaction-studio-heading">Move the electrons. Check the whole step.</h2>
+            <p>
+              Pick an electron source on the structure, choose its destination, then let the
+              deterministic checker read the complete bundle.
+            </p>
+          </header>
+
+          <div className="reaction-studio__layout">
+            <ProblemBrief
+              problem={problem}
+              problems={problems}
+              state={state}
+              demoMode={activeSessionMode === "demo"}
+              onProblemChange={(problemId) => mechanismStore.switchProblem(problemId, "human")}
+              onReset={reset}
+            />
+            <div className="workbench-column">
+              <MechanismCanvas problem={problem} state={state} store={mechanismStore} />
+              <div className="workbench-support">
+                <DraftTray problem={problem} state={state} store={mechanismStore} />
+                <ReasoningPanel problem={problem} state={state} store={mechanismStore} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="agent-studio" id="agent-studio" aria-labelledby="agent-studio-heading">
+          <header className="agent-studio__intro">
+            <div>
+              <p className="section-kicker">Agent lab</p>
+              <h2 id="agent-studio-heading">Open only the part you need.</h2>
+            </div>
+            <p>
+              Set the boundary, test isolated paths, then inspect proof. Each stage stays
+              closed until you choose it.
+            </p>
+          </header>
+
+          {activeSessionMode === "demo" && <DemoNotice />}
+
+          <div className="agent-studio__stages">
+            <details className="agent-stage">
+              <summary>
+                <span className="agent-stage__number">01</span>
+                <span className="agent-stage__title">
+                  <strong>Set the boundary</strong>
+                  <small>Choose what the agent may inspect or change.</small>
+                </span>
+                <span className="agent-stage__state">
+                  {COLLABORATION_MODE_LABELS[collaborationContract.mode]}
+                </span>
+                <span className="agent-stage__toggle" aria-hidden="true" />
+              </summary>
+              <div className="agent-stage__content">
+                <CollaborationContract
+                  store={mechanismStore}
+                  sessionMode={activeSessionMode}
+                  delegationSession={delegationSession}
+                  hypothesisLab={hypothesisLab}
+                />
+              </div>
+            </details>
+
+            <details className="agent-stage" id="idea-sandbox">
+              <summary>
+                <span className="agent-stage__number">02</span>
+                <span className="agent-stage__title">
+                  <strong>Test competing paths</strong>
+                  <small>Let the agent work off-draft in two or three branches.</small>
+                </span>
+                <span className="agent-stage__state">
+                  {hypothesisLab ? `${hypothesisLab.branches.length} paths open` : "Lab closed"}
+                </span>
+                <span className="agent-stage__toggle" aria-hidden="true" />
+              </summary>
+              <div className="agent-stage__content">
+                <HypothesisLab
+                  store={mechanismStore}
+                  manager={hypothesisLabManager}
+                  lab={hypothesisLab}
+                  delegationSession={delegationSession}
+                />
+              </div>
+            </details>
+
+            <details className="agent-stage">
+              <summary>
+                <span className="agent-stage__number">03</span>
+                <span className="agent-stage__title">
+                  <strong>Give it one job</strong>
+                  <small>Freeze the purpose, scope, and action budget.</small>
+                </span>
+                <span className="agent-stage__state">
+                  {delegationSession ? delegationSession.status : "No active job"}
+                </span>
+                <span className="agent-stage__toggle" aria-hidden="true" />
+              </summary>
+              <div className="agent-stage__content">
+                <DelegationSession
+                  store={mechanismStore}
+                  manager={delegationSessionManager}
+                  hypothesisLab={hypothesisLab}
+                />
+              </div>
+            </details>
+
+            <details className="agent-stage agent-stage--proof">
+              <summary>
+                <span className="agent-stage__number">04</span>
+                <span className="agent-stage__title">
+                  <strong>Inspect the proof</strong>
+                  <small>See the discovered surface, run report, and receipts.</small>
+                </span>
+                <span className="agent-stage__state">
+                  {toolStatus === "ready" ? `${activeToolCount} live tools` : "Manual preview"}
+                </span>
+                <span className="agent-stage__toggle" aria-hidden="true" />
+              </summary>
+              <div className="agent-stage__content agent-stage__content--proof">
+                <WebMcpObservatory
+                  contract={collaborationContract}
+                  delegationSession={delegationSession}
+                  hypothesisLab={hypothesisLab}
+                  hostStatus={toolStatus}
+                  recorder={capabilitySurfaceRecorder}
+                  receiptLedger={toolReceiptLedger}
+                />
+                <AgentProofLedger
+                  ledger={toolReceiptLedger}
+                  store={mechanismStore}
+                  sessionMode={activeSessionMode}
+                />
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <details className="learning-drawer">
+          <summary>
+            <span>
+              <small>After the mechanism</small>
+              <strong>Review the run and choose what to practice next.</strong>
+            </span>
+            <span className="learning-drawer__toggle" aria-hidden="true" />
+          </summary>
+          <div className="learning-drawer__content">
+            <PracticeCompass state={state} store={mechanismStore} sessionMode={activeSessionMode} />
+            <ReactionDiff problem={problem} state={state} />
+            <LearningRecord
+              problem={problem}
+              state={state}
+              store={mechanismStore}
+              sessionMode={activeSessionMode}
+            />
+          </div>
+        </details>
       </main>
 
       <footer className="app-footer">

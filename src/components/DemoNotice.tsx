@@ -19,10 +19,10 @@ export function DemoNotice() {
     <section className="demo-notice" aria-label="Demo session status">
       <div>
         <strong>Clean demo</strong>
-        <span>Starts in Coach with no lab, delegation, or receipts. Open a two-path Counterfactual Lab, then start a six-action Compare hypotheses session before using the copied judge prompt; the Live Run Observatory will evaluate the real callbacks while saved practice stays untouched.</span>
+        <span>Refresh whenever you like. Saved practice stays separate.</span>
       </div>
       <button type="button" onClick={copyPrompt}>
-        {copyStatus === "copied" ? "First prompt copied" : "Copy first agent prompt"}
+        {copyStatus === "copied" ? "Judge prompt copied" : "Copy judge prompt"}
       </button>
       {copyStatus === "failed" && (
         <span className="demo-notice__error" role="status">

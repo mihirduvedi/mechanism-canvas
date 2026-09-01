@@ -74,11 +74,10 @@ export function CollaborationContract({
     <section className="collaboration-contract" aria-labelledby="collaboration-contract-heading">
       <div className="collaboration-contract__intro">
         <div>
-          <p className="section-kicker">Learner-owned agent permissions</p>
-          <h2 id="collaboration-contract-heading">Choose how much of the work stays yours.</h2>
+          <p className="section-kicker">Your boundary</p>
+          <h2 id="collaboration-contract-heading">Choose what the agent may do.</h2>
           <p>
-            This page—not a prompt—decides what the agent can discover and do. Changing the
-            contract updates the live WebMCP tool surface; no Site Tool can change it back.
+            The page enforces this choice. The agent can work inside it, but it cannot widen it.
           </p>
         </div>
         <div className="collaboration-contract__receipt" aria-label="Current contract receipt">
@@ -157,7 +156,7 @@ export function CollaborationContract({
         </label>
 
         <div className="collaboration-contract__authority">
-          <span>Authority stack</span>
+          <span>Who decides what</span>
           <ol>
             <li><strong>Learner</strong> sets agent permissions</li>
             <li><strong>WebMCP</strong> exposes only allowed actions</li>

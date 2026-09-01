@@ -79,9 +79,9 @@ function diffLabel(event: CapabilitySurfaceEvent): string {
 
 function FlightConnector() {
   return (
-    <svg aria-hidden="true" className="webmcp-flight-connector" viewBox="0 0 40 28">
-      <path d="M 2 14 C 10 5, 22 5, 30 14" />
-      <path d="M 24 9 L 30 14 L 24 19" />
+    <svg aria-hidden="true" className="webmcp-flight-connector" viewBox="0 0 44 28">
+      <path d="M 3 16 C 12 6, 23 6, 33 14" vectorEffect="non-scaling-stroke" />
+      <polygon points="31,8 41,16 29,20" />
     </svg>
   );
 }
@@ -119,12 +119,11 @@ export function WebMcpObservatory({
     <section className="webmcp-observatory" aria-labelledby="webmcp-observatory-heading">
       <div className="webmcp-observatory__masthead">
         <div>
-          <p className="section-kicker">Live WebMCP Observatory</p>
-          <h2 id="webmcp-observatory-heading">See capability discovery become execution proof.</h2>
+          <p className="section-kicker">Live WebMCP proof</p>
+          <h2 id="webmcp-observatory-heading">See what was available—and what ran.</h2>
           <p>
-            Page policy predicts the useful tools; the flight recorder attests a surface only
-            after the host accepts its real registration batch. Actual callbacks then assemble
-            a deterministic journey report.
+            The page separates allowed tools from host-accepted tools, then records the callbacks
+            that actually ran.
           </p>
         </div>
         <div
@@ -167,7 +166,7 @@ export function WebMcpObservatory({
         <section className="webmcp-run-report" aria-labelledby="webmcp-run-report-heading">
           <div className="webmcp-run-report__heading">
             <div>
-              <span>Journey eval</span>
+          <span>Run check</span>
               <h3 id="webmcp-run-report-heading">Compare hypotheses run</h3>
             </div>
             {report && (
@@ -215,7 +214,7 @@ export function WebMcpObservatory({
         <section className="webmcp-surface-history" aria-labelledby="webmcp-surface-history-heading">
           <div className="webmcp-surface-history__heading">
             <div>
-              <span>Registration lifecycle</span>
+              <span>Host history</span>
               <h3 id="webmcp-surface-history-heading">Host-accepted surfaces</h3>
             </div>
             <strong>{surfaceSnapshot.events.length}</strong>
