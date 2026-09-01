@@ -14,6 +14,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "verify": "npm test && npm run build",
+    "verify:submission": "npm run verify && node scripts/check-submission.mjs",
+    "verify:release": "npm run verify:submission && node scripts/check-submission.mjs --release && node scripts/check-live-release.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"

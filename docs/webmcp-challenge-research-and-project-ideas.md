@@ -1,5 +1,7 @@
 # WebMCP Challenge: Research, Winning Strategy, and Project Ideas
 
+> **Research archive.** This document records the August 27 selection process. Mechanism Canvas was selected and implemented. For the current product, judge path, and submission evidence, use [README.md](../README.md), [HACKATHON.md](../HACKATHON.md), and [JUDGE_GUIDE.md](JUDGE_GUIDE.md).
+
 Research date: August 27, 2026
 Official deadline: September 3, 2026 at 1:00 p.m. Pacific Time
 

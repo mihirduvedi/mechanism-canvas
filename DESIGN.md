@@ -1,5 +1,48 @@
 # Mechanism Canvas design contract
 
+## Current direction — Soft Orbit
+
+This section supersedes the earlier visual-direction rules wherever they conflict.
+The interaction, chemistry, evidence, and accessibility contracts below remain
+authoritative.
+
+- **Thesis:** Mechanism Canvas is a warm molecular play-space. The learner should feel
+  invited to try, compare, and recover—not as if they have entered an administrative
+  dashboard.
+- **Opening story:** the first screen shows the agent's isolated test ideas, the page's
+  deterministic check, and the learner-only decision gate. When no lab exists, the
+  product labels the clean SN2 fixture as example output. When a lab exists, the same
+  surface renders its real branches and revision.
+- **Shape language:** top-level work zones use large, intentionally asymmetric curves.
+  Electron-cloud forms and soft orbit shapes may support the hero and page composition;
+  they must stay sparse, purposeful, and behind content. Nested evidence rows remain
+  quieter so the page does not become a pile of decorative cards.
+- **Warmth:** the existing ocean, coral, sunlight, seafoam, plum, and periwinkle roles
+  remain, but they sit on a warm paper canvas instead of cool gray software chrome.
+- **Type:** `Avenir Next` and the system sans stack carry reading and controls. A rounded
+  display stack (`ui-rounded`, `Arial Rounded MT Bold`, then `Avenir Next`) gives the
+  opening and section titles a friendly, authored voice. Monospace remains limited to
+  reason codes and machine-readable identifiers.
+- **Controlled counter-rule:** chemistry does not become blobby. Atoms, bonds, curved
+  arrows, validator results, and receipt evidence stay exact. Arrow shafts and heads are
+  explicit SVG geometry with shared color, weight, centerline, and round joins; font
+  chevrons are never used as diagram connectors.
+- **Brand mark:** the `e−` sits in one organic warm-paper shape with optical centering and
+  no decorative electron dot. The electron-pair dots inside chemistry diagrams retain
+  their scientific meaning.
+- **Geometry:** primary regions use roughly 38–64 px irregular radii, inset groups use
+  18–32 px radii, and controls use 14–22 px radii with at least 44 px targets. Pills are
+  reserved for compact statuses.
+- **Motion:** only short, soft press/elevation feedback and user-triggered electron-flow
+  replay. Reduced motion removes both animation and smooth scrolling without removing
+  information.
+- **Responsive contract:** the complete two-idea result is visible beside the story at
+  desktop. At narrow widths the story, trust flow, and result stack in that order, with
+  no horizontal overflow at 360 px.
+- **Reference boundary:** the direction borrows only the broad principle of friendly,
+  rounded geometry from modern consumer-product identities. It does not reproduce a
+  protected logo, palette, typeface, or component system.
+
 ## Product
 
 - Direction: **Tidal Pop · Reaction Line** with **Electron Flow Replay** as its most vivid event.
@@ -15,7 +58,7 @@
 - Subject concept: the interface reads like a crisp reaction map. Deep-ocean chrome frames the workspace; nearly white paper keeps chemistry readable; aqua, sunlight, seafoam, periwinkle, and coral form one bright coastal family rather than unrelated software category colors.
 - Dominant rule: color belongs to complete, meaningful surfaces and interaction states. The problem brief is ocean mist, drafting is sunlight, reasoning is pale aqua, reflection/evidence is periwinkle, and the chemistry canvas remains quiet white paper. The stronger draft surface is intentional task emphasis; the other light fields stay close in value so the page remains composed.
 - Surface rule: a region receives color only when the color explains its role. Aqua marks active interaction, amber means draft/incomplete/broken bond, sea green means accepted/committed/formed bond, coral means performed electron movement, deep blue means reflection or reached evidence, and red means failure.
-- Counter-rule: molecular geometry, paragraphs, evidence rows, and nested controls remain calm. No ornamental edge stripe, text highlight patch, gradient blob, or one-off tint is allowed to simulate hierarchy.
+- Counter-rule: molecular geometry, paragraphs, evidence rows, and nested controls remain calm. Organic shapes may frame a top-level story or work zone, but ornamental stripes, highlight patches, and one-off tints may not simulate hierarchy.
 - Signature: stable atoms, bonds, and electron pairs remain directly selectable while the adjacent feedback names the same entities in plain language.
 - Delegation signature: one sunlight intent surface turns a broad contract into a fixed purpose, exact mechanism scope, and finite action meter. Active work shifts to aqua; exhaustion or drift returns to amber. The three-step Intent → Capability → Execution chain is always textual and never relies on color alone.
 - Counterfactual-lab signature: one deep-plum hypothesis surface contains two or three equal white molecular stages. Purple identifies isolated branch state, amber names incomplete or drifted evidence, and sea green names validator-approved or recommended evidence. The main-revision seal and learner-review gate remain textual; purple never leaks into the authoritative chemistry canvas.
@@ -69,7 +112,7 @@
 - A design pass also fails if an implicit-hydrogen annotation intersects an atom-map ID, atom symbol, formal charge, or lone-pair dot. Its placement is selected from clear perimeter ports, and its count is subordinate to the H rather than written as an undifferentiated `3H` token.
 - Comparison SVGs use `aria-label` plus a description, not a child `<title>` element: native SVG title tooltips can float over the dialog header and are a visual defect even when the graph itself is collision-free.
 - Disclosure toggles use a real 24 px icon box at the trailing edge of the summary. The plus/minus glyph is optically and mathematically centered; it is not an unmeasurable inline pseudo-element before the label.
-- A design pass also fails if repeated rounded cards, pills, random tint patches, symmetrical bento modules, generic gradients, glass, blobs, or ornamental icons replace content-led hierarchy. Status capsules remain allowed because their shape communicates status; evidence lists and supporting prose remain unboxed.
+- A design pass also fails if repeated identical cards, pills, random tint patches, symmetrical bento modules, generic gradients, glass, or ornamental icons replace content-led hierarchy. Purposeful electron-cloud shapes are allowed only where they reinforce the molecular play-space; statuses and evidence must remain legible without them.
 - Playfulness must have a product job: aqua marks interaction, sunlight marks drafting, pale aqua marks reasoning, periwinkle marks reflection/evidence, coral traces performed electron movement, and state colors mark accepted, incomplete, or invalid outcomes. Decorative color without a semantic or compositional role is removed.
 - Instruction bands use one complete seafoam surface with a normal 1 px border and ambient shadow. A thicker colored start edge or inset stripe is a regression even when the rest of the band is neutral.
 

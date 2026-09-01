@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import "./index.css";
+import "./soft-orbit.css";
 import { registerMechanismCanvasTools } from "./webmcp/register-tools";
 
 void registerMechanismCanvasTools();

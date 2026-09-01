@@ -1,12 +1,29 @@
 # Mechanism Canvas
 
+[![Verify and deploy Pages](https://github.com/mihirduvedi/mechanism-canvas/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/mihirduvedi/mechanism-canvas/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2f6f73.svg)](LICENSE)
+
 Mechanism Canvas is a **proof-carrying visual tutor**: a learner decides how much help an agent may provide, WebMCP exposes only those permitted actions, and a deterministic domain engine—not the model—decides whether the work is correct.
 
 Its **Counterfactual Mechanism Lab** turns WebMCP into a visible scientific collaborator: an agent can build competing electron-flow paths in isolated branches, run the real deterministic validator on each, compare their evidence, and stage only a valid recommendation for learner review. **Intent-Bound Delegation Sessions** constrain that exploration to one temporary job and finite action budget. The **Live Run Observatory** attests host-accepted capability changes and evaluates the complete journey from actual callbacks, while the **Agent Proof Ledger** preserves a privacy-minimized receipt for every invocation.
 
 Organic chemistry is the first proving ground. The broader contribution is a human-agent contract for any visual STEM workspace where meaning lives behind pixels: circuit editors, geometry canvases, data-flow diagrams, CAD tools, and simulations.
 
-[Open a clean demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) · [Read the judge guide](docs/JUDGE_GUIDE.md) · [View the demo script](docs/DEMO_SCRIPT.md)
+[Open the clean judge demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) · [Run the judge path](docs/JUDGE_GUIDE.md) · [Read the hackathon brief](HACKATHON.md) · [Check submission readiness](docs/SUBMISSION_CHECKLIST.md) · [Browse the docs](docs/README.md)
+
+![Mechanism Canvas: a proof-carrying WebMCP tutor](public/mechanism-canvas-social-card.png)
+
+## Judge in 60 seconds
+
+| What to inspect | Where the proof lives |
+|---|---|
+| A real, stateful WebMCP workflow | Open the clean demo, create a two-path Counterfactual Lab, and start a six-action **Compare hypotheses** session. The exact prompt is in the [judge guide](docs/JUDGE_GUIDE.md). |
+| Dynamic capability discovery | The discoverable surface follows visible learner intent: **16 → 21 → 15 → 4** tools across Coach, Lab, bounded exploration, and automatic expiry. |
+| Page-side execution proof | The Live Run Observatory records only host-accepted registration batches. The Agent Proof Ledger records each callback, guard, revision, and page effect without saving prompts or raw outputs. |
+| A complete product, not a tool demo | Six reviewed exercises share a 2D canvas, deterministic checks, reversible commits, 3D inspection, replay, reached-state diffs, local learning records, and next-practice evidence. |
+| Human authority | The agent cannot change the Collaboration Contract, open or close the Lab, widen or renew a delegation, adopt a proposal, or commit learner work unless that authority was explicitly shared. |
+
+The [hackathon brief](HACKATHON.md) maps this evidence to every official requirement and judging criterion. The [submission checklist](docs/SUBMISSION_CHECKLIST.md) separates verified repository evidence from owner-only and publication gates. The copy-ready [Devpost package](docs/DEVPOST_SUBMISSION.md) is kept in the repository so the public description stays consistent with the code and live demo.
 
 ## The problem it solves
 
@@ -108,6 +125,7 @@ The mutating tools reject stale revisions. A draft edit invalidates its previous
 
 ## What is implemented
 
+- A judge-facing opening that shows the clean two-path agent sandbox result immediately, then switches to the real Lab branches and revision when a live sandbox exists.
 - Six chemistry-reviewed fixtures: three SN2 exercises, two proton-transfer exercises, and a two-step ammonia-alkylation capstone with a charged intermediate.
 - Clickable and keyboard-operable SVG atoms, bonds, and lone pairs.
 - Atomic multi-arrow validation with distinct incomplete, invariant-error, authored-path, accepted, and invalid-input results.
@@ -144,11 +162,11 @@ Requires Node.js 24 or a current compatible Node release.
 
 ```bash
 npm ci
-npm run verify
+npm run verify:submission
 npm run dev
 ```
 
-`npm run verify` runs the full Vitest contract suite, TypeScript build, and production bundle. The public deployment uses the same command in GitHub Actions before Pages publishes `dist/`.
+`npm run verify:submission` runs the full Vitest contract suite, TypeScript build, production bundle, and submission-package checks. After an approved commit has been pushed and deployed, `npm run verify:release` additionally requires a clean tracked release, exact local/`origin/main` parity, and byte-identical live JavaScript, CSS, and social artwork.
 
 ## Project map
 
@@ -163,6 +181,7 @@ npm run dev
 | WebMCP registration | `src/webmcp/register-tools.ts` |
 | WebMCP Live Run Observatory | `src/webmcp/capability-surface-recorder.ts`, `src/webmcp/webmcp-run-report.ts`, `src/components/WebMcpObservatory.tsx`, and `docs/WEBMCP_LIVE_RUN_OBSERVATORY.md` |
 | Agent Proof Ledger | `src/webmcp/tool-receipt-ledger.ts`, `src/components/AgentProofLedger.tsx`, and `docs/AGENT_PROOF_LEDGER.md` |
+| Judge-facing opening | `src/components/AgentSandboxPreview.tsx` |
 | Visible workspace | `src/components/` |
 | Learning-record schema and privacy allowlist | `src/domain/learning-record.ts` and `docs/LEARNING_RECORD.md` |
 | Reached-step comparison engine | `src/domain/mechanism-comparison.ts` and `docs/REACTION_DIFF.md` |
@@ -170,7 +189,7 @@ npm run dev
 | Reviewable agent proposals | `src/store/mechanism-store.ts`, `src/components/ReasoningPanel.tsx`, and `docs/AGENT_DRAFT_PROPOSALS.md` |
 | Practice Compass | `src/domain/practice-compass.ts`, `src/components/PracticeCompass.tsx`, and `docs/PRACTICE_COMPASS.md` |
 | Six-fixture problem library | `src/problems/library-expansion.ts` and `docs/PROBLEM_LIBRARY_EXPANSION.md` |
-| Visual system | `src/index.css` and `DESIGN.md` |
+| Visual system | `src/soft-orbit.css`, `src/index.css`, and `DESIGN.md` |
 | Chemistry review packets | `docs/chemistry-review/` |
 | Product requirements | `docs/mechanism-canvas-prd.md` |
 

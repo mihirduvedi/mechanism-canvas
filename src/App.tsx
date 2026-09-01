@@ -1,6 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CollaborationContract } from "./components/CollaborationContract";
 import { AgentProofLedger } from "./components/AgentProofLedger";
+import { AgentSandboxPreview } from "./components/AgentSandboxPreview";
 import { DemoNotice } from "./components/DemoNotice";
 import { DelegationSession } from "./components/DelegationSession";
 import { HypothesisLab } from "./components/HypothesisLab";
@@ -101,11 +102,16 @@ export function App() {
         </div>
       </header>
 
-      {activeSessionMode === "demo" && (
-        <DemoNotice />
-      )}
-
       <main className="workspace" id="mechanism-workspace">
+        <AgentSandboxPreview
+          problemTitle={problem.title}
+          draftArrowCount={state.draftArrows.length}
+          lab={hypothesisLab}
+          delegationSession={delegationSession}
+        />
+        {activeSessionMode === "demo" && (
+          <DemoNotice />
+        )}
         <CollaborationContract
           store={mechanismStore}
           sessionMode={activeSessionMode}

@@ -77,6 +77,15 @@ function diffLabel(event: CapabilitySurfaceEvent): string {
   return `${additions} / ${removals}`;
 }
 
+function FlightConnector() {
+  return (
+    <svg aria-hidden="true" className="webmcp-flight-connector" viewBox="0 0 40 28">
+      <path d="M 2 14 C 10 5, 22 5, 30 14" />
+      <path d="M 24 9 L 30 14 L 24 19" />
+    </svg>
+  );
+}
+
 export function WebMcpObservatory({
   contract,
   delegationSession,
@@ -133,16 +142,19 @@ export function WebMcpObservatory({
           <span>01 · Contract</span>
           <strong>{contractTools.length}</strong>
           <small>{contract.mode} permission base</small>
+          <FlightConnector />
         </div>
         <div>
           <span>02 · Page state</span>
           <strong>{relevantTools.length}</strong>
           <small>{hypothesisLab ? `Lab ${hypothesisLab.status}` : "Lab closed"}</small>
+          <FlightConnector />
         </div>
         <div>
           <span>03 · Intent</span>
           <strong>{activeTools.length}</strong>
           <small>{delegationSession ? `${delegationSession.presetLabel} · ${delegationSession.status}` : "No bounded job"}</small>
+          <FlightConnector />
         </div>
         <div className={`webmcp-flight-path__host webmcp-flight-path__host--${hostStatus}`}>
           <span>04 · Host</span>

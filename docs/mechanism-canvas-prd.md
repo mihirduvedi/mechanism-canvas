@@ -3,7 +3,7 @@
 ## Product Requirements Document
 
 **Version:** 1.0
-**Status:** Build-ready hackathon baseline
+**Status:** Historical design baseline; the implemented release is documented in [README.md](../README.md), [HACKATHON.md](../HACKATHON.md), and the current feature contracts in this directory
 **Author:** Mihir Duvedi with Codex
 **Created:** August 27, 2026
 **Target event:** The WebMCP Challenge

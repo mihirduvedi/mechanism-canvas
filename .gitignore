@@ -10,3 +10,6 @@ coverage/
 test-results/
 .qa/
 docs/*handoff*.md
+handoffs/
+work/
+output/
