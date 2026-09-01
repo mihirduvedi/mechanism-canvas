@@ -33,6 +33,7 @@ requireFile("docs/JUDGE_GUIDE.md");
 
 requireText("README.md", [
   /mihirduvedi\.github\.io\/mechanism-canvas\/\?demo=1/,
+  /mihirduvedi\.github\.io\/mechanism-canvas\/mechanism-canvas-social-card\.png/,
   /github\.com\/mihirduvedi\/mechanism-canvas/,
   /youtu\.be\/UXbloTA5bqU/,
   /16 → 21 → 15 → 4/,

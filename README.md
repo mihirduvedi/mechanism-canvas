@@ -11,7 +11,7 @@ Organic chemistry is the first use case. The same human-agent contract can suppo
 
 [Open the clean judge demo](https://mihirduvedi.github.io/mechanism-canvas/?demo=1) · [Run the judge path](docs/JUDGE_GUIDE.md) · [Read the hackathon brief](HACKATHON.md) · [Check submission readiness](docs/SUBMISSION_CHECKLIST.md) · [Browse the docs](docs/README.md)
 
-![Mechanism Canvas: a proof-carrying WebMCP tutor](public/mechanism-canvas-social-card.png)
+[![Mechanism Canvas: a proof-carrying WebMCP tutor](https://mihirduvedi.github.io/mechanism-canvas/mechanism-canvas-social-card.png)](https://mihirduvedi.github.io/mechanism-canvas/?demo=1)
 
 ## Watch the demo
 
