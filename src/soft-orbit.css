@@ -1947,6 +1947,7 @@ a {
 }
 
 .agent-stage__content .webmcp-flight-path strong {
+  align-self: center;
   font-family: var(--font-reading);
   font-size: 1.5rem;
 }

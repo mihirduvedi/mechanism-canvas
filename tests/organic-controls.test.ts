@@ -55,4 +55,10 @@ describe("Reaction Garden uniform controls", () => {
     expect(reactionGardenCss).toMatch(/\.compact-stats--secondary\s*\{[^}]*border:\s*0/s);
     expect(reactionGardenCss).toMatch(/\.agent-sandbox-preview__canvas-link\s*\{[^}]*display:\s*inline-flex/s);
   });
+
+  it("centers every WebMCP capability count on its connector axis", () => {
+    expect(reactionGardenCss).toMatch(
+      /\.agent-stage__content \.webmcp-flight-path strong\s*\{[^}]*align-self:\s*center;/s,
+    );
+  });
 });
