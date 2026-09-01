@@ -1,6 +1,6 @@
 # Devpost submission package
 
-This file is the copy source for the WebMCP Challenge entry. Replace the one marked video placeholder after the parallel video workstream delivers the final public YouTube URL.
+This file is the copy source for the WebMCP Challenge entry.
 
 ## Project overview
 
@@ -16,7 +16,7 @@ This file is the copy source for the WebMCP Challenge entry. Replace the one mar
 
 **Public repository:** <https://github.com/mihirduvedi/mechanism-canvas>
 
-**Video demo link:** `[ADD FINAL PUBLIC YOUTUBE URL]`
+**Video demo link:** <https://youtu.be/UXbloTA5bqU>
 
 ## Project story
 

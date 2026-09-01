@@ -34,6 +34,7 @@ requireFile("docs/JUDGE_GUIDE.md");
 requireText("README.md", [
   /mihirduvedi\.github\.io\/mechanism-canvas\/\?demo=1/,
   /github\.com\/mihirduvedi\/mechanism-canvas/,
+  /youtu\.be\/UXbloTA5bqU/,
   /16 → 21 → 15 → 4/,
 ]);
 
@@ -60,6 +61,8 @@ const devpostCopy = requireText("docs/DEVPOST_SUBMISSION.md", [
 const tagline = devpostCopy.match(/\*\*Tagline:\*\* (.+)/)?.[1] ?? "";
 if (!tagline) failures.push("Devpost tagline could not be parsed");
 if (tagline.length > 140) failures.push(`Devpost tagline is ${tagline.length} characters; maximum is 140`);
+const videoUrl = devpostCopy.match(/\*\*Video demo link:\*\* <(https:\/\/youtu\.be\/[^>]+)>/)?.[1] ?? "";
+if (!videoUrl) failures.push("Devpost video demo link must contain a YouTube share URL");
 
 const socialCard = requireFile("public/mechanism-canvas-social-card.png");
 if (existsSync(socialCard)) {
@@ -147,4 +150,5 @@ if (failures.length) {
 }
 
 console.log(`${releaseMode ? "Release-state" : "Submission"} checks passed (${trackedFiles.length} tracked files; tagline ${tagline.length}/140; thumbnail 1800×1200 under 5 MB).`);
-console.log("Intentional external fields still pending: public YouTube URL and owner-confirmed Devpost registration, eligibility, rights, and team details.");
+console.log(`Video demo: ${videoUrl}`);
+console.log("Intentional external fields still pending: owner-confirmed Devpost registration, eligibility, rights, and team details.");

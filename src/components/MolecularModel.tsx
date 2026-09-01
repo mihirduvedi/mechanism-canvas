@@ -663,7 +663,7 @@ export function MolecularModel({ molecule }: MolecularModelProps) {
       <ul className="force-key" aria-label="Three-dimensional model legend">
         <li><span className="force-key__bond" aria-hidden="true" />Parallel rods show bond order</li>
         <li><span className="force-key__pair" aria-hidden="true" />Paired teal spheres show lone pairs</li>
-        <li><span className="force-key__polarity" aria-hidden="true">↦</span>Longer dipole arrow means larger ΔEN</li>
+        <li><span className="force-key__polarity" aria-hidden="true" />Longer dipole arrow means larger ΔEN</li>
         <li><span className="force-key__charge-pair" aria-hidden="true"><span className="force-key__charge force-key__charge--positive" /><span className="force-key__charge force-key__charge--negative" /></span>Blue + and red − mark formal charge</li>
       </ul>
     </section>

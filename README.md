@@ -13,6 +13,12 @@ Organic chemistry is the first use case. The same human-agent contract can suppo
 
 ![Mechanism Canvas: a proof-carrying WebMCP tutor](public/mechanism-canvas-social-card.png)
 
+## Watch the demo
+
+[![Watch the 2:49 Mechanism Canvas demo on YouTube](https://img.youtube.com/vi/UXbloTA5bqU/maxresdefault.jpg)](https://youtu.be/UXbloTA5bqU)
+
+The unlisted [YouTube demo](https://youtu.be/UXbloTA5bqU) shows the complete WebMCP judge path in 2 minutes 49 seconds.
+
 ## See the proof in 60 seconds
 
 | What to inspect | Where the proof lives |

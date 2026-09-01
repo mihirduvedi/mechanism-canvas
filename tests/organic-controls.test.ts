@@ -3,6 +3,11 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const reactionGardenCss = readFileSync(join(process.cwd(), "src/soft-orbit.css"), "utf8");
+const baseCss = readFileSync(join(process.cwd(), "src/index.css"), "utf8");
+const molecularModelSource = readFileSync(
+  join(process.cwd(), "src/components/MolecularModel.tsx"),
+  "utf8",
+);
 
 const retiredShapeAssets = [
   ...["a", "b", "c", "d", "e", "f"].map((variant) => `cloud-shape-${variant}.svg`),
@@ -60,5 +65,17 @@ describe("Reaction Garden uniform controls", () => {
     expect(reactionGardenCss).toMatch(
       /\.agent-stage__content \.webmcp-flight-path strong\s*\{[^}]*align-self:\s*center;/s,
     );
+  });
+
+  it("uses centered CSS geometry for the dipole legend arrow", () => {
+    expect(molecularModelSource).toContain(
+      '<span className="force-key__polarity" aria-hidden="true" />Longer dipole arrow means larger ΔEN',
+    );
+    expect(molecularModelSource).not.toContain(">↦</span>");
+    expect(baseCss).toMatch(
+      /\.force-key__polarity\s*\{[^}]*position:\s*relative;[^}]*font-size:\s*0;[^}]*linear-gradient/s,
+    );
+    expect(baseCss).toMatch(/\.force-key__polarity::before\s*\{[^}]*inset-block-start:\s*9px/s);
+    expect(baseCss).toMatch(/\.force-key__polarity::after\s*\{[^}]*inset-block-start:\s*6px/s);
   });
 });

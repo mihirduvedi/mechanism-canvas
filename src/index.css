@@ -1686,9 +1686,33 @@ button:disabled {
 }
 
 .force-key__polarity {
+  position: relative;
   color: #c76a16;
-  font-weight: 800;
-  font-size: 1rem;
+  font-size: 0;
+  background: linear-gradient(currentColor 0 0) 2px center / 2px 10px no-repeat;
+}
+
+.force-key__polarity::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 2px;
+  inset-block-start: 9px;
+  inline-size: 15px;
+  block-size: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.force-key__polarity::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 2px;
+  inset-block-start: 6px;
+  inline-size: 6px;
+  block-size: 6px;
+  border-block-start: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  transform: rotate(45deg);
 }
 
 .force-key__charge-pair {

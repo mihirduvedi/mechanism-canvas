@@ -10,6 +10,7 @@ Mechanism Canvas is a proof-carrying organic chemistry workspace where a learner
 | Event | The WebMCP Challenge |
 | Live judge URL | <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> |
 | Public source | <https://github.com/mihirduvedi/mechanism-canvas> |
+| Video demo | [YouTube · 2:49](https://youtu.be/UXbloTA5bqU) |
 | License | [MIT](LICENSE) |
 | Primary judge instructions | [docs/JUDGE_GUIDE.md](docs/JUDGE_GUIDE.md) |
 | Copy-ready Devpost story | [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md) |
@@ -50,7 +51,7 @@ If the page says **Manual mode**, the host did not expose `document.modelContext
 
 ## Build-period provenance
 
-This is a new project created during the official submission period. The repository was created on August 28, 2026. All fourteen commits through the current Reaction Garden release were authored from August 28 through August 31, 2026. The table highlights the product milestones; documentation-only history remains visible in Git.
+This is a new project created during the official submission period. The repository was created on August 28, 2026, and every commit through the current Reaction Garden release was authored during the August 25 through September 3 submission period. The table highlights the product milestones; documentation-only history remains visible in Git.
 
 | Date (PDT) | Commit | Milestone |
 |---|---|---|
@@ -67,7 +68,7 @@ This is a new project created during the official submission period. The reposit
 | Aug 30 | `ef69a61` | Intent-Bound Delegation Sessions |
 | Aug 31 | `2a20d3f` | Counterfactual Lab and Live Run Observatory |
 | Aug 31 | `d42a3d0` | First judge-facing opening and submission experience |
-| Aug 31 | Git tip | Reaction Garden redesign, progressive disclosure, and final submission polish |
+| Sep 1 | Git tip | Reaction Garden redesign, progressive disclosure, and final submission polish |
 
 The Git history is the timestamped source of truth. No pre-hackathon codebase is included.
 
@@ -86,7 +87,7 @@ npm ci
 npm run verify:submission
 ```
 
-The command runs 132 contract tests across 23 files, TypeScript compilation, the production Vite build, and submission-package checks for required files, public metadata, image dimensions, repository hygiene, and the 140-character tagline limit.
+The command runs 143 contract tests across 25 files, TypeScript compilation, the production Vite build, and submission-package checks for required files, public metadata, image dimensions, repository hygiene, the YouTube demo URL, and the 140-character tagline limit.
 
 After the reviewed commit is pushed and GitHub Pages finishes deploying, run `npm run verify:release`. That stricter gate requires every release artifact to be tracked, a clean non-ignored worktree, exact local/remote commit parity, live metadata, and byte-identical JavaScript, CSS, and social-card assets.
 

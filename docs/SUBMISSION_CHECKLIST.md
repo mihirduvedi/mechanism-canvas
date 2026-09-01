@@ -1,6 +1,6 @@
 # WebMCP Challenge submission checklist
 
-Last audited: August 31, 2026 (PDT). The [Official Rules](https://webmcp.devpost.com/rules) are authoritative; the [challenge overview](https://webmcp.devpost.com/) and [Devpost submission guide](https://help.devpost.com/article/126-know-your-submission-steps) provide supporting form guidance.
+Last audited: September 1, 2026 (PDT). The [Official Rules](https://webmcp.devpost.com/rules) are authoritative; the [challenge overview](https://webmcp.devpost.com/) and [Devpost submission guide](https://help.devpost.com/article/126-know-your-submission-steps) provide supporting form guidance.
 
 This checklist separates facts proved by the repository from actions that require Mihir's account, legal confirmation, publication approval, or a compatible WebMCP host. A passing build is not evidence that those external steps happened.
 
@@ -13,7 +13,7 @@ This checklist separates facts proved by the repository from actions that requir
 
 ## Official requirement matrix
 
-| Requirement | Status on August 31 | Evidence or exact remaining action |
+| Requirement | Status on September 1 | Evidence or exact remaining action |
 |---|---|---|
 | WebMCP-powered web app about people and agents collaborating on the open web | Ready | The app exposes an adaptive catalog of 26 Site Tools over the learner's semantic canvas and explicit authority contract. See [HACKATHON.md](../HACKATHON.md). |
 | Live URL judges can access without restriction | Ready | The judge build is public at <https://mihirduvedi.github.io/mechanism-canvas/?demo=1>. The release gate verifies the deployed page and asset hashes against `origin/main`. |
@@ -25,11 +25,11 @@ This checklist separates facts proved by the repository from actions that requir
 | Public repository contains source, assets, and functional instructions | Ready | Source, locked dependencies, judge instructions, submission copy, artwork, and verification are public at <https://github.com/mihirduvedi/mechanism-canvas>. |
 | Detectable open-source license is visible | Ready | Root [MIT license](../LICENSE), `package.json` license metadata, and [third-party notices](../THIRD_PARTY_NOTICES.md). |
 | Repository demonstrates `document.modelContext.registerTool` | Ready | [`src/webmcp/register-tools.ts`](../src/webmcp/register-tools.ts) registers adaptive closed-schema tools. |
-| Project is new or prior work is disclosed | Ready | New repository created August 28, 2026; all twelve released commits were authored during the submission period. See [HACKATHON.md](../HACKATHON.md#build-period-provenance). |
-| Public YouTube video demonstrates the functioning project with audio | Parallel video workstream | Add its final public URL to [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md) and Devpost. |
-| Video is under three minutes | Parallel video workstream | Verify the exact exported duration before upload. |
-| Video and entry use only authorized material | Repository side ready; final video review pending | Repository artwork and copy are original. Dependencies and licenses are recorded in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). Review the final video separately for music, marks, and third-party material. |
-| Submission is in English | Ready except final video review | App, repository, and copy package are English. |
+| Project is new or prior work is disclosed | Ready | New repository created August 28, 2026; every commit was authored during the submission period. See [HACKATHON.md](../HACKATHON.md#build-period-provenance). |
+| Public YouTube video demonstrates the functioning project with audio | Ready | The final unlisted [YouTube demo](https://youtu.be/UXbloTA5bqU) is reachable and linked from the README and [DEVPOST_SUBMISSION.md](DEVPOST_SUBMISSION.md). |
+| Video is under three minutes | Ready | YouTube reports a 169-second runtime (2:49), checked September 1. |
+| Video and entry use only authorized material | Owner confirmation required | Repository artwork and copy are original. Dependencies and licenses are recorded in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md). Mihir must make the final rights representation in Devpost. |
+| Submission is in English | Ready | App, repository, submission copy, and final demo are in English. |
 | Entrant owns the work and has rights to submit it | Owner confirmation required | Mihir must make the final ownership and rights representation; the repository audit found no bundled third-party photos, music, datasets, or credentials. |
 | Entrant is eligible and registration/team details are correct | Owner action required | Join the challenge and accept its eligibility and legal terms personally. Do not infer these facts from the repository. |
 | Entry is submitted before the deadline | Not yet submitted | Review the exact final entry, obtain publication approval, submit, and preserve the Devpost confirmation. |
@@ -45,7 +45,7 @@ This checklist separates facts proved by the repository from actions that requir
 | Built with | WebMCP, React, TypeScript, Vite, Three.js, Vitest, GitHub Pages, HTML, CSS, SVG |
 | Try it out | <https://mihirduvedi.github.io/mechanism-canvas/?demo=1> |
 | Source | <https://github.com/mihirduvedi/mechanism-canvas> |
-| Video | Waiting for the parallel video workstream's final public YouTube URL |
+| Video | [YouTube · 2:49](https://youtu.be/UXbloTA5bqU) |
 
 The standard Devpost form also allows an optional image gallery. The project thumbnail and the live product are sufficient for compliance; add gallery images only if they strengthen the final story and match the deployed revision.
 
@@ -72,7 +72,7 @@ Mihir should supply or select these answers and personally accept the legal term
 3. Confirm GitHub Pages deploys that exact commit, then run `npm run verify:release` to prove tracking, clean state, local/remote commit parity, live metadata, and exact asset hashes.
 4. Run the [judge guide](JUDGE_GUIDE.md) in a compatible WebMCP host. Save host-attested evidence; do not substitute Manual mode or a page-local adapter.
 5. Join the challenge and confirm the owner-only registration and eligibility fields.
-6. Add the final public YouTube URL and verify its duration, audio, visibility, rights, and match to the deployed release.
+6. Reopen the final [YouTube demo](https://youtu.be/UXbloTA5bqU) and confirm its audio, unlisted visibility, rights, and match to the deployed release.
 7. Create the Devpost draft and paste the prepared package. Recheck every visible field, link, image, and custom question.
 8. Review the exact public entry and obtain explicit approval immediately before submission.
 9. Submit before September 3 at 1:00 PM PDT and preserve the confirmation page or email.
@@ -80,8 +80,8 @@ Mihir should supply or select these answers and personally accept the legal term
 
 ## Verification boundaries
 
-- Automated: 132 tests across 23 files, TypeScript, production build, metadata/package checks, repository hygiene, thumbnail dimensions, tagline length, plus a post-deploy tracked-state/SHA/live-asset gate.
+- Automated: 143 tests across 25 files, TypeScript, production build, metadata/package checks, repository hygiene, thumbnail dimensions, YouTube URL, tagline length, plus a post-deploy tracked-state/SHA/live-asset gate.
 - Rendered: the final interface was inspected at 1440 × 900, 768 × 1024, 390 × 844, and 360 × 800 with no horizontal overflow. The complete two-arrow check/commit/undo path, all four agent disclosures, the 3D model, keyboard focus, and console output were exercised. The strict UI checker reported no warnings or errors.
 - Public release: GitHub Pages serves the current `origin/main`; `npm run verify:release` checks exact SHA parity and byte-identical live JavaScript, CSS, and social artwork after deployment.
-- Live WebMCP: still pending because the available hosts did not expose `document.modelContext` on August 31.
+- Live WebMCP: still pending because the available hosts did not expose `document.modelContext` during the last host audit.
 - Devpost: account is signed in but not registered for this challenge; no draft or submission has been created.
