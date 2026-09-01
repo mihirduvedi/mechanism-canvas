@@ -77,13 +77,27 @@ function diffLabel(event: CapabilitySurfaceEvent): string {
   return `${additions} / ${removals}`;
 }
 
+export const WEBMCP_FLIGHT_CONNECTOR_GEOMETRY = {
+  start: { x: 3, y: 19 },
+  firstControl: { x: 12, y: 8 },
+  tipControl: { x: 24, y: 9.5 },
+  headBase: { x: 34.5, y: 15.8 },
+  tip: { x: 41.5, y: 20 },
+  headLeft: { x: 32.442, y: 19.23 },
+  headRight: { x: 36.558, y: 12.37 },
+} as const;
+
 export const WEBMCP_FLIGHT_CONNECTOR_PATH =
-  "M 3 17 C 13 6, 25 7, 40 17 M 32 9 L 42 17 L 31 23";
+  "M 3 19 C 12 8, 24 9.5, 34.5 15.8";
+
+export const WEBMCP_FLIGHT_CONNECTOR_HEAD =
+  "41.5,20 32.442,19.23 36.558,12.37";
 
 export function FlightConnector() {
   return (
     <svg aria-hidden="true" className="webmcp-flight-connector" viewBox="0 0 46 32">
       <path d={WEBMCP_FLIGHT_CONNECTOR_PATH} vectorEffect="non-scaling-stroke" />
+      <polygon points={WEBMCP_FLIGHT_CONNECTOR_HEAD} />
     </svg>
   );
 }

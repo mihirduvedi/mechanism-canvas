@@ -1903,8 +1903,8 @@ a {
   font-size: 0.8rem !important;
 }
 
-/* Capability evidence. Shaft and head share one stroked SVG path so scaling
- * cannot expose a seam between separately rendered pieces. */
+/* Capability evidence. The shaft ends at the filled head's base midpoint, and
+ * both use the same computed tangent so the join stays aligned when scaled. */
 
 .agent-stage__content .webmcp-flight-path {
   border-color: #c9dad5;
@@ -1936,9 +1936,14 @@ a {
 .webmcp-flight-connector path {
   fill: none;
   stroke: currentColor;
-  stroke-linecap: round;
+  stroke-linecap: butt;
   stroke-linejoin: round;
   stroke-width: 2.25;
+}
+
+.webmcp-flight-connector polygon {
+  fill: currentColor;
+  stroke: none;
 }
 
 .agent-stage__content .webmcp-flight-path strong {
