@@ -1,115 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title desc">
-  <title id="title">Mechanism Canvas submission thumbnail</title>
-  <desc id="desc">A warm organic chemistry workspace where an agent tests two isolated mechanism paths, the page checks both, and the learner decides what returns to the draft.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title description">
+  <title id="title">Mechanism Canvas social card</title>
+  <desc id="description">A learner-owned chemistry canvas where an agent tests electron-flow paths, the page checks them, and the learner chooses what reaches the draft.</desc>
 
-  <rect width="1800" height="1200" fill="#f5f0e5"/>
-  <path d="M0 0H622C646 130 583 252 456 303C302 365 114 316 0 221Z" fill="#ffdf7e" fill-opacity="0.72"/>
-  <path d="M1513 0H1800V406C1689 438 1563 389 1517 286C1482 208 1474 91 1513 0Z" fill="#dceeea"/>
-  <path d="M0 891C124 814 288 817 395 921C467 991 488 1094 465 1200H0Z" fill="#dce9ff"/>
-  <path d="M1426 1010C1509 879 1679 834 1800 894V1200H1320C1318 1136 1354 1087 1426 1010Z" fill="#f2d8d0"/>
+  <rect width="1800" height="1200" fill="#F5F0E5"/>
+  <rect width="650" height="1200" fill="#183F4D"/>
+  <rect x="650" width="10" height="1200" fill="#FFDF7E"/>
 
-  <path d="M48 43H1715C1738 43 1752 58 1752 81V119C1752 143 1736 156 1712 156H80C52 156 39 139 42 113L46 75C48 56 54 46 48 43Z" fill="#183f4d"/>
-  <path d="M87 69C106 57 134 59 148 77C162 96 153 128 130 137C105 146 79 132 74 109C70 92 75 78 87 69Z" fill="#fffdf7"/>
-  <text x="113" y="118" fill="#183d46" font-family="Georgia, Charter, serif" font-size="46" font-weight="700" text-anchor="middle">e</text>
-  <text x="142" y="83" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="20" font-weight="800" text-anchor="middle">−</text>
-  <text x="178" y="111" fill="#fffdf7" font-family="Avenir Next, Arial, sans-serif" font-size="30" font-weight="750">Mechanism Canvas</text>
-  <text x="1708" y="109" fill="#c8dfda" font-family="Avenir Next, Arial, sans-serif" font-size="21" font-weight="650" text-anchor="end">WebMCP Challenge · 2026</text>
+  <!-- Brand -->
+  <circle cx="124" cy="116" r="46" fill="#F5F0E5"/>
+  <text x="109" y="135" fill="#183F4D" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="48" font-weight="700">e</text>
+  <text x="139" y="103" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="24" font-weight="700">−</text>
+  <text x="194" y="131" fill="#F5F0E5" font-family="Avenir Next, Arial, sans-serif" font-size="40" font-weight="700">Mechanism Canvas</text>
 
-  <g transform="translate(96 236)">
-    <text x="0" y="0" fill="#376a62" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="750">A safe place for wrong turns</text>
-    <text x="0" y="100" fill="#183d46" font-family="Georgia, Charter, serif" font-size="78" font-weight="700" letter-spacing="-2">Let the agent</text>
-    <text x="0" y="184" fill="#183d46" font-family="Georgia, Charter, serif" font-size="78" font-weight="700" letter-spacing="-2">try the wrong</text>
-    <text x="0" y="268" fill="#183d46" font-family="Georgia, Charter, serif" font-size="78" font-weight="700" letter-spacing="-2">turns.</text>
-    <circle cx="242" cy="241" r="9" fill="#c96b58"/>
-    <circle cx="267" cy="229" r="9" fill="#c96b58"/>
+  <!-- Core promise -->
+  <text x="86" y="284" fill="#FFDF7E" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="3">A SAFE PLACE TO TEST</text>
+  <text x="84" y="408" fill="#F5F0E5" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="82" font-weight="700">Wrong turns</text>
+  <text x="84" y="520" fill="#F5F0E5" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="82" font-weight="700">stay off</text>
+  <text x="84" y="632" fill="#F5F0E5" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="82" font-weight="700">your draft.</text>
 
-    <text x="2" y="336" fill="#46645f" font-family="Avenir Next, Arial, sans-serif" font-size="27">Two isolated paths go in. The page checks both;</text>
-    <text x="2" y="374" fill="#46645f" font-family="Avenir Next, Arial, sans-serif" font-size="27">only the learner can bring one back.</text>
+  <circle cx="96" cy="714" r="9" fill="#FFDF7E"/>
+  <circle cx="124" cy="714" r="9" fill="#FFDF7E"/>
+  <line x1="151" y1="714" x2="310" y2="714" stroke="#7DA3A1" stroke-width="3"/>
+  <text x="86" y="792" fill="#DCEEEA" font-family="Avenir Next, Arial, sans-serif" font-size="30" font-weight="500">The agent explores competing paths.</text>
+  <text x="86" y="842" fill="#DCEEEA" font-family="Avenir Next, Arial, sans-serif" font-size="30" font-weight="500">The page checks the chemistry.</text>
+  <text x="86" y="892" fill="#DCEEEA" font-family="Avenir Next, Arial, sans-serif" font-size="30" font-weight="500">You make the move.</text>
 
-    <path d="M14 514C125 447 282 453 472 514" fill="none" stroke="#9eb4ae" stroke-width="3" stroke-linecap="round"/>
-    <g transform="translate(0 472)">
-      <path d="M18 0C34 -5 50 5 51 22C53 40 37 52 20 49C3 46 -5 28 2 13C5 7 11 2 18 0Z" fill="#fffdf7" stroke="#799890" stroke-width="2"/>
-      <text x="24" y="32" fill="#315b55" font-family="Avenir Next, Arial, sans-serif" font-size="17" font-weight="750" text-anchor="middle">1</text>
-      <text x="0" y="86" fill="#315b55" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="700">Draft sealed</text>
-    </g>
-    <g transform="translate(205 466)">
-      <path d="M19 0C37 -4 51 8 51 25C51 43 34 54 18 49C2 44 -4 28 2 14C5 7 11 2 19 0Z" fill="#fffdf7" stroke="#799890" stroke-width="2"/>
-      <text x="24" y="32" fill="#315b55" font-family="Avenir Next, Arial, sans-serif" font-size="17" font-weight="750" text-anchor="middle">2</text>
-      <text x="-28" y="92" fill="#315b55" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="700">Chemistry checked</text>
-    </g>
-    <g transform="translate(452 472)">
-      <path d="M18 0C34 -5 50 5 51 22C53 40 37 52 20 49C3 46 -5 28 2 13C5 7 11 2 18 0Z" fill="#fffdf7" stroke="#799890" stroke-width="2"/>
-      <text x="24" y="32" fill="#315b55" font-family="Avenir Next, Arial, sans-serif" font-size="17" font-weight="750" text-anchor="middle">3</text>
-      <text x="-5" y="86" fill="#315b55" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="700">You choose</text>
-    </g>
+  <text x="86" y="1110" fill="#B8D3CF" font-family="Avenir Next, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="2.5">WEBMCP CHALLENGE · 2026</text>
 
-    <text x="0" y="650" fill="#183d46" font-family="Georgia, Charter, serif" font-size="35" font-weight="700">26 adaptive Site Tools.</text>
-    <text x="0" y="692" fill="#4e6963" font-family="Avenir Next, Arial, sans-serif" font-size="24">One learner-owned boundary.</text>
+  <!-- Product frame -->
+  <text x="730" y="119" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="28" font-weight="600">A learner-owned WebMCP chemistry canvas</text>
+  <line x1="730" y1="166" x2="1708" y2="166" stroke="#A6C1BC" stroke-width="2"/>
+  <text x="730" y="254" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="52" font-weight="700">Agent tests. Page checks. You decide.</text>
+  <text x="730" y="338" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="3">CHECKED ELECTRON FLOW</text>
 
-    <path d="M5 776C5 750 25 735 51 735H562C589 735 606 754 603 781L599 855C598 881 579 895 552 895H48C20 895 4 877 5 850Z" fill="#183f4d"/>
-    <circle cx="45" cy="786" r="7" fill="#ffdf7e"/>
-    <circle cx="68" cy="786" r="7" fill="#ffdf7e"/>
-    <text x="98" y="783" fill="#bdd6d0" font-family="Avenir Next, Arial, sans-serif" font-size="18" font-weight="700">Learner-only handoff</text>
-    <text x="35" y="842" fill="#fffdf7" font-family="Georgia, Charter, serif" font-size="34" font-weight="700">The agent proposes. You decide.</text>
-  </g>
+  <!-- SN2 mechanism -->
+  <line x1="1308" y1="512" x2="1451" y2="512" stroke="#315E63" stroke-width="10" stroke-linecap="round"/>
 
-  <g transform="translate(707 194)">
-    <path d="M64 0H923C978 0 1010 34 1010 91V823C1010 876 975 912 918 912H74C25 912 0 879 0 829V81C0 34 27 0 64 0Z" fill="#183f4d" stroke="#6f938c" stroke-width="3"/>
-    <text x="42" y="52" fill="#bdd6d0" font-family="Avenir Next, Arial, sans-serif" font-size="20">Two-path test · clean SN2 demo</text>
-    <text x="42" y="94" fill="#fffdf7" font-family="Georgia, Charter, serif" font-size="37" font-weight="700">Hydroxide replaces bromide</text>
-    <text x="956" y="57" fill="#bdd6d0" font-family="Avenir Next, Arial, sans-serif" font-size="18" text-anchor="end">Example</text>
+  <circle cx="882" cy="512" r="68" fill="#FFFFFF" stroke="#6C918D" stroke-width="4"/>
+  <circle cx="1240" cy="512" r="74" fill="#FFFFFF" stroke="#6C918D" stroke-width="4"/>
+  <circle cx="1524" cy="512" r="70" fill="#FFFFFF" stroke="#6C918D" stroke-width="4"/>
 
-    <path d="M34 151C34 128 51 116 75 116H929C955 116 972 132 970 158L967 211C966 235 949 248 923 248H71C46 248 32 232 34 208Z" fill="#e4f2ed"/>
-    <text x="64" y="168" fill="#254f48" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="750">Your draft stays sealed</text>
-    <text x="64" y="207" fill="#52716a" font-family="Avenir Next, Arial, sans-serif" font-size="19">0 learner arrows protected · no agent job is running</text>
+  <text x="855" y="535" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="58" font-weight="800">O</text>
+  <text x="1215" y="535" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="58" font-weight="800">C</text>
+  <text x="1484" y="535" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="51" font-weight="800">Br</text>
+  <text x="921" y="458" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="34" font-weight="700">−</text>
+  <circle cx="954" cy="458" r="10" fill="#183F4D"/>
+  <circle cx="978" cy="444" r="10" fill="#183F4D"/>
 
-    <g transform="translate(34 276)">
-      <path d="M0 34C0 12 16 0 41 0H420C446 0 460 17 458 43L454 357C454 382 437 398 410 398H45C17 398 0 382 0 354Z" fill="#fff0c4"/>
-      <text x="26" y="45" fill="#5f490e" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="750">Path A</text>
-      <text x="429" y="45" fill="#765f2c" font-family="Avenir Next, Arial, sans-serif" font-size="17" text-anchor="end">Incomplete · evidence kept</text>
-      <circle cx="83" cy="176" r="38" fill="#fffdf7" stroke="#718e88" stroke-width="3"/>
-      <circle cx="272" cy="176" r="41" fill="#fffdf7" stroke="#718e88" stroke-width="3"/>
-      <circle cx="397" cy="176" r="38" fill="#fffdf7" stroke="#718e88" stroke-width="3"/>
-      <text x="83" y="186" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="29" font-weight="800" text-anchor="middle">O</text>
-      <text x="272" y="186" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="29" font-weight="800" text-anchor="middle">C</text>
-      <text x="397" y="185" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="25" font-weight="800" text-anchor="middle">Br</text>
-      <circle cx="128" cy="148" r="6" fill="#183d46"/><circle cx="141" cy="138" r="6" fill="#183d46"/>
-      <path d="M148 136C184 102 228 106 248 146" fill="none" stroke="#c94d38" stroke-width="7" stroke-linecap="round"/>
-      <polygon points="239,137 259,157 232,152" fill="#c94d38"/>
-      <path d="M314 176H355" fill="none" stroke="#536f69" stroke-width="6" stroke-linecap="round"/>
-      <text x="26" y="293" fill="#4f655f" font-family="Avenir Next, Arial, sans-serif" font-size="20">Bond formation alone misses the</text>
-      <text x="26" y="326" fill="#4f655f" font-family="Avenir Next, Arial, sans-serif" font-size="20">coupled leaving-group move.</text>
-    </g>
+  <!-- Explicit attack arrow: shaft and joined head -->
+  <path d="M 993 441 C 1065 374, 1157 381, 1196 428" fill="none" stroke="#C94D38" stroke-width="14" stroke-linecap="round"/>
+  <polygon points="1221,456 1184,441 1205,410" fill="#C94D38"/>
 
-    <g transform="translate(508 276)">
-      <path d="M0 42C0 16 19 0 46 0H422C449 0 462 19 460 46L456 352C456 381 438 398 409 398H43C16 398 0 380 0 352Z" fill="#dceeea"/>
-      <text x="26" y="45" fill="#225b4c" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="750">Path B</text>
-      <text x="432" y="45" fill="#47705f" font-family="Avenir Next, Arial, sans-serif" font-size="17" text-anchor="end">Approved · ready for review</text>
-      <circle cx="83" cy="176" r="38" fill="#fffdf7" stroke="#718e88" stroke-width="3"/>
-      <circle cx="272" cy="176" r="41" fill="#fffdf7" stroke="#718e88" stroke-width="3"/>
-      <circle cx="397" cy="176" r="38" fill="#fffdf7" stroke="#718e88" stroke-width="3"/>
-      <text x="83" y="186" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="29" font-weight="800" text-anchor="middle">O</text>
-      <text x="272" y="186" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="29" font-weight="800" text-anchor="middle">C</text>
-      <text x="397" y="185" fill="#183d46" font-family="Avenir Next, Arial, sans-serif" font-size="25" font-weight="800" text-anchor="middle">Br</text>
-      <circle cx="128" cy="148" r="6" fill="#183d46"/><circle cx="141" cy="138" r="6" fill="#183d46"/>
-      <path d="M148 136C184 102 228 106 248 146" fill="none" stroke="#c94d38" stroke-width="7" stroke-linecap="round"/>
-      <polygon points="239,137 259,157 232,152" fill="#c94d38"/>
-      <path d="M314 176H355" fill="none" stroke="#536f69" stroke-width="6" stroke-linecap="round"/>
-      <path d="M330 181C343 232 374 239 389 205" fill="none" stroke="#76507e" stroke-width="7" stroke-linecap="round"/>
-      <polygon points="379,207 398,191 393,217" fill="#76507e"/>
-      <text x="26" y="293" fill="#4f655f" font-family="Avenir Next, Arial, sans-serif" font-size="20">Bond formation and bond cleavage</text>
-      <text x="26" y="326" fill="#4f655f" font-family="Avenir Next, Arial, sans-serif" font-size="20">travel as one elementary step.</text>
-    </g>
+  <!-- Explicit bond-cleavage arrow: shaft and joined head -->
+  <path d="M 1388 524 C 1400 627, 1474 658, 1504 578" fill="none" stroke="#76507E" stroke-width="14" stroke-linecap="round"/>
+  <polygon points="1518,549 1490,578 1525,585" fill="#76507E"/>
 
-    <path d="M35 724C35 702 51 688 75 688H928C955 688 972 706 970 732L966 793C965 818 947 832 920 832H74C48 832 33 815 35 789Z" fill="#ffffff" fill-opacity="0.07" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
-    <circle cx="66" cy="742" r="7" fill="#ffdf7e"/>
-    <circle cx="90" cy="742" r="7" fill="#ffdf7e"/>
-    <text x="120" y="742" fill="#bdd6d0" font-family="Avenir Next, Arial, sans-serif" font-size="18">Your decision</text>
-    <text x="120" y="783" fill="#fffdf7" font-family="Georgia, Charter, serif" font-size="29" font-weight="700">Only you move a checked path onto the canvas.</text>
-    <text x="44" y="874" fill="#bdd6d0" font-family="Avenir Next, Arial, sans-serif" font-size="19">Judge path proof</text>
-    <text x="955" y="875" fill="#ffdf7e" font-family="Georgia, Charter, serif" font-size="29" font-weight="700" text-anchor="end">16 → 21 → 15 → 4 · 7 / 7</text>
-  </g>
+  <line x1="730" y1="690" x2="770" y2="690" stroke="#C94D38" stroke-width="8" stroke-linecap="round"/>
+  <text x="792" y="700" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="26" font-weight="600">bond forms</text>
+  <line x1="1000" y1="690" x2="1040" y2="690" stroke="#76507E" stroke-width="8" stroke-linecap="round"/>
+  <text x="1062" y="700" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="26" font-weight="600">bond breaks</text>
+  <text x="1378" y="700" fill="#183F4D" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="28" font-weight="700">one elementary step</text>
 
-  <text x="96" y="1142" fill="#48635e" font-family="Avenir Next, Arial, sans-serif" font-size="22">Deterministic chemistry · visible agent work · learner-owned decisions</text>
-  <text x="1705" y="1142" fill="#2f746b" font-family="Avenir Next, Arial, sans-serif" font-size="22" font-weight="750" text-anchor="end">mihirduvedi.github.io/mechanism-canvas</text>
+  <!-- Learner gate -->
+  <rect x="730" y="790" width="978" height="294" rx="34" fill="#DCEEEA"/>
+  <rect x="730" y="790" width="14" height="294" rx="7" fill="#FFDF7E"/>
+  <text x="780" y="850" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="19" font-weight="700" letter-spacing="3">THE LEARNER'S GATE</text>
+  <text x="780" y="928" fill="#183F4D" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="48" font-weight="700">Only you move a checked path</text>
+  <text x="780" y="988" fill="#183F4D" font-family="Charter, 'Iowan Old Style', Georgia, serif" font-size="48" font-weight="700">onto the canvas.</text>
+
+  <text x="780" y="1044" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="2">AGENT TESTS</text>
+  <line x1="922" y1="1038" x2="997" y2="1038" stroke="#7DA3A1" stroke-width="3"/>
+  <polygon points="1009,1038 995,1030 995,1046" fill="#7DA3A1"/>
+  <text x="1035" y="1044" fill="#315E63" font-family="Avenir Next, Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="2">PAGE CHECKS</text>
+  <line x1="1197" y1="1038" x2="1272" y2="1038" stroke="#7DA3A1" stroke-width="3"/>
+  <polygon points="1284,1038 1270,1030 1270,1046" fill="#7DA3A1"/>
+  <circle cx="1434" cy="1038" r="28" fill="#FFDF7E"/>
+  <path d="M 1420 1038 L 1431 1049 L 1450 1026" fill="none" stroke="#183F4D" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1478" y="1044" fill="#183F4D" font-family="Avenir Next, Arial, sans-serif" font-size="18" font-weight="800" letter-spacing="2">YOU CHOOSE</text>
 </svg>
