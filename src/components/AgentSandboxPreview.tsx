@@ -23,6 +23,13 @@ interface PreviewPoint {
   y: number;
 }
 
+export const PREVIEW_LONE_PAIR_DOTS = [
+  { x: 20, y: 24 },
+  { x: 28, y: 24 },
+] as const;
+
+export const PREVIEW_FORMATION_ARROW_START = { x: 38, y: 24 } as const;
+
 function formatCoordinate(value: number): string {
   return Number(value.toFixed(2)).toString();
 }
@@ -97,7 +104,7 @@ const exampleBranches: PreviewBranch[] = [
 ];
 
 function ElectronFlowSketch({ arrowCount }: { arrowCount: number }) {
-  const formationHead = buildPreviewArrowHead({ x: 115, y: 27 }, { x: 120, y: 35 }, 6.5);
+  const formationHead = buildPreviewArrowHead({ x: 116, y: 26 }, { x: 120, y: 35 }, 6.5);
   const cleavageHead = buildPreviewArrowHead({ x: 210, y: 66 }, { x: 219, y: 60 }, 6.5);
 
   return (
@@ -106,11 +113,24 @@ function ElectronFlowSketch({ arrowCount }: { arrowCount: number }) {
       <circle cx="132" cy="48" r="18" />
       <circle cx="224" cy="48" r="16" />
       <path className="agent-sandbox-preview__bond" d="M 150 48 L 208 48" />
-      <circle className="agent-sandbox-preview__electron" cx="45" cy="37" r="3" />
-      <circle className="agent-sandbox-preview__electron" cx="51" cy="32" r="3" />
+      <g className="agent-sandbox-preview__lone-pair" data-preview-lone-pair="oxygen">
+        {PREVIEW_LONE_PAIR_DOTS.map((dot) => (
+          <circle
+            className="agent-sandbox-preview__electron"
+            cx={dot.x}
+            cy={dot.y}
+            key={`${dot.x}-${dot.y}`}
+            r="3"
+          />
+        ))}
+      </g>
       {arrowCount > 0 && (
         <>
-          <path className="agent-sandbox-preview__flow" d="M 51 31 C 77 9 104 10 115 27" />
+          <path
+            className="agent-sandbox-preview__flow"
+            d={`M ${PREVIEW_FORMATION_ARROW_START.x} ${PREVIEW_FORMATION_ARROW_START.y} C 68 6 103 8 116 26`}
+            data-preview-shaft="bond-formation"
+          />
           <polygon
             className="agent-sandbox-preview__flow-head"
             data-preview-arrow="bond-formation"

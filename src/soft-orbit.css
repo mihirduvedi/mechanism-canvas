@@ -3,8 +3,8 @@
  *
  * A lower-density layer built from the subject itself: paired electron dots,
  * orbital fields, and one continuous reaction path. Large fields carry the
- * broad curves; the six pivotal learner actions use stable, individually cut
- * droplet silhouettes. Evidence and chemistry geometry stay quiet and exact.
+ * broad curves; eligible controls and cutouts use stable, individually cut
+ * pebble silhouettes. Evidence and chemistry geometry stay quiet and exact.
  */
 
 :root {
@@ -24,14 +24,44 @@
   --garden-shadow-small: 0 8px 22px rgb(18 53 58 / 8%);
   --font-reading: Charter, "Iowan Old Style", Georgia, serif;
   --radius-field: 32px 74px 42px 58px / 44px 56px 68px 48px;
-  --radius-work: 20px 30px 24px 28px;
-  --radius-control: 12px 16px 14px 15px;
-  --organic-hero: 18% 31% 23% 28% / 62% 44% 56% 38%;
-  --organic-check: 22% 34% 29% 17% / 52% 35% 65% 48%;
-  --organic-commit: 31% 18% 21% 37% / 39% 66% 34% 61%;
-  --organic-undo: 16% 36% 33% 24% / 68% 38% 62% 32%;
-  --organic-clear: 35% 22% 27% 19% / 44% 61% 39% 56%;
-  --organic-lab: 24% 38% 31% 20% / 58% 33% 67% 42%;
+  --radius-work: 34px 42px 36px 46px / 42px 35px 45px 38px;
+  --radius-control: 18px 22px 19px 24px / 21px 18px 23px 20px;
+  --shape-preview-result: 26px 46px 30px 38px;
+  --shape-problem-rail: 34px 46px 38px 50px / 44px 36px 48px 40px;
+  --shape-canvas-panel: 32px 44px 36px 48px / 42px 34px 46px 38px;
+  --shape-agent-studio: 46px 28px 72px 34px;
+  --shape-demo-notice: 25px 31px 27px 34px / 29px 24px 32px 26px;
+  --shape-learning-drawer: 24px 44px 28px 36px;
+  --shape-preview-mobile: 30px 48px 34px 41px;
+  --shape-agent-mobile: 34px 24px 52px 28px;
+  --pebble-action: 25px 30px 27px 32px / 29px 24px 31px 26px;
+  --pebble-hero: 33px 28px 35px 26px / 29px 35px 27px 33px;
+  --pebble-check: 27px 32px 29px 34px / 32px 26px 34px 28px;
+  --pebble-commit: 34px 27px 31px 29px / 28px 35px 27px 33px;
+  --pebble-undo: 30px 35px 26px 32px / 35px 28px 33px 26px;
+  --pebble-clear: 33px 29px 35px 27px / 27px 33px 29px 35px;
+  --pebble-lab: 29px 36px 31px 34px / 33px 27px 36px 30px;
+  --pebble-manual: 22px 26px 20px 27px / 25px 21px 27px 23px;
+  --pebble-saved: 26px 21px 27px 23px / 22px 27px 21px 26px;
+  --pebble-model: 20px 25px 22px 27px / 26px 21px 25px 23px;
+  --pebble-seal: 25px 22px 27px 20px / 21px 26px 22px 27px;
+  --pebble-review: 18px 22px 19px 24px / 23px 18px 22px 20px;
+  --pebble-select: 17px 21px 18px 23px / 22px 17px 21px 19px;
+  --pebble-more: 23px 19px 24px 21px / 20px 25px 19px 23px;
+  --pebble-copy: 24px 29px 26px 31px / 30px 23px 29px 25px;
+  --pebble-metric-one: 20px 25px 21px 27px / 26px 20px 24px 22px;
+  --pebble-metric-two: 26px 21px 25px 22px / 21px 27px 20px 25px;
+  --pebble-metric-three: 22px 27px 20px 25px / 25px 22px 27px 21px;
+  --pebble-toggle-one: 58% 42% 54% 46% / 56% 45% 55% 44%;
+  --pebble-toggle-two: 44% 56% 47% 53% / 48% 59% 41% 52%;
+  --pebble-toggle-three: 57% 43% 51% 49% / 44% 54% 46% 56%;
+  --pebble-toggle-four: 48% 52% 43% 57% / 55% 42% 58% 45%;
+  --organic-hero: var(--pebble-hero);
+  --organic-check: var(--pebble-check);
+  --organic-commit: var(--pebble-commit);
+  --organic-undo: var(--pebble-undo);
+  --organic-clear: var(--pebble-clear);
+  --organic-lab: var(--pebble-lab);
 }
 
 html {
@@ -126,11 +156,15 @@ body {
 .tool-status,
 .session-link {
   min-block-size: 44px;
-  border-radius: var(--radius-control);
   font-size: 0.78rem;
 }
 
+.tool-status {
+  border-radius: var(--pebble-manual);
+}
+
 .session-link {
+  border-radius: var(--pebble-saved);
   background: var(--garden-sun);
   color: var(--chrome-deep);
 }
@@ -172,13 +206,13 @@ a {
 
 .button {
   min-block-size: 46px;
-  border-radius: var(--radius-control);
+  border-radius: var(--pebble-action);
   box-shadow: none;
   text-decoration: none;
 }
 
 /* Stable variation, never runtime randomness: each important action gets its
-   own reaction-droplet outline, while labels and hit areas stay conventional. */
+   own smooth-pebble outline, while labels and hit areas stay conventional. */
 .button--organic {
   min-block-size: 48px;
   padding-inline: 20px;
@@ -204,8 +238,16 @@ a {
 .button--organic-clear {
   --organic-shape: var(--organic-clear);
   padding-inline: 18px;
-  border: 1px solid rgb(138 87 0 / 48%);
-  background: rgb(255 253 247 / 42%);
+  border: 2px solid #a87820;
+  background: #fff0bf;
+  background-clip: padding-box;
+  box-shadow: none;
+}
+
+.button--organic-clear:disabled {
+  border-color: #a87820;
+  background: #fff0bf;
+  color: #68797a;
 }
 
 .button--organic-lab {
@@ -334,9 +376,14 @@ a {
 }
 
 .agent-sandbox-preview__canvas-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-block-size: 48px;
+  padding-inline: 4px;
   color: var(--chrome);
   font-size: 0.94rem;
+  line-height: 1;
   text-decoration-thickness: 1px;
 }
 
@@ -373,9 +420,17 @@ a {
   block-size: 26px;
   place-items: center;
   border: 1px solid #7d9c96;
-  border-radius: 54% 46% 58% 42%;
+  border-radius: var(--pebble-toggle-one);
   background: rgb(255 253 247 / 72%);
   font-size: 0.76rem;
+}
+
+.agent-sandbox-preview__trust-flow li:nth-child(2) > span {
+  border-radius: var(--pebble-toggle-two);
+}
+
+.agent-sandbox-preview__trust-flow li:nth-child(3) > span {
+  border-radius: var(--pebble-toggle-three);
 }
 
 .agent-sandbox-preview__result {
@@ -383,7 +438,7 @@ a {
   min-inline-size: 0;
   padding: 24px;
   border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 26px 46px 30px 38px;
+  border-radius: var(--shape-preview-result);
   background: var(--chrome);
   box-shadow: 0 16px 36px rgb(18 53 58 / 17%);
 }
@@ -662,7 +717,7 @@ a {
   display: block;
   padding: 25px;
   border: 1px solid #c8aa51;
-  border-radius: 24px 38px 28px 34px;
+  border-radius: var(--shape-problem-rail);
   background: #ffe59a;
   box-shadow: var(--garden-shadow-small);
 }
@@ -698,7 +753,7 @@ a {
   min-block-size: 34px;
   padding: 6px 9px;
   border: 1px solid rgb(18 53 58 / 22%);
-  border-radius: 10px 14px 12px 13px;
+  border-radius: var(--pebble-review);
   background: rgb(255 253 247 / 52%);
   color: #315a52;
   font-size: 0.76rem;
@@ -718,7 +773,7 @@ a {
 .problem-picker select {
   min-block-size: 48px;
   border: 1px solid #a8893f;
-  border-radius: 11px 15px 13px 14px;
+  border-radius: var(--pebble-select);
   background-color: var(--garden-paper);
   color: var(--chrome-deep);
   font-size: 0.92rem;
@@ -822,7 +877,10 @@ a {
   gap: 10px;
   align-items: center;
   min-block-size: 46px;
-  padding: 0;
+  padding: 9px 11px 9px 13px;
+  border: 1px solid rgb(112 91 36 / 24%);
+  border-radius: var(--pebble-more);
+  background: rgb(255 253 247 / 30%);
   color: var(--chrome-deep);
   font-size: 0.9rem;
   font-weight: 740;
@@ -834,9 +892,14 @@ a {
   display: none;
 }
 
+.problem-rail__more > summary:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 3px rgb(24 61 70 / 28%);
+}
+
 .problem-rail__more-content {
-  padding-block-start: 14px;
-  border-block-start: 1px solid rgb(112 91 36 / 25%);
+  padding-block-start: 12px;
+  border-block-start: 0;
 }
 
 .problem-rail__more-content > p:first-child {
@@ -850,13 +913,23 @@ a {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-block: 16px;
+  padding: 0;
+  border: 0;
 }
 
 .compact-stats--secondary > div {
   padding: 10px;
   border: 1px solid rgb(112 91 36 / 22%);
-  border-radius: 10px 13px 11px 12px;
+  border-radius: var(--pebble-metric-one);
   background: rgb(255 253 247 / 42%);
+}
+
+.compact-stats--secondary > div:nth-child(2) {
+  border-radius: var(--pebble-metric-two);
+}
+
+.compact-stats--secondary > div:nth-child(3) {
+  border-radius: var(--pebble-metric-three);
 }
 
 .compact-stats--secondary dd {
@@ -882,13 +955,21 @@ a {
 .canvas-panel {
   overflow: hidden;
   border: 1px solid var(--garden-line);
-  border-radius: 22px 38px 26px 32px;
+  border-radius: var(--shape-canvas-panel);
   background: var(--garden-paper);
   box-shadow: var(--garden-shadow-small);
 }
 
 .canvas-heading {
   padding: 22px 24px 16px;
+}
+
+.model-toggle {
+  border-radius: var(--pebble-model);
+}
+
+.state-seal {
+  border-radius: var(--pebble-seal);
 }
 
 .canvas-heading h2,
@@ -938,6 +1019,10 @@ a {
 
 .draft-tray__heading {
   padding: 0;
+}
+
+.revision-label {
+  border-radius: var(--pebble-review);
 }
 
 .draft-empty {
@@ -1026,6 +1111,7 @@ a {
 }
 
 .reasoning-disclosure > summary > span:nth-child(2) {
+  border-radius: var(--pebble-review);
   color: #55716f;
   font-size: 0.8rem;
   font-weight: 680;
@@ -1048,7 +1134,29 @@ a {
   inline-size: 24px;
   block-size: 24px;
   border: 1px solid currentColor;
-  border-radius: 50%;
+  border-radius: var(--pebble-toggle-one);
+}
+
+.problem-rail__more .context-note__toggle,
+.reasoning-rail > section:nth-child(4n + 1) .reasoning-disclosure__toggle,
+.agent-stage:nth-child(4n + 1) .agent-stage__toggle {
+  border-radius: var(--pebble-toggle-one);
+}
+
+.reasoning-rail > section:nth-child(4n + 2) .reasoning-disclosure__toggle,
+.agent-stage:nth-child(4n + 2) .agent-stage__toggle,
+.learning-drawer__toggle {
+  border-radius: var(--pebble-toggle-two);
+}
+
+.reasoning-rail > section:nth-child(4n + 3) .reasoning-disclosure__toggle,
+.agent-stage:nth-child(4n + 3) .agent-stage__toggle {
+  border-radius: var(--pebble-toggle-three);
+}
+
+.reasoning-rail > section:nth-child(4n) .reasoning-disclosure__toggle,
+.agent-stage:nth-child(4n) .agent-stage__toggle {
+  border-radius: var(--pebble-toggle-four);
 }
 
 :is(.reasoning-disclosure__toggle, .context-note__toggle, .agent-stage__toggle, .learning-drawer__toggle)::before,
@@ -1078,7 +1186,7 @@ a {
   padding: clamp(32px, 5vw, 64px);
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 14%);
-  border-radius: 46px 28px 72px 34px;
+  border-radius: var(--shape-agent-studio);
   background: var(--chrome);
   box-shadow: var(--garden-shadow);
 }
@@ -1149,7 +1257,7 @@ a {
   margin: 0 0 20px;
   padding: 13px 14px 13px 17px;
   border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 14px 21px 16px 19px;
+  border-radius: var(--shape-demo-notice);
   background: rgb(255 255 255 / 7%);
   color: #e9f4f1;
 }
@@ -1173,7 +1281,7 @@ a {
   min-block-size: 42px;
   padding-inline: 15px;
   border: 1px solid #d0af4d;
-  border-radius: 11px 15px 13px 14px;
+  border-radius: var(--pebble-copy);
   background: var(--garden-sun);
   color: var(--chrome-deep);
   font-size: 0.86rem;
@@ -1217,7 +1325,7 @@ a {
   block-size: 42px;
   place-items: center;
   border: 1px solid rgb(255 255 255 / 28%);
-  border-radius: 56% 44% 52% 48%;
+  border-radius: var(--pebble-toggle-one);
   color: var(--garden-sun);
   font-family: var(--font-reading);
   font-size: 0.95rem;
@@ -1225,7 +1333,15 @@ a {
 }
 
 .agent-stage:nth-child(even) .agent-stage__number {
-  border-radius: 43% 57% 47% 53%;
+  border-radius: var(--pebble-toggle-two);
+}
+
+.agent-stage:nth-child(3) .agent-stage__number {
+  border-radius: var(--pebble-toggle-three);
+}
+
+.agent-stage:nth-child(4) .agent-stage__number {
+  border-radius: var(--pebble-toggle-four);
 }
 
 .agent-stage__title {
@@ -1845,7 +1961,7 @@ a {
 .learning-drawer {
   overflow: hidden;
   border: 1px solid #a8b8d8;
-  border-radius: 24px 44px 28px 36px;
+  border-radius: var(--shape-learning-drawer);
   background: var(--garden-sky);
   box-shadow: var(--garden-shadow-small);
 }
@@ -2029,7 +2145,7 @@ a {
   .agent-sandbox-preview {
     gap: 34px;
     padding: 42px 28px 30px;
-    border-radius: 30px 48px 34px 41px;
+    border-radius: var(--shape-preview-mobile);
   }
 
   .reaction-studio__intro,
@@ -2053,7 +2169,7 @@ a {
 
   .agent-studio {
     padding: 34px 24px;
-    border-radius: 34px 24px 52px 28px;
+    border-radius: var(--shape-agent-mobile);
   }
 
   .agent-stage > summary {

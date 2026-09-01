@@ -2,7 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createMechanismStore } from "../store/mechanism-store";
 import { createHypothesisLabManager } from "../webmcp/hypothesis-lab";
-import { AgentSandboxPreview, buildPreviewArrowHead } from "./AgentSandboxPreview";
+import {
+  AgentSandboxPreview,
+  buildPreviewArrowHead,
+  PREVIEW_FORMATION_ARROW_START,
+  PREVIEW_LONE_PAIR_DOTS,
+} from "./AgentSandboxPreview";
 
 describe("AgentSandboxPreview", () => {
   it("labels the no-lab story as example output and shows both reviewed example paths", () => {
@@ -46,7 +51,7 @@ describe("AgentSandboxPreview", () => {
   });
 
   it("derives each arrowhead around the shaft endpoint and points it toward the target", () => {
-    const points = buildPreviewArrowHead({ x: 115, y: 27 }, { x: 120, y: 35 }, 6.5)
+    const points = buildPreviewArrowHead({ x: 116, y: 26 }, { x: 120, y: 35 }, 6.5)
       .split(" ")
       .map((pair) => pair.split(",").map(Number));
     const [tip, firstBase, secondBase] = points;
@@ -56,9 +61,34 @@ describe("AgentSandboxPreview", () => {
     ];
 
     expect(tip).toEqual([120, 35]);
-    expect(baseMidpoint[0]).toBeCloseTo(115, 2);
-    expect(baseMidpoint[1]).toBeCloseTo(27, 2);
+    expect(baseMidpoint[0]).toBeCloseTo(116, 2);
+    expect(baseMidpoint[1]).toBeCloseTo(26, 2);
     expect(tip[0] - baseMidpoint[0]).toBeGreaterThan(0);
     expect(tip[1] - baseMidpoint[1]).toBeGreaterThan(0);
+  });
+
+  it("renders oxygen's lone pair tangentially and starts the shaft beyond both dots", () => {
+    const [firstDot, secondDot] = PREVIEW_LONE_PAIR_DOTS;
+    const pairMidpoint = {
+      x: (firstDot.x + secondDot.x) / 2,
+      y: (firstDot.y + secondDot.y) / 2,
+    };
+
+    expect(firstDot.y).toBe(secondDot.y);
+    expect(pairMidpoint).toEqual({ x: 24, y: 24 });
+    expect(PREVIEW_FORMATION_ARROW_START.x - secondDot.x).toBeGreaterThan(6);
+    expect(PREVIEW_FORMATION_ARROW_START.y).toBe(secondDot.y);
+
+    const html = renderToStaticMarkup(
+      <AgentSandboxPreview
+        problemTitle="Hydroxide replaces bromide"
+        draftArrowCount={0}
+        lab={null}
+        delegationSession={null}
+      />,
+    );
+    expect(html).toContain('data-preview-lone-pair="oxygen"');
+    expect(html).toContain('data-preview-shaft="bond-formation"');
+    expect(html).toContain('d="M 38 24 C 68 6 103 8 116 26"');
   });
 });
