@@ -1,6 +1,6 @@
 # Mechanism Canvas design contract
 
-## Current direction — Reaction Garden · Smooth Pebbles
+## Current direction — Reaction Garden · Reaction Cloud
 
 This section supersedes the earlier visual-direction rules wherever they conflict.
 The interaction, chemistry, evidence, and accessibility contracts below remain
@@ -20,9 +20,11 @@ authoritative.
 - **Shape language:** irregular curves belong to large spatial fields, where they suggest
   an electron cloud or reaction boundary. The hero, agent field, problem leaf, and brand
   shell may be asymmetric. Eligible actions, compact statuses, selectors, disclosure
-  cutouts, and plus/minus rings use fixed smooth-pebble silhouettes. Their asymmetry is
-  subtle and rounded: no pointed lenses, hard pinches, random distortion, or repeated
-  one-radius capsules. Evidence, chemistry, typography, and data alignment stay exact.
+  cutouts, and plus/minus rings use fixed reaction-cloud silhouettes. Each outline has
+  several soft convex lobes separated by shallow fluid valleys, so it reads as bubbly and
+  misshapen rather than as an oval with uneven corners. There are no pointed lenses, hard
+  pinches, random distortion, or repeated one-radius capsules. Evidence, chemistry,
+  typography, and data alignment stay exact.
 - **Warmth:** the existing ocean, coral, sunlight, seafoam, plum, and periwinkle roles
   remain, but they sit on a warm paper canvas instead of cool gray software chrome.
 - **Type:** Charter, Iowan Old Style, and Georgia give learner-facing titles the voice of a
@@ -32,11 +34,12 @@ authoritative.
   arrows, validator results, and receipt evidence stay exact. Arrow shafts and heads are
   explicit SVG geometry with shared color, weight, centerline, and round joins; font
   chevrons are never used as diagram connectors.
-- **Smooth-pebble rule:** each eligible control category has a fixed, purpose-named
-  silhouette, with additional stable variants where neighboring controls would otherwise
-  look stamped from one template. Labels, baselines, hit areas, borders, and focus states
-  remain exact; only the outside contour varies. Shapes stay stable across reloads, are
-  never randomized, and pivotal action variants do not reuse a radius profile.
+- **Reaction-cloud rule:** six hand-authored SVG masks provide genuinely multi-lobed
+  silhouettes, with additional stable assignments where neighboring controls would
+  otherwise look stamped from one template. Labels, baselines, rectangular hit areas,
+  complete painted outlines, and focus states remain exact; only the visible contour
+  varies. Shapes stay stable across reloads, are never randomized, and no variant is a
+  plain ellipse, capsule, rounded rectangle, or angular polygon.
 - **Arrow construction rule:** every preview arrowhead is derived from its shaft endpoint
   and direction. Its base is centered on and overlaps that endpoint, preventing a kink,
   gap, or arrowhead that points away from its target after SVG scaling. Preview lone-pair
@@ -46,10 +49,11 @@ authoritative.
   no decorative dot. Paired dots appear only as a deliberate electron-pair motif.
 - **Geometry:** top-level fields may use 28–74 px asymmetric radii. Work surfaces use
   30–50 px smooth asymmetric corners. Open agent instruments use a restrained 11–17 px
-  frame and straight internal rules. Supporting controls use bounded pixel radii so wide
-  labels cannot collapse into pointed percentage-radius lenses. Small plus/minus rings may
-  use restrained percentage asymmetry because their width and height are equal. Every
-  action keeps at least a 44 px target. True capsules remain reserved for compact status.
+  frame and straight internal rules. Eligible controls use responsive SVG masks whose
+  spline paths alternate rounded lobes and shallow valleys while filling nearly the full
+  hit box. Every important action keeps at least a 44 px rectangular target beneath its
+  painted cloud. Forced-colors mode restores a conventional high-contrast border rather
+  than depending on the mask.
 - **Motion:** only short, soft press/elevation feedback and user-triggered electron-flow
   replay. Reduced motion removes both animation and smooth scrolling without removing
   information.

@@ -3,34 +3,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const reactionGardenCss = readFileSync(join(process.cwd(), "src/soft-orbit.css"), "utf8");
-
-const pivotalPebbleTokens = [
-  "--pebble-hero",
-  "--pebble-check",
-  "--pebble-commit",
-  "--pebble-undo",
-  "--pebble-clear",
-  "--pebble-lab",
-] as const;
-
-const supportingPebbleTokens = [
-  "--pebble-action",
-  "--pebble-manual",
-  "--pebble-saved",
-  "--pebble-model",
-  "--pebble-seal",
-  "--pebble-review",
-  "--pebble-select",
-  "--pebble-more",
-  "--pebble-copy",
-  "--pebble-metric-one",
-  "--pebble-metric-two",
-  "--pebble-metric-three",
-  "--pebble-toggle-one",
-  "--pebble-toggle-two",
-  "--pebble-toggle-three",
-  "--pebble-toggle-four",
-] as const;
+const cloudVariants = ["a", "b", "c", "d", "e", "f"] as const;
+const cloudSvgs = cloudVariants.map((variant) =>
+  readFileSync(join(process.cwd(), `src/assets/cloud-shape-${variant}.svg`), "utf8"),
+);
+const compactClouds = ["a", "b", "c", "d"].map((variant) =>
+  readFileSync(join(process.cwd(), `src/assets/cloud-compact-${variant}.svg`), "utf8"),
+);
 
 function tokenValue(name: string): string {
   const match = reactionGardenCss.match(new RegExp(`${name}:\\s*([^;]+);`));
@@ -38,41 +17,68 @@ function tokenValue(name: string): string {
   return match[1].trim();
 }
 
-describe("Reaction Garden organic controls", () => {
-  it("gives every pivotal action a stable, unique, and softly bounded silhouette", () => {
-    const shapes = pivotalPebbleTokens.map(tokenValue);
+describe("Reaction Garden cloud controls", () => {
+  it("uses six stable, unique, genuinely multi-lobed spline masks", () => {
+    const paths = cloudSvgs.map((svg) => svg.match(/<path[^>]+d="([^"]+)"/)?.[1]);
 
-    expect(new Set(shapes).size).toBe(pivotalPebbleTokens.length);
-    shapes.forEach((shape) => {
-      expect(shape).toMatch(/^(?:\d+px\s+){3}\d+px\s*\/\s*(?:\d+px\s+){3}\d+px$/);
+    expect(new Set(paths).size).toBe(cloudVariants.length);
+    cloudSvgs.forEach((svg) => {
+      expect(svg).toContain('preserveAspectRatio="none"');
+      expect(svg).not.toMatch(/<(?:ellipse|polygon|rect)\b/);
+      expect(svg.match(/C/g)?.length).toBeGreaterThanOrEqual(12);
     });
     expect(reactionGardenCss).not.toMatch(/Math\.random|random\s*\(/);
   });
 
-  it("extends the stable pebble family across supporting controls and cutouts", () => {
-    const shapes = supportingPebbleTokens.map(tokenValue);
+  it("uses separate hand-drawn clouds for square counters and toggles", () => {
+    const paths = compactClouds.map((svg) => svg.match(/<path[^>]+d="([^"]+)"/)?.[1]);
 
-    expect(new Set(shapes).size).toBe(supportingPebbleTokens.length);
-    expect(reactionGardenCss).toMatch(/\.tool-status\s*\{[^}]*var\(--pebble-manual\)/s);
-    expect(reactionGardenCss).toMatch(/\.session-link\s*\{[^}]*var\(--pebble-saved\)/s);
-    expect(reactionGardenCss).toMatch(/\.model-toggle\s*\{[^}]*var\(--pebble-model\)/s);
-    expect(reactionGardenCss).toMatch(/\.state-seal\s*\{[^}]*var\(--pebble-seal\)/s);
-    expect(reactionGardenCss).toMatch(/\.review-stamp\s*\{[^}]*var\(--pebble-review\)/s);
-    expect(reactionGardenCss).toMatch(/\.problem-picker select\s*\{[^}]*var\(--pebble-select\)/s);
-    expect(reactionGardenCss).toMatch(/\.demo-notice button\s*\{[^}]*var\(--pebble-copy\)/s);
+    expect(new Set(paths).size).toBe(compactClouds.length);
+    compactClouds.forEach((svg) => {
+      expect(svg).toContain('viewBox="0 0 100 100"');
+      expect(svg).not.toMatch(/<(?:ellipse|polygon|rect)\b/);
+      expect(svg.match(/C/g)?.length).toBeGreaterThanOrEqual(8);
+    });
+    expect(reactionGardenCss).toMatch(/\.agent-sandbox-preview__trust-flow li > span\s*\{[^}]*var\(--cloud-compact-a\)/s);
+    expect(reactionGardenCss).toMatch(/\.compact-stats--secondary > div\s*\{[^}]*var\(--cloud-compact-a\)/s);
+    expect(reactionGardenCss).toMatch(/\.agent-stage__number,\s*\.agent-stage__toggle\s*\{[^}]*var\(--cloud-compact-d\)/s);
   });
 
-  it("keeps the organic contour on the outside without clipping button content", () => {
-    expect(reactionGardenCss).toContain("border-radius: var(--organic-shape, var(--radius-control));");
-    expect(reactionGardenCss).not.toMatch(/\.button--organic\s*\{[^}]*clip-path:/s);
-    expect(reactionGardenCss).not.toMatch(/\.button--organic\s*\{[^}]*overflow:\s*hidden/s);
+  it("maps every pivotal action to a different cloud silhouette", () => {
+    const masks = cloudVariants.map((variant) => tokenValue(`--cloud-mask-${variant}`));
+
+    expect(new Set(masks).size).toBe(cloudVariants.length);
+    expect(reactionGardenCss).toMatch(/\.button--organic-hero\s*\{[^}]*var\(--cloud-mask-a\)/s);
+    expect(reactionGardenCss).toMatch(/\.button--organic-check\s*\{[^}]*var\(--cloud-mask-b\)/s);
+    expect(reactionGardenCss).toMatch(/\.button--organic-commit\s*\{[^}]*var\(--cloud-mask-c\)/s);
+    expect(reactionGardenCss).toMatch(/\.button--organic-undo\s*\{[^}]*var\(--cloud-mask-d\)/s);
+    expect(reactionGardenCss).toMatch(/\.button--organic-clear\s*\{[^}]*var\(--cloud-mask-e\)/s);
+    expect(reactionGardenCss).toMatch(/\.button--organic-lab\s*\{[^}]*var\(--cloud-mask-f\)/s);
   });
 
-  it("owns the exercise separator once and gives Clear draft a complete outline", () => {
+  it("extends the cloud family across supporting controls and cutouts", () => {
+    expect(reactionGardenCss).toMatch(/\.tool-status\s*\{[^}]*var\(--cloud-mask-b\)/s);
+    expect(reactionGardenCss).toMatch(/\.session-link\s*\{[^}]*var\(--cloud-mask-c\)/s);
+    expect(reactionGardenCss).toMatch(/\.problem-picker select\s*\{[^}]*var\(--cloud-mask-c\)/s);
+    expect(reactionGardenCss).toMatch(/\.problem-rail__more > summary\s*\{[^}]*var\(--cloud-mask-d\)/s);
+    expect(reactionGardenCss).toMatch(/\.model-toggle\s*\{[^}]*var\(--cloud-mask-e\)/s);
+    expect(reactionGardenCss).toMatch(/\.state-seal\s*\{[^}]*var\(--cloud-mask-f\)/s);
+    expect(reactionGardenCss).toMatch(/\.demo-notice button\s*\{[^}]*var\(--cloud-mask-c\)/s);
+    expect(reactionGardenCss).toMatch(/\.agent-stage__number,\s*\.agent-stage__toggle\s*\{/s);
+  });
+
+  it("keeps conventional hit areas, complete painted edges, and accessible fallbacks", () => {
+    expect(reactionGardenCss).toContain("-webkit-mask-image: var(--cloud-mask);");
+    expect(reactionGardenCss).toContain("mask-image: var(--cloud-mask);");
+    expect(tokenValue("--cloud-outline")).toContain("drop-shadow(1px 0 0 var(--cloud-edge))");
+    expect(reactionGardenCss).not.toMatch(/clip-path:/);
+    expect(reactionGardenCss).toMatch(/\.button--organic-clear\s*\{[^}]*--cloud-edge:\s*#a87820/s);
+    expect(reactionGardenCss).toMatch(/@media \(forced-colors: active\)[\s\S]*mask-image:\s*none/s);
+  });
+
+  it("retains the exercise separator and hero-alignment repairs", () => {
     expect(reactionGardenCss).toMatch(/\.problem-rail__more-content\s*\{[^}]*border-block-start:\s*0/s);
     expect(reactionGardenCss).toMatch(/\.compact-stats--secondary\s*\{[^}]*border:\s*0/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-clear\s*\{[^}]*border:\s*2px solid #a87820/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-clear:disabled\s*\{[^}]*border-color:\s*#a87820/s);
     expect(reactionGardenCss).toMatch(/\.agent-sandbox-preview__canvas-link\s*\{[^}]*display:\s*inline-flex/s);
   });
 });
