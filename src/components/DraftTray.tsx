@@ -62,7 +62,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
 
       <div className="action-row" aria-label="Mechanism actions">
         <button
-          className="button button--primary"
+          className="button button--primary button--organic button--organic-check"
           type="button"
           disabled={state.draftArrows.length === 0 || complete || historyView}
           title={state.draftArrows.length === 0 ? "Add at least one arrow first" : undefined}
@@ -71,7 +71,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
           Check step
         </button>
         <button
-          className="button button--commit"
+          className="button button--commit button--organic button--organic-commit"
           type="button"
           disabled={!canCommit || historyView}
           title={!canCommit ? "A current valid check is required" : undefined}
@@ -80,7 +80,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
           Commit checked step
         </button>
         <button
-          className="button button--secondary"
+          className="button button--secondary button--organic button--organic-undo"
           type="button"
           disabled={!canUndo || historyView}
           title={!canUndo ? "There is no committed step to undo" : undefined}
@@ -89,7 +89,7 @@ export function DraftTray({ problem, state, store }: DraftTrayProps) {
           Undo commit
         </button>
         <button
-          className="text-button"
+          className="text-button button--organic button--organic-clear"
           type="button"
           disabled={state.draftArrows.length === 0 || historyView}
           onClick={() => store.clearDraft("human")}

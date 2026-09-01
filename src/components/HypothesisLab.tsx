@@ -126,7 +126,7 @@ export function HypothesisLab({
               </label>
             ))}
           </fieldset>
-          <button className="button" type="button" disabled={activeSession} onClick={startLab}>
+          <button className="button button--organic button--organic-lab" type="button" disabled={activeSession} onClick={startLab}>
             Open isolated lab
           </button>
           {activeSession && (

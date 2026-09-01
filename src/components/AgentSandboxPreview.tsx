@@ -18,6 +18,35 @@ interface PreviewBranch {
   arrowCount: number;
 }
 
+interface PreviewPoint {
+  x: number;
+  y: number;
+}
+
+function formatCoordinate(value: number): string {
+  return Number(value.toFixed(2)).toString();
+}
+
+export function buildPreviewArrowHead(
+  base: PreviewPoint,
+  tip: PreviewPoint,
+  halfWidth: number,
+): string {
+  const dx = tip.x - base.x;
+  const dy = tip.y - base.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return `${tip.x},${tip.y} ${base.x},${base.y} ${base.x},${base.y}`;
+
+  const perpendicularX = (-dy / length) * halfWidth;
+  const perpendicularY = (dx / length) * halfWidth;
+  const firstBase = { x: base.x + perpendicularX, y: base.y + perpendicularY };
+  const secondBase = { x: base.x - perpendicularX, y: base.y - perpendicularY };
+
+  return [tip, firstBase, secondBase]
+    .map((point) => `${formatCoordinate(point.x)},${formatCoordinate(point.y)}`)
+    .join(" ");
+}
+
 function branchTone(branch: HypothesisBranch, lab: HypothesisLab): PreviewTone {
   if (lab.recommendedBranchId === branch.id) return "recommended";
   if (branch.validation?.classification === "valid") return "approved";
@@ -68,6 +97,9 @@ const exampleBranches: PreviewBranch[] = [
 ];
 
 function ElectronFlowSketch({ arrowCount }: { arrowCount: number }) {
+  const formationHead = buildPreviewArrowHead({ x: 115, y: 27 }, { x: 120, y: 35 }, 6.5);
+  const cleavageHead = buildPreviewArrowHead({ x: 210, y: 66 }, { x: 219, y: 60 }, 6.5);
+
   return (
     <svg aria-hidden="true" className="agent-sandbox-preview__sketch" viewBox="0 0 250 92">
       <circle cx="24" cy="48" r="16" />
@@ -79,13 +111,21 @@ function ElectronFlowSketch({ arrowCount }: { arrowCount: number }) {
       {arrowCount > 0 && (
         <>
           <path className="agent-sandbox-preview__flow" d="M 51 31 C 77 9 104 10 115 27" />
-          <polygon className="agent-sandbox-preview__flow-head" points="124,32 112,27 116,40" />
+          <polygon
+            className="agent-sandbox-preview__flow-head"
+            data-preview-arrow="bond-formation"
+            points={formationHead}
+          />
         </>
       )}
       {arrowCount > 1 && (
         <>
           <path className="agent-sandbox-preview__flow agent-sandbox-preview__flow--second" d="M 174 50 C 182 71 198 75 210 66" />
-          <polygon className="agent-sandbox-preview__flow-head agent-sandbox-preview__flow-head--second" points="219,60 209,62 215,72" />
+          <polygon
+            className="agent-sandbox-preview__flow-head agent-sandbox-preview__flow-head--second"
+            data-preview-arrow="bond-cleavage"
+            points={cleavageHead}
+          />
         </>
       )}
       <text x="24" y="53">O</text>
@@ -128,7 +168,7 @@ export function AgentSandboxPreview({
           Two isolated paths go in. The page checks both; only you can bring one back.
         </p>
         <div className="agent-sandbox-preview__actions">
-          <a className="button button--primary" href="#agent-studio">Open the agent lab</a>
+          <a className="button button--primary button--organic button--organic-hero" href="#agent-studio">Open the agent lab</a>
           <a className="agent-sandbox-preview__canvas-link" href="#canvas-title">Start drawing</a>
         </div>
         <ol className="agent-sandbox-preview__trust-flow" aria-label="Human-agent collaboration flow">

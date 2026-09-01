@@ -19,7 +19,8 @@ authoritative.
   rows, and rules carry hierarchy; nested mini-cards do not.
 - **Shape language:** irregular curves belong to large spatial fields, where they suggest
   an electron cloud or reaction boundary. The hero, agent field, problem leaf, and brand
-  shell may be asymmetric. Controls, evidence, chemistry, and data alignment stay exact.
+  shell may be asymmetric. Six pivotal actions use fixed reaction-droplet silhouettes;
+  supporting controls, evidence, chemistry, and data alignment stay exact.
 - **Warmth:** the existing ocean, coral, sunlight, seafoam, plum, and periwinkle roles
   remain, but they sit on a warm paper canvas instead of cool gray software chrome.
 - **Type:** Charter, Iowan Old Style, and Georgia give learner-facing titles the voice of a
@@ -29,12 +30,20 @@ authoritative.
   arrows, validator results, and receipt evidence stay exact. Arrow shafts and heads are
   explicit SVG geometry with shared color, weight, centerline, and round joins; font
   chevrons are never used as diagram connectors.
+- **Action-droplet rule:** the six pivotal learner actions use six fixed organic
+  silhouettes. Their labels, baselines, hit areas, and focus states remain exact; only
+  the outside contour varies. Shapes stay stable across reloads, are never randomized,
+  and no two variants reuse the same radius profile.
+- **Arrow construction rule:** every preview arrowhead is derived from its shaft endpoint
+  and direction. Its base is centered on and overlaps that endpoint, preventing a kink,
+  gap, or arrowhead that points away from its target after SVG scaling.
 - **Brand mark:** the `e−` sits in one organic warm-paper shell with optical centering and
   no decorative dot. Paired dots appear only as a deliberate electron-pair motif.
 - **Geometry:** top-level fields may use 28–74 px asymmetric radii. Work surfaces use
   18–30 px corners. Open agent instruments use a restrained 11–17 px frame and straight
-  internal rules. Controls use 12–16 px corners and at least 44 px targets. Pills are
-  reserved for compact status.
+  internal rules. Supporting controls use 12–16 px corners; the six pivotal actions use
+  distinct percentage-radius contours. Every action keeps at least a 44 px target. Pills
+  are reserved for compact status.
 - **Motion:** only short, soft press/elevation feedback and user-triggered electron-flow
   replay. Reduced motion removes both animation and smooth scrolling without removing
   information.

@@ -2,8 +2,9 @@
  * Reaction Garden
  *
  * A lower-density layer built from the subject itself: paired electron dots,
- * orbital fields, and one continuous reaction path. Irregular shapes belong to
- * the large spatial fields. Controls and evidence stay quiet and exact.
+ * orbital fields, and one continuous reaction path. Large fields carry the
+ * broad curves; the six pivotal learner actions use stable, individually cut
+ * droplet silhouettes. Evidence and chemistry geometry stay quiet and exact.
  */
 
 :root {
@@ -25,6 +26,12 @@
   --radius-field: 32px 74px 42px 58px / 44px 56px 68px 48px;
   --radius-work: 20px 30px 24px 28px;
   --radius-control: 12px 16px 14px 15px;
+  --organic-hero: 18% 31% 23% 28% / 62% 44% 56% 38%;
+  --organic-check: 22% 34% 29% 17% / 52% 35% 65% 48%;
+  --organic-commit: 31% 18% 21% 37% / 39% 66% 34% 61%;
+  --organic-undo: 16% 36% 33% 24% / 68% 38% 62% 32%;
+  --organic-clear: 35% 22% 27% 19% / 44% 61% 39% 56%;
+  --organic-lab: 24% 38% 31% 20% / 58% 33% 67% 42%;
 }
 
 html {
@@ -170,6 +177,41 @@ a {
   text-decoration: none;
 }
 
+/* Stable variation, never runtime randomness: each important action gets its
+   own reaction-droplet outline, while labels and hit areas stay conventional. */
+.button--organic {
+  min-block-size: 48px;
+  padding-inline: 20px;
+  border-radius: var(--organic-shape, var(--radius-control));
+}
+
+.button--organic-hero {
+  --organic-shape: var(--organic-hero);
+}
+
+.button--organic-check {
+  --organic-shape: var(--organic-check);
+}
+
+.button--organic-commit {
+  --organic-shape: var(--organic-commit);
+}
+
+.button--organic-undo {
+  --organic-shape: var(--organic-undo);
+}
+
+.button--organic-clear {
+  --organic-shape: var(--organic-clear);
+  padding-inline: 18px;
+  border: 1px solid rgb(138 87 0 / 48%);
+  background: rgb(255 253 247 / 42%);
+}
+
+.button--organic-lab {
+  --organic-shape: var(--organic-lab);
+}
+
 .button:not(:disabled):active,
 .demo-notice button:active,
 .session-link:active {
@@ -287,7 +329,7 @@ a {
 .agent-sandbox-preview__actions .button {
   min-block-size: 50px;
   padding-inline: 21px;
-  border-radius: 14px 21px 16px 18px;
+  border-radius: var(--organic-hero);
   font-size: 0.94rem;
 }
 
@@ -506,6 +548,7 @@ a {
   fill: none;
   stroke: var(--garden-coral);
   stroke-linecap: round;
+  stroke-linejoin: round;
   stroke-width: 3.2;
 }
 
