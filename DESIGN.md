@@ -1,6 +1,6 @@
 # Mechanism Canvas design contract
 
-## Current direction — Reaction Garden · Reaction Cloud
+## Current direction — Reaction Garden · Uniform Orbit
 
 This section supersedes the earlier visual-direction rules wherever they conflict.
 The interaction, chemistry, evidence, and accessibility contracts below remain
@@ -17,15 +17,12 @@ authoritative.
   record appear in that order. The agent lab uses one native disclosure level: four calm
   stages remain closed until the learner asks for them. Inside an open stage, proximity,
   rows, and rules carry hierarchy; nested mini-cards do not.
-- **Shape language:** irregular curves belong to large spatial fields, where they suggest
-  an electron cloud or reaction boundary. The hero, agent field, problem leaf, and brand
-  shell may be asymmetric. Eligible actions, compact statuses, selectors, disclosure
-  cutouts, and plus/minus rings use fixed reaction-cloud silhouettes. Each wide outline
-  has three broad, nearly even lobes per edge with shallow valleys and an 85–90% vertical
-  fill. The result reads as full and bubbly, not thin, scalloped, or erratically wavy.
-  There are no pointed lenses, hard pinches, random distortion, or repeated one-radius
-  capsules. Compact counters use one full rounded blob instead of miniature ripples.
-  Evidence, chemistry, typography, and data alignment stay exact.
+- **Shape language:** the interface now uses a deliberately narrow, uniform geometry.
+  Wide controls, statuses, selectors, and disclosure cutouts are clean capsules. Compact
+  square counters, step numbers, brand marks, and plus/minus rings are exact circles.
+  Larger content fields use consistent single-value corner radii. There are no masks,
+  uneven percentage radii, wavy outlines, per-instance distortions, or decorative shape
+  variants. Evidence, chemistry, typography, and data alignment stay exact.
 - **Warmth:** the existing ocean, coral, sunlight, seafoam, plum, and periwinkle roles
   remain, but they sit on a warm paper canvas instead of cool gray software chrome.
 - **Type:** Charter, Iowan Old Style, and Georgia give learner-facing titles the voice of a
@@ -35,26 +32,21 @@ authoritative.
   arrows, validator results, and receipt evidence stay exact. Arrow shafts and heads are
   explicit SVG geometry with shared color, weight, centerline, and round joins; font
   chevrons are never used as diagram connectors.
-- **Reaction-cloud rule:** six hand-authored SVG masks provide low-frequency, gently
-  multi-lobed silhouettes, with additional stable assignments where neighboring controls
-  would otherwise look stamped from one template. Labels, baselines, rectangular hit areas,
-  complete painted outlines, and focus states remain exact; only the visible contour
-  varies. Shapes stay stable across reloads, are never randomized, and no variant is a
-  plain ellipse, capsule, rounded rectangle, or angular polygon.
+- **Uniform-orbit rule:** eligible wide controls share one `999px` capsule radius and a
+  conventional complete border. Compact square controls use `50%` circles. Semantic color,
+  label, and state may vary, but silhouette does not. Focus uses a conventional offset
+  outline, and forced-colors mode keeps a visible system border.
 - **Arrow construction rule:** every preview arrowhead is derived from its shaft endpoint
   and direction. Its base is centered on and overlaps that endpoint, preventing a kink,
   gap, or arrowhead that points away from its target after SVG scaling. Preview lone-pair
   dots are tangent to the atom perimeter as a conventional pair; the shaft begins beyond
   both dot radii with visible clearance, matching the interactive canvas invariant.
-- **Brand mark:** the `e−` sits in one organic warm-paper shell with optical centering and
+- **Brand mark:** the `e−` sits in one circular warm-paper shell with optical centering and
   no decorative dot. Paired dots appear only as a deliberate electron-pair motif.
-- **Geometry:** top-level fields may use 28–74 px asymmetric radii. Work surfaces use
-  30–50 px smooth asymmetric corners. Open agent instruments use a restrained 11–17 px
-  frame and straight internal rules. Eligible controls use responsive SVG masks whose
-  spline paths use only a few broad lobes and shallow, uniform valleys while filling
-  nearly the full hit box. Every important action keeps at least a 44 px rectangular
-  target beneath its painted cloud. Forced-colors mode restores a conventional
-  high-contrast border rather than depending on the mask.
+- **Geometry:** top-level fields use consistent 32–48 px corner radii. Work surfaces use
+  consistent 14–36 px corners and straight internal rules. Eligible wide controls use
+  capsules; compact square controls use circles. Every important action keeps at least a
+  44 px hit target, and conventional borders remain complete at every zoom level.
 - **Motion:** only short, soft press/elevation feedback and user-triggered electron-flow
   replay. Reduced motion removes both animation and smooth scrolling without removing
   information.
@@ -141,7 +133,7 @@ authoritative.
 - A design pass also fails if an implicit-hydrogen annotation intersects an atom-map ID, atom symbol, formal charge, or lone-pair dot. Its placement is selected from clear perimeter ports, and its count is subordinate to the H rather than written as an undifferentiated `3H` token.
 - Comparison SVGs use `aria-label` plus a description, not a child `<title>` element: native SVG title tooltips can float over the dialog header and are a visual defect even when the graph itself is collision-free.
 - Disclosure toggles use a real 24 px icon box at the trailing edge of the summary. The plus/minus glyph is optically and mathematically centered; it is not an unmeasurable inline pseudo-element before the label.
-- A design pass also fails if repeated identical cards, pills, random tint patches, symmetrical bento modules, generic gradients, glass, or ornamental icons replace content-led hierarchy. Purposeful electron-cloud shapes are allowed only where they reinforce the molecular play-space; statuses and evidence must remain legible without them.
+- A design pass also fails if repeated identical cards, random tint patches, symmetrical bento modules, generic gradients, glass, ornamental icons, or irregular decorative outlines replace content-led hierarchy. Capsules are reserved for actual actions and compact status/readout roles; statuses and evidence remain legible without color alone.
 - Playfulness must have a product job: aqua marks interaction, sunlight marks drafting, pale aqua marks reasoning, periwinkle marks reflection/evidence, coral traces performed electron movement, and state colors mark accepted, incomplete, or invalid outcomes. Decorative color without a semantic or compositional role is removed.
 - Instruction bands use one complete seafoam surface with a normal 1 px border and ambient shadow. A thicker colored start edge or inset stripe is a regression even when the rest of the band is neutral.
 
@@ -163,4 +155,4 @@ authoritative.
 - Comparison color never carries the change alone: formed, broken, order, charge, lone-pair, and implicit-hydrogen changes are named with before and after values in the ledger.
 - Long replay arrows that cross disconnected species lift into a comparison-only upper arch so they cannot run through intervening atoms or electron pairs. The drawable exercise keeps its existing routing.
 - Replay never implies a physical transition state or reaction coordinate. It repeats the authored curved-arrow bookkeeping performed by the learner or agent, and the copy names that boundary.
-- Primary actions are at least 44 px high, use filled rounded rectangles, and include pressed, focus, selected, and disabled states. Capsule geometry is reserved for compact statuses and standalone utility controls.
+- Primary actions are at least 44 px high, use filled capsules, and include pressed, focus, selected, and disabled states. Compact square controls use exact circles; content containers do not become pills.

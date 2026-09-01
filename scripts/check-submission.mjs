@@ -131,7 +131,12 @@ const textExtensions = new Set([".css", ".html", ".js", ".json", ".md", ".mjs", 
 for (const relativePath of trackedFiles) {
   const extension = relativePath.slice(relativePath.lastIndexOf("."));
   if (!textExtensions.has(extension)) continue;
-  const text = readFileSync(join(root, relativePath), "utf8");
+  const absolutePath = join(root, relativePath);
+  // Submission verification is intentionally usable before a release commit.
+  // A tracked file staged for deletion is absent from the working tree; release
+  // mode's clean-tree check still prevents such a state from shipping.
+  if (!existsSync(absolutePath)) continue;
+  const text = readFileSync(absolutePath, "utf8");
   if (/\/Users\/[^/]+\//.test(text)) failures.push(`Tracked file contains an absolute user path: ${relativePath}`);
   if (/BEGIN [A-Z ]+PRIVATE KEY|sk-[A-Za-z0-9]{20,}/.test(text)) failures.push(`Tracked file may contain a secret: ${relativePath}`);
 }

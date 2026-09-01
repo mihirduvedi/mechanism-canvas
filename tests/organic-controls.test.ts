@@ -1,94 +1,53 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const reactionGardenCss = readFileSync(join(process.cwd(), "src/soft-orbit.css"), "utf8");
-const cloudVariants = ["a", "b", "c", "d", "e", "f"] as const;
-const cloudSvgs = cloudVariants.map((variant) =>
-  readFileSync(join(process.cwd(), `src/assets/cloud-shape-${variant}.svg`), "utf8"),
-);
-const compactClouds = ["a", "b", "c", "d"].map((variant) =>
-  readFileSync(join(process.cwd(), `src/assets/cloud-compact-${variant}.svg`), "utf8"),
-);
 
-function tokenValue(name: string): string {
-  const match = reactionGardenCss.match(new RegExp(`${name}:\\s*([^;]+);`));
-  if (!match) throw new Error(`Missing ${name} from the Reaction Garden tokens.`);
-  return match[1].trim();
-}
+const retiredShapeAssets = [
+  ...["a", "b", "c", "d", "e", "f"].map((variant) => `cloud-shape-${variant}.svg`),
+  ...["a", "b", "c", "d"].map((variant) => `cloud-compact-${variant}.svg`),
+];
 
-describe("Reaction Garden cloud controls", () => {
-  it("uses six stable, unique, full-height low-frequency cloud masks", () => {
-    const paths = cloudSvgs.map((svg) => svg.match(/<path[^>]+d="([^"]+)"/)?.[1]);
+describe("Reaction Garden uniform controls", () => {
+  it("uses one capsule rule for every eligible wide control", () => {
+    const sharedShapeRule = reactionGardenCss.match(/\/\* Uniform Orbit:[\s\S]*?\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
 
-    expect(new Set(paths).size).toBe(cloudVariants.length);
-    cloudSvgs.forEach((svg) => {
-      expect(svg).toContain('preserveAspectRatio="none"');
-      expect(svg).not.toMatch(/<(?:ellipse|polygon|rect)\b/);
-      expect(svg.match(/C/g)?.length).toBe(12);
-      const path = svg.match(/<path[^>]+d="([^"]+)"/)?.[1] ?? "";
-      const coordinates = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-      const yCoordinates = coordinates.filter((_, index) => index % 2 === 1);
-      expect(Math.min(...yCoordinates)).toBeLessThanOrEqual(13);
-      expect(Math.max(...yCoordinates)).toBeGreaterThanOrEqual(87);
+    expect(sharedShapeRule).toContain("border-radius: var(--control-radius, var(--radius-control)) !important;");
+    expect(sharedShapeRule).toContain("border: var(--control-border-width, 1px) solid var(--control-edge, #71918c) !important;");
+    expect(reactionGardenCss).toMatch(/--radius-control:\s*999px/);
+  });
+
+  it("uses exact circles for compact square counters and toggles", () => {
+    expect(reactionGardenCss).toMatch(
+      /\.agent-sandbox-preview__trust-flow li > span,[\s\S]*?\.learning-drawer__toggle\s*\)\s*\{\s*--control-radius:\s*50%;/s,
+    );
+    expect(reactionGardenCss).toMatch(/\.brand-mark\s*\{[^}]*border-radius:\s*50%;/s);
+    expect(reactionGardenCss).toMatch(/\.agent-sandbox-preview__seal-mark\s*\{[^}]*border-radius:\s*50%;/s);
+  });
+
+  it("removes the retired irregular mask system completely", () => {
+    expect(reactionGardenCss).not.toMatch(/cloud-mask|cloud-compact|cloud-outline/);
+    expect(reactionGardenCss).not.toMatch(/(?:-webkit-)?mask-image/);
+    expect(reactionGardenCss).not.toMatch(/clip-path/);
+    retiredShapeAssets.forEach((asset) => {
+      expect(existsSync(join(process.cwd(), "src/assets", asset))).toBe(false);
     });
-    expect(reactionGardenCss).not.toMatch(/Math\.random|random\s*\(/);
   });
 
-  it("uses separate hand-drawn clouds for square counters and toggles", () => {
-    const paths = compactClouds.map((svg) => svg.match(/<path[^>]+d="([^"]+)"/)?.[1]);
-
-    expect(new Set(paths).size).toBe(compactClouds.length);
-    compactClouds.forEach((svg) => {
-      expect(svg).toContain('viewBox="0 0 100 100"');
-      expect(svg).not.toMatch(/<(?:ellipse|polygon|rect)\b/);
-      expect(svg.match(/C/g)?.length).toBe(4);
-      const path = svg.match(/<path[^>]+d="([^"]+)"/)?.[1] ?? "";
-      const coordinates = path.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-      const yCoordinates = coordinates.filter((_, index) => index % 2 === 1);
-      expect(Math.min(...yCoordinates)).toBeLessThanOrEqual(7);
-      expect(Math.max(...yCoordinates)).toBeGreaterThanOrEqual(94);
-    });
-    expect(reactionGardenCss).toMatch(/\.agent-sandbox-preview__trust-flow li > span\s*\{[^}]*var\(--cloud-compact-a\)/s);
-    expect(reactionGardenCss).toMatch(/\.compact-stats--secondary > div\s*\{[^}]*var\(--cloud-compact-a\)/s);
-    expect(reactionGardenCss).toMatch(/\.agent-stage__number,\s*\.agent-stage__toggle\s*\{[^}]*var\(--cloud-compact-d\)/s);
+  it("keeps complete conventional borders and visible focus rings", () => {
+    expect(reactionGardenCss).toMatch(
+      /\.button--organic-clear\s*\{[^}]*--control-edge:\s*#a87820;[^}]*--control-border-width:\s*2px;/s,
+    );
+    expect(reactionGardenCss).toMatch(/:focus-visible\s*\{[^}]*outline:\s*3px solid var\(--focus\);[^}]*outline-offset:\s*2px;/s);
+    expect(reactionGardenCss).toMatch(/@media \(forced-colors: active\)[\s\S]*border:\s*2px solid ButtonText !important;/s);
   });
 
-  it("maps every pivotal action to a different cloud silhouette", () => {
-    const masks = cloudVariants.map((variant) => tokenValue(`--cloud-mask-${variant}`));
-
-    expect(new Set(masks).size).toBe(cloudVariants.length);
-    expect(reactionGardenCss).toMatch(/\.button--organic-hero\s*\{[^}]*var\(--cloud-mask-a\)/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-check\s*\{[^}]*var\(--cloud-mask-b\)/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-commit\s*\{[^}]*var\(--cloud-mask-c\)/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-undo\s*\{[^}]*var\(--cloud-mask-d\)/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-clear\s*\{[^}]*var\(--cloud-mask-e\)/s);
-    expect(reactionGardenCss).toMatch(/\.button--organic-lab\s*\{[^}]*var\(--cloud-mask-f\)/s);
-  });
-
-  it("extends the cloud family across supporting controls and cutouts", () => {
-    expect(reactionGardenCss).toMatch(/\.tool-status\s*\{[^}]*var\(--cloud-mask-b\)/s);
-    expect(reactionGardenCss).toMatch(/\.session-link\s*\{[^}]*var\(--cloud-mask-c\)/s);
-    expect(reactionGardenCss).toMatch(/\.problem-picker select\s*\{[^}]*var\(--cloud-mask-c\)/s);
-    expect(reactionGardenCss).toMatch(/\.problem-rail__more > summary\s*\{[^}]*var\(--cloud-mask-d\)/s);
-    expect(reactionGardenCss).toMatch(/\.model-toggle\s*\{[^}]*var\(--cloud-mask-e\)/s);
-    expect(reactionGardenCss).toMatch(/\.state-seal\s*\{[^}]*var\(--cloud-mask-f\)/s);
-    expect(reactionGardenCss).toMatch(/\.demo-notice button\s*\{[^}]*var\(--cloud-mask-c\)/s);
-    expect(reactionGardenCss).toMatch(/\.agent-stage__number,\s*\.agent-stage__toggle\s*\{/s);
-  });
-
-  it("keeps conventional hit areas, complete painted edges, and accessible fallbacks", () => {
-    const sharedMaskRule = reactionGardenCss.match(/\/\* Reaction Cloud:[\s\S]*?\)\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-
-    expect(reactionGardenCss).toContain("-webkit-mask-image: var(--cloud-mask);");
-    expect(reactionGardenCss).toContain("mask-image: var(--cloud-mask);");
-    expect(sharedMaskRule).not.toContain("--cloud-mask:");
-    expect(sharedMaskRule).not.toContain("--cloud-edge:");
-    expect(tokenValue("--cloud-outline")).toContain("drop-shadow(1px 0 0 var(--cloud-edge))");
-    expect(reactionGardenCss).toMatch(/\.agent-sandbox-preview__trust-flow li > span,[\s\S]*filter:\s*drop-shadow\(0 0 1px var\(--cloud-edge\)\)/s);
-    expect(reactionGardenCss).not.toMatch(/clip-path:/);
-    expect(reactionGardenCss).toMatch(/\.button--organic-clear\s*\{[^}]*--cloud-edge:\s*#a87820/s);
-    expect(reactionGardenCss).toMatch(/@media \(forced-colors: active\)[\s\S]*mask-image:\s*none/s);
+  it("retains semantic edge colors without changing silhouette", () => {
+    expect(reactionGardenCss).toMatch(/\.button--primary\s*\{[^}]*--control-edge:\s*#00615f;/s);
+    expect(reactionGardenCss).toMatch(/\.button--commit\s*\{[^}]*--control-edge:\s*#0b6044;/s);
+    expect(reactionGardenCss).toMatch(/\.button--secondary\s*\{[^}]*--control-edge:\s*#91aaa6;/s);
+    expect(reactionGardenCss).toMatch(/\.button--organic-lab\s*\{[^}]*--control-edge:\s*#5d396e;/s);
   });
 
   it("retains the exercise separator and hero-alignment repairs", () => {
