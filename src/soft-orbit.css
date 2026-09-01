@@ -1903,8 +1903,8 @@ a {
   font-size: 0.8rem !important;
 }
 
-/* Capability evidence. The curved connector is one SVG: an open shaft ending
- * exactly beneath a filled head. No browser-default fill is allowed. */
+/* Capability evidence. Shaft and head share one stroked SVG path so scaling
+ * cannot expose a seam between separately rendered pieces. */
 
 .agent-stage__content .webmcp-flight-path {
   border-color: #c9dad5;
@@ -1924,9 +1924,9 @@ a {
   position: absolute;
   z-index: 2;
   inset-block-start: 50%;
-  inset-inline-end: -22px;
-  inline-size: 44px;
-  block-size: 28px;
+  inset-inline-end: -23px;
+  inline-size: 46px;
+  block-size: 32px;
   overflow: visible;
   color: #407c71;
   pointer-events: none;
@@ -1937,12 +1937,8 @@ a {
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
-  stroke-width: 2;
-}
-
-.webmcp-flight-connector polygon {
-  fill: currentColor;
-  stroke: none;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
 }
 
 .agent-stage__content .webmcp-flight-path strong {

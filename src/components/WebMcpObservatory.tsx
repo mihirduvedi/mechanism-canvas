@@ -77,11 +77,13 @@ function diffLabel(event: CapabilitySurfaceEvent): string {
   return `${additions} / ${removals}`;
 }
 
-function FlightConnector() {
+export const WEBMCP_FLIGHT_CONNECTOR_PATH =
+  "M 3 17 C 13 6, 25 7, 40 17 M 32 9 L 42 17 L 31 23";
+
+export function FlightConnector() {
   return (
-    <svg aria-hidden="true" className="webmcp-flight-connector" viewBox="0 0 44 28">
-      <path d="M 3 16 C 12 6, 23 6, 33 14" vectorEffect="non-scaling-stroke" />
-      <polygon points="31,8 41,16 29,20" />
+    <svg aria-hidden="true" className="webmcp-flight-connector" viewBox="0 0 46 32">
+      <path d={WEBMCP_FLIGHT_CONNECTOR_PATH} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
