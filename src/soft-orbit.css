@@ -271,8 +271,6 @@ a {
   .agent-stage__toggle,
   .learning-drawer__toggle
 ) {
-  --cloud-mask: var(--cloud-mask-a);
-  --cloud-edge: #718f8a;
   border-color: transparent !important;
   border-radius: 0 !important;
   background-clip: border-box;
@@ -391,6 +389,18 @@ a {
   --cloud-mask: var(--cloud-compact-a);
   --cloud-edge: currentColor;
   background: #f4fbf9;
+}
+
+:is(
+  .agent-sandbox-preview__trust-flow li > span,
+  .compact-stats--secondary > div,
+  .agent-stage__number,
+  .reasoning-disclosure__toggle,
+  .context-note__toggle,
+  .agent-stage__toggle,
+  .learning-drawer__toggle
+) {
+  filter: drop-shadow(0 0 1px var(--cloud-edge));
 }
 
 .agent-stage__number,

@@ -20,11 +20,12 @@ authoritative.
 - **Shape language:** irregular curves belong to large spatial fields, where they suggest
   an electron cloud or reaction boundary. The hero, agent field, problem leaf, and brand
   shell may be asymmetric. Eligible actions, compact statuses, selectors, disclosure
-  cutouts, and plus/minus rings use fixed reaction-cloud silhouettes. Each outline has
-  several soft convex lobes separated by shallow fluid valleys, so it reads as bubbly and
-  misshapen rather than as an oval with uneven corners. There are no pointed lenses, hard
-  pinches, random distortion, or repeated one-radius capsules. Evidence, chemistry,
-  typography, and data alignment stay exact.
+  cutouts, and plus/minus rings use fixed reaction-cloud silhouettes. Each wide outline
+  has three broad, nearly even lobes per edge with shallow valleys and an 85–90% vertical
+  fill. The result reads as full and bubbly, not thin, scalloped, or erratically wavy.
+  There are no pointed lenses, hard pinches, random distortion, or repeated one-radius
+  capsules. Compact counters use one full rounded blob instead of miniature ripples.
+  Evidence, chemistry, typography, and data alignment stay exact.
 - **Warmth:** the existing ocean, coral, sunlight, seafoam, plum, and periwinkle roles
   remain, but they sit on a warm paper canvas instead of cool gray software chrome.
 - **Type:** Charter, Iowan Old Style, and Georgia give learner-facing titles the voice of a
@@ -34,9 +35,9 @@ authoritative.
   arrows, validator results, and receipt evidence stay exact. Arrow shafts and heads are
   explicit SVG geometry with shared color, weight, centerline, and round joins; font
   chevrons are never used as diagram connectors.
-- **Reaction-cloud rule:** six hand-authored SVG masks provide genuinely multi-lobed
-  silhouettes, with additional stable assignments where neighboring controls would
-  otherwise look stamped from one template. Labels, baselines, rectangular hit areas,
+- **Reaction-cloud rule:** six hand-authored SVG masks provide low-frequency, gently
+  multi-lobed silhouettes, with additional stable assignments where neighboring controls
+  would otherwise look stamped from one template. Labels, baselines, rectangular hit areas,
   complete painted outlines, and focus states remain exact; only the visible contour
   varies. Shapes stay stable across reloads, are never randomized, and no variant is a
   plain ellipse, capsule, rounded rectangle, or angular polygon.
@@ -50,10 +51,10 @@ authoritative.
 - **Geometry:** top-level fields may use 28–74 px asymmetric radii. Work surfaces use
   30–50 px smooth asymmetric corners. Open agent instruments use a restrained 11–17 px
   frame and straight internal rules. Eligible controls use responsive SVG masks whose
-  spline paths alternate rounded lobes and shallow valleys while filling nearly the full
-  hit box. Every important action keeps at least a 44 px rectangular target beneath its
-  painted cloud. Forced-colors mode restores a conventional high-contrast border rather
-  than depending on the mask.
+  spline paths use only a few broad lobes and shallow, uniform valleys while filling
+  nearly the full hit box. Every important action keeps at least a 44 px rectangular
+  target beneath its painted cloud. Forced-colors mode restores a conventional
+  high-contrast border rather than depending on the mask.
 - **Motion:** only short, soft press/elevation feedback and user-triggered electron-flow
   replay. Reduced motion removes both animation and smooth scrolling without removing
   information.
